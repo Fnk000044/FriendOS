@@ -1,0 +1,7 @@
+*.dll
+*.pak
+*.exe
+*.zip
+*.asar
+*.bin
+*.icd.json
