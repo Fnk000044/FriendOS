@@ -10,6 +10,7 @@ import TodayDiary from '../components/dashboard/TodayDiary';
 import LearningCheckin from '../components/dashboard/LearningCheckin';
 import WeeklyReview from '../components/dashboard/WeeklyReview';
 import EmotionOverview from '../components/dashboard/EmotionOverview';
+import InterventionRecommendations from '../components/dashboard/InterventionRecommendations';
 import { useAI } from '../hooks/useAI';
 
 export default function DashboardPage() {
@@ -63,6 +64,7 @@ export default function DashboardPage() {
         <div className="space-y-5">
           <TodayTodos />
           <LearningCheckin />
+          <InterventionRecommendations />
         </div>
         <div className="space-y-5">
           <TodayDiary />

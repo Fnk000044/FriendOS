@@ -3,7 +3,7 @@ import type {
   Task, DiaryEntry, Habit, HabitLog, Memory, MemoryCandidate,
   DailyRecord, QuickCapture, Category, SyncLog, Quote,
   EmotionRecord, BehaviorRecord, HealthProfile, CrisisLog,
-  ConversationSummary, Assessment, TherapyRecord
+  ConversationSummary, Assessment, TherapyRecord, FeedbackLog
 } from './models';
 
 export class FriendOSDatabase extends Dexie {
@@ -25,6 +25,7 @@ export class FriendOSDatabase extends Dexie {
   conversationSummaries!: EntityTable<ConversationSummary, 'id'>;
   assessments!: EntityTable<Assessment, 'id'>;
   therapyRecords!: EntityTable<TherapyRecord, 'id'>;
+  feedbackLogs!: EntityTable<FeedbackLog, 'id'>;
 
   constructor() {
     super('FriendOS');
@@ -70,6 +71,11 @@ export class FriendOSDatabase extends Dexie {
     // v6: 修复 conversationSummaries 缺少 createdAt 索引
     this.version(6).stores({
       conversationSummaries: '&id, date, createdAt',
+    });
+
+    // v7: 添加用户反馈表
+    this.version(7).stores({
+      feedbackLogs: '&id, type, feedback, createdAt',
     });
   }
 }

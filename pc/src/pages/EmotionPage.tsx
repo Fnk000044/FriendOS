@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, Activity, Brain, Calendar } from 'lucide-react';
+import { TrendingUp, Activity, Brain, Calendar, Sparkles } from 'lucide-react';
 import { db } from '../db';
 import { getDaysAgo, getToday } from '../utils/date';
 import EmotionTrend from '../components/emotion/EmotionTrend';
 import EmotionHeatmap from '../components/emotion/EmotionHeatmap';
 import HealthRadar from '../components/emotion/HealthRadar';
+import EmotionPrediction from '../components/emotion/EmotionPrediction';
 import { generateHealthProfile } from '../services/emotion/HealthProfileService';
 import type { HealthProfile } from '../db/models';
 
@@ -196,6 +197,15 @@ export default function EmotionPage() {
           <h2 className="font-semibold text-slate-800 mb-4">心理健康画像</h2>
           <HealthRadar dimensions={dimensions} hasData={hasData} />
         </div>
+      </div>
+
+      {/* Prediction */}
+      <div className="glass-card rounded-xl p-5 shadow-sm">
+        <h2 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-indigo-500" />
+          情绪趋势预测
+        </h2>
+        <EmotionPrediction recentAvgMood={stats.averageSentiment / 20} />
       </div>
 
       {/* Heatmap */}

@@ -8,6 +8,7 @@ import MoodChart from '../components/reports/MoodChart';
 import HabitChart from '../components/reports/HabitChart';
 import HealthRadar from '../components/emotion/HealthRadar';
 import EmotionTrend from '../components/emotion/EmotionTrend';
+import WeeklyReportCard from '../components/reports/WeeklyReportCard';
 import { useLanguage } from '../i18n/useLanguage';
 import { generateReport, type ReportData } from '../utils/reports';
 import { generateAIReport, type AIReport } from '../services/ai/ReportAIService';
@@ -158,6 +159,9 @@ export default function ReportsPage() {
                 )}
               </div>
             </div>
+
+            {/* Weekly Report */}
+            <WeeklyReportCard />
 
             {/* Charts */}
             {report && (

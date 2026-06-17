@@ -39,17 +39,12 @@ export class LocalModelProvider implements AIProvider {
 
   /**
    * 从消息数组中提取 systemPrompt 和用户消息
-   * systemPrompt 由 LlamaChatSession 自动包装为 ChatML system 消息
-   * 用户消息作为纯文本传给 chatSession.prompt()，自动包装为 ChatML user 消息
+   * 对本地 0.6B 模型使用精简版提示词，避免模型混淆
    */
   private extractPromptParts(messages: { role: string; content: string }[]): {
     systemPrompt: string;
     userPrompt: string;
   } {
-    // 提取 system 消息
-    const systemMsg = messages.find(m => m.role === 'system');
-    const systemPrompt = systemMsg?.content || '';
-
     // 提取非 system 消息
     const nonSystem = messages.filter(m => m.role !== 'system');
 
@@ -57,17 +52,18 @@ export class LocalModelProvider implements AIProvider {
     const userMessages = nonSystem.filter(m => m.role === 'user');
     const lastUserMsg = userMessages[userMessages.length - 1]?.content || '';
 
-    // 历史对话（除最后一条 user 外的所有非 system 消息）
+    // 历史对话（只保留最近 2 轮，0.6B 模型上下文有限）
     const historyMessages = nonSystem.filter(m => m !== userMessages[userMessages.length - 1]);
-
-    // 将历史对话压缩为纯文本（0.6B 模型上下文有限，只保留最近几轮）
     let historyText = '';
     if (historyMessages.length > 0) {
-      const recentHistory = historyMessages.slice(-6); // 最近 3 轮对话
+      const recentHistory = historyMessages.slice(-4); // 最近 2 轮
       historyText = recentHistory.map(m =>
         `${m.role === 'user' ? '用户' : '助手'}：${m.content}`
       ).join('\n') + '\n\n';
     }
+
+    // 精简版系统提示词（0.6B 模型专用）
+    const systemPrompt = '你是一个友善的AI助手。用简短的中文回答用户问题，不要重复相同的话。';
 
     return {
       systemPrompt,
@@ -133,7 +129,7 @@ export class LocalModelProvider implements AIProvider {
             onChunk?.(data.token);
           }
         },
-        { systemPrompt, temperature: 0.7, maxTokens: 512 }
+        { systemPrompt, temperature: 0.5, maxTokens: 200 }
       );
     });
   }
