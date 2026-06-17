@@ -1,0 +1,152 @@
+import { useCallback, useRef, useEffect } from 'react';
+import { useAIStore } from '../stores/aiStore';
+import { aiService } from '../services/ai/AIService';
+import { useLanguage } from '../i18n/useLanguage';
+
+const STREAM_FLUSH_INTERVAL = 16;
+
+export function useAI() {
+  const { t } = useLanguage();
+  const messages = useAIStore((s) => s.messages);
+  const loading = useAIStore((s) => s.loading);
+  const error = useAIStore((s) => s.error);
+  const clearMessages = useAIStore((s) => s.clearMessages);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const sendMessageStream = useCallback(async (text: string) => {
+    if (!text.trim()) return;
+    if (abortControllerRef.current) return;
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    const store = useAIStore.getState();
+    store.addMessage({ role: 'user', content: text.trim() });
+    const assistantMsgId = store.addMessage({ role: 'assistant', content: '' });
+    store.setLoading(true);
+    store.setError(null);
+
+    let pendingChunk = '';
+    let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const flushBuffer = () => {
+      if (!pendingChunk) return;
+      const chunk = pendingChunk;
+      pendingChunk = '';
+      useAIStore.setState((state) => ({
+        messages: state.messages.map((msg) =>
+          msg.id === assistantMsgId ? { ...msg, content: msg.content + chunk } : msg
+        ),
+      }));
+    };
+
+    try {
+      const currentConfig = useAIStore.getState().config;
+      await aiService.initialize(currentConfig);
+      const currentMessages = useAIStore.getState().messages;
+
+      await aiService.sendMessageStream(text.trim(), currentMessages, (chunk) => {
+        if (controller.signal.aborted) return;
+        pendingChunk += chunk;
+        if (!flushTimer) {
+          flushTimer = setTimeout(() => {
+            flushTimer = null;
+            flushBuffer();
+          }, STREAM_FLUSH_INTERVAL);
+        }
+      });
+    } catch (err: any) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+      const errorMsg = err?.message || t('assistant.error');
+      useAIStore.getState().setError(errorMsg);
+      useAIStore.setState((state) => ({
+        messages: state.messages.map((msg) =>
+          msg.id === assistantMsgId ? { ...msg, content: `❌ ${errorMsg}` } : msg
+        ),
+      }));
+    } finally {
+      if (flushTimer) {
+        clearTimeout(flushTimer);
+        flushTimer = null;
+      }
+      flushBuffer();
+      // 检测空响应：如果助手消息仍为空，显示提示
+      const finalMsg = useAIStore.getState().messages.find(m => m.id === assistantMsgId);
+      if (finalMsg && finalMsg.content.trim().length === 0) {
+        useAIStore.setState((state) => ({
+          messages: state.messages.map((msg) =>
+            msg.id === assistantMsgId ? { ...msg, content: '⚠️ AI 未能生成回复，请重试。' } : msg
+          ),
+        }));
+      }
+      abortControllerRef.current = null;
+      useAIStore.getState().setLoading(false);
+    }
+  }, [t]);
+
+  const sendMessage = useCallback(async (text: string) => {
+    if (!text.trim()) return;
+    if (abortControllerRef.current) return;
+
+    const store = useAIStore.getState();
+    const currentConfig = store.config;
+    if (currentConfig.provider === 'local') {
+      return sendMessageStream(text);
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+
+    store.addMessage({ role: 'user', content: text.trim() });
+    store.setLoading(true);
+    store.setError(null);
+
+    try {
+      await aiService.initialize(currentConfig);
+      const currentMessages = useAIStore.getState().messages;
+      const response = await aiService.sendMessage(text.trim(), currentMessages);
+      // 检查是否已被取消
+      if (controller.signal.aborted) return;
+      useAIStore.getState().addMessage({ role: 'assistant', content: response });
+    } catch (err: any) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+      const errorMsg = err?.message || t('assistant.error');
+      useAIStore.getState().setError(errorMsg);
+      useAIStore.getState().addMessage({ role: 'assistant', content: `❌ ${errorMsg}` });
+    } finally {
+      abortControllerRef.current = null;
+      useAIStore.getState().setLoading(false);
+    }
+  }, [t, sendMessageStream]);
+
+  const cancelStream = useCallback(() => {
+    abortControllerRef.current?.abort();
+  }, []);
+
+  const initService = useCallback(async () => {
+    try {
+      const currentConfig = useAIStore.getState().config;
+      await aiService.initialize(currentConfig);
+    } catch {
+      // Service will be initialized on first send
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
+
+  return {
+    messages,
+    loading,
+    error,
+    sendMessage,
+    sendMessageStream,
+    cancelStream,
+    clearMessages,
+    initService,
+  };
+}

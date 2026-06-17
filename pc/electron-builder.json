@@ -1,0 +1,28 @@
+{
+  "appId": "com.friendos.app",
+  "productName": "FriendOS",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "build/**/*"
+  ],
+  "asar": true,
+  "asarUnpack": [
+    "node_modules/node-llama-cpp/**/*",
+    "node_modules/@node-llama-cpp/**/*",
+    "node_modules/onnxruntime-node/**/*",
+    "node_modules/onnxruntime-common/**/*"
+  ],
+  "win": {
+    "icon": "build/icon.png",
+    "target": [
+      {
+        "target": "dir",
+        "arch": ["x64"]
+      }
+    ]
+  }
+}

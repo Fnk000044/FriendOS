@@ -1,0 +1,116 @@
+import Button from '../common/Button';
+
+interface AssessmentResultProps {
+  type: 'PHQ9' | 'GAD7' | 'PSS10';
+  scores: number[];
+  totalScore: number;
+  level: string;
+  onClose: () => void;
+  onRetake: () => void;
+}
+
+const PHQ9_LEVELS: Record<string, { label: string; color: string; description: string; suggestion: string }> = {
+  minimal: { label: '无症状', color: '#10B981', description: '总分 0-4 分', suggestion: '当前无明显抑郁症状，继续保持良好状态。' },
+  mild: { label: '轻度', color: '#F59E0B', description: '总分 5-9 分', suggestion: '存在轻度抑郁倾向，建议关注情绪变化，适当运动和社交。' },
+  moderate: { label: '中度', color: '#F97316', description: '总分 10-14 分', suggestion: '存在中度抑郁症状，建议寻求心理咨询帮助。' },
+  moderately_severe: { label: '中重度', color: '#EF4444', description: '总分 15-19 分', suggestion: '存在中重度抑郁症状，强烈建议寻求专业心理咨询。' },
+  severe: { label: '重度', color: '#DC2626', description: '总分 20-27 分', suggestion: '存在重度抑郁症状，请尽快寻求专业心理帮助。' },
+};
+
+const GAD7_LEVELS: Record<string, { label: string; color: string; description: string; suggestion: string }> = {
+  minimal: { label: '无症状', color: '#10B981', description: '总分 0-4 分', suggestion: '当前无明显焦虑症状，继续保持良好状态。' },
+  mild: { label: '轻度', color: '#F59E0B', description: '总分 5-9 分', suggestion: '存在轻度焦虑倾向，建议适当放松和休息。' },
+  moderate: { label: '中度', color: '#F97316', description: '总分 10-14 分', suggestion: '存在中度焦虑症状，建议寻求心理咨询帮助。' },
+  severe: { label: '重度', color: '#EF4444', description: '总分 15-21 分', suggestion: '存在重度焦虑症状，请尽快寻求专业心理帮助。' },
+};
+
+const PSS10_LEVELS: Record<string, { label: string; color: string; description: string; suggestion: string }> = {
+  low: { label: '低压力', color: '#10B981', description: '总分 0-13 分', suggestion: '你目前的知觉压力水平较低，应对能力良好，继续保持健康的生活方式。' },
+  moderate: { label: '中等压力', color: '#F59E0B', description: '总分 14-26 分', suggestion: '你感受到中等程度的压力，建议尝试呼吸练习、正念冥想或适度运动来缓解。' },
+  high: { label: '高压力', color: '#EF4444', description: '总分 27-40 分', suggestion: '你目前承受较高的压力，建议寻求支持，尝试放松技巧，必要时咨询心理专业人士。' },
+};
+
+function getLevel(type: string, score: number) {
+  if (type === 'PHQ9') {
+    if (score <= 4) return PHQ9_LEVELS.minimal;
+    if (score <= 9) return PHQ9_LEVELS.mild;
+    if (score <= 14) return PHQ9_LEVELS.moderate;
+    if (score <= 19) return PHQ9_LEVELS.moderately_severe;
+    return PHQ9_LEVELS.severe;
+  } else if (type === 'GAD7') {
+    if (score <= 4) return GAD7_LEVELS.minimal;
+    if (score <= 9) return GAD7_LEVELS.mild;
+    if (score <= 14) return GAD7_LEVELS.moderate;
+    return GAD7_LEVELS.severe;
+  } else {
+    if (score <= 13) return PSS10_LEVELS.low;
+    if (score <= 26) return PSS10_LEVELS.moderate;
+    return PSS10_LEVELS.high;
+  }
+}
+
+export default function AssessmentResult({ type, scores, totalScore, onClose, onRetake }: AssessmentResultProps) {
+  const level = getLevel(type, totalScore);
+  const typeName = type === 'PHQ9' ? 'PHQ-9 抑郁筛查' : type === 'GAD7' ? 'GAD-7 焦虑筛查' : 'PSS-10 压力评估';
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center space-y-2">
+        <h3 className="text-lg font-semibold text-text-primary">{typeName}结果</h3>
+        <p className="text-sm text-text-muted">{level.description}</p>
+      </div>
+
+      {/* Score display */}
+      <div className="flex justify-center">
+        <div
+          className="w-32 h-32 rounded-full flex flex-col items-center justify-center border-4"
+          style={{ borderColor: level.color }}
+        >
+          <span className="text-3xl font-bold" style={{ color: level.color }}>{totalScore}</span>
+          <span className="text-sm text-text-muted">总分</span>
+        </div>
+      </div>
+
+      {/* Level label */}
+      <div className="text-center">
+        <span
+          className="inline-block px-3 py-1 rounded-full text-sm font-medium text-white"
+          style={{ backgroundColor: level.color }}
+        >
+          {level.label}
+        </span>
+      </div>
+
+      {/* Suggestion */}
+      <div className="rounded-lg p-4" style={{ background: 'var(--bg-hover)' }}>
+        <p className="text-sm text-text-secondary leading-relaxed">{level.suggestion}</p>
+      </div>
+
+      {/* Score breakdown */}
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-text-primary">各题得分：</p>
+        <div className="grid grid-cols-3 gap-2">
+          {scores.map((score, i) => (
+            <div key={i} className="flex items-center gap-1 text-sm">
+              <span className="text-text-muted">Q{i + 1}:</span>
+              <span className="font-medium">{score}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Disclaimer */}
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+        <p className="text-xs text-amber-700">
+          ⚠️ 本评估仅供参考，不能替代专业医疗诊断。如有疑虑，请咨询专业心理健康从业者。
+        </p>
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-center gap-3">
+        <Button variant="ghost" onClick={onRetake}>重新测评</Button>
+        <Button onClick={onClose}>完成</Button>
+      </div>
+    </div>
+  );
+}
