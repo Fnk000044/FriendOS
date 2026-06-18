@@ -12,6 +12,21 @@ const taskKnowledgeTags = ['知识', '学习', '经验', '研究', '调研', '�
 
 const MIN_CONTENT_LENGTH = 50;
 
+/**
+ * 使用 ONNX 情感分析模型判断内容是否包含危机信号
+ * 返回 true 表示内容有危机风险，不应提取为记忆
+ */
+async function isCrisisContent(text: string): Promise<boolean> {
+  try {
+    const api = window.electronAPI;
+    if (!api?.sentimentAnalyze) return false;
+    const result = await api.sentimentAnalyze(text);
+    return result?.level === 'high';
+  } catch {
+    return false;
+  }
+}
+
 function scoreDiaryInsight(content: string): number {
   const lower = content.toLowerCase();
   let score = 0;
@@ -57,6 +72,7 @@ export class MemoryCandidateService {
       if (existing) continue;
 
       if (!diary.content || diary.content.length < MIN_CONTENT_LENGTH) continue;
+      if (await isCrisisContent(diary.content)) continue;
       if (scoreDiaryInsight(diary.content) < 2) continue;
 
       const content = truncateContent(diary.content);
@@ -153,6 +169,9 @@ export class MemoryCandidateService {
         c => c.sourceType === 'diary' && c.sourceId === diary.id
       );
       if (existing) continue;
+
+      // 使用 ONNX 模型检测危机内容，跳过有风险的日记
+      if (await isCrisisContent(diary.content)) continue;
 
       const systemPrompt = '你是一位知识提取助手。判断用户日记是否包含值得记录的知识、感悟或经验。只返回JSON格式。';
       const userPrompt = `判断以下日记是否包含值得记录的知识、感悟或经验。

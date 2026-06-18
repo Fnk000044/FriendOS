@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Minus, Square, X } from 'lucide-react';
+import { Minus, Square, X, Sparkles } from 'lucide-react';
 
 export default function TitleBar() {
   const [isMaximized, setIsMaximized] = useState(false);
@@ -22,13 +22,19 @@ export default function TitleBar() {
   if (isMac) {
     return (
       <div
-        className="h-8 border-b flex items-center px-3 fixed top-0 left-0 right-0 z-50 select-none backdrop-blur-sm"
-        style={{ WebkitAppRegion: 'drag', background: 'var(--bg-card)' } as React.CSSProperties}
+        className="h-8 border-b flex items-center px-3 fixed top-0 left-0 right-0 z-50 select-none"
+        style={{
+          WebkitAppRegion: 'drag',
+          background: 'color-mix(in srgb, var(--bg-card) 80%, transparent)',
+          backdropFilter: 'blur(24px) saturate(1.2)',
+          WebkitBackdropFilter: 'blur(24px) saturate(1.2)',
+          borderColor: 'var(--glass-border)',
+        } as React.CSSProperties}
       >
         <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-          <button aria-label="关闭" onClick={handleClose} className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 transition-colors" />
-          <button aria-label="最小化" onClick={handleMinimize} className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors" />
-          <button aria-label="最大化" onClick={handleMaximize} className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 transition-colors" />
+          <button aria-label="关闭" onClick={handleClose} className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 transition-all duration-150" />
+          <button aria-label="最小化" onClick={handleMinimize} className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-all duration-150" />
+          <button aria-label="最大化" onClick={handleMaximize} className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 transition-all duration-150" />
         </div>
       </div>
     );
@@ -36,23 +42,32 @@ export default function TitleBar() {
 
   return (
     <div
-      className="h-8 border-b flex items-center justify-between fixed top-0 left-0 right-0 z-50 select-none backdrop-blur-sm"
-      style={{ WebkitAppRegion: 'drag', background: 'var(--bg-card)' } as React.CSSProperties}
+      className="h-8 border-b flex items-center justify-between fixed top-0 left-0 right-0 z-50 select-none"
+      style={{
+        WebkitAppRegion: 'drag',
+        background: 'color-mix(in srgb, var(--bg-card) 80%, transparent)',
+        backdropFilter: 'blur(24px) saturate(1.2)',
+        WebkitBackdropFilter: 'blur(24px) saturate(1.2)',
+        borderColor: 'var(--glass-border)',
+      } as React.CSSProperties}
     >
-      <div className="flex items-center px-3 text-sm text-text-muted">
-        FriendOS
+      <div className="flex items-center gap-2 px-3 text-sm text-text-muted" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+        <div className="w-4 h-4 rounded flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #14B8A6, #5EEAD4)' }}>
+          <Sparkles className="w-2.5 h-2.5 text-white" />
+        </div>
+        <span className="font-medium text-xs">FriendOS</span>
       </div>
       <div className="flex items-center h-full" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         <button
           onClick={handleMinimize}
-          className="h-full px-4 hover:bg-surface-hover transition-colors flex items-center justify-center"
+          className="h-full px-4 hover:bg-surface-hover transition-all duration-150 flex items-center justify-center"
           title="最小化"
         >
           <Minus className="w-4 h-4 text-text-secondary" strokeWidth={2} />
         </button>
         <button
           onClick={handleMaximize}
-          className="h-full px-4 hover:bg-surface-hover transition-colors flex items-center justify-center"
+          className="h-full px-4 hover:bg-surface-hover transition-all duration-150 flex items-center justify-center"
           title={isMaximized ? '还原' : '最大化'}
         >
           {isMaximized ? (
@@ -66,10 +81,13 @@ export default function TitleBar() {
         </button>
         <button
           onClick={handleClose}
-          className="h-full px-4 hover:bg-red-500 transition-colors flex items-center justify-center group"
+          className="h-full px-4 transition-all duration-150 flex items-center justify-center group"
+          style={{ '--hover-bg': '#EF4444' } as React.CSSProperties}
           title="关闭"
+          onMouseEnter={(e) => { e.currentTarget.style.background = '#EF4444'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
         >
-          <X className="w-4 h-4 text-text-secondary group-hover:text-white" />
+          <X className="w-4 h-4 text-text-secondary group-hover:text-white transition-colors duration-150" />
         </button>
       </div>
     </div>

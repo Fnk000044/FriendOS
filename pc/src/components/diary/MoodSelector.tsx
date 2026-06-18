@@ -6,18 +6,74 @@ interface MoodSelectorProps {
   size?: 'sm' | 'md';
 }
 
-const moodIcons = ['😡', '😞', '😐', '😊', '😄'];
+const moodColors = ['#EF4444', '#F97316', '#F59E0B', '#22C55E', '#14B8A6'];
+
+const MoodFace = ({ index, size }: { index: number; size: number }) => {
+  const color = moodColors[index];
+  const paths = [
+    // Angry
+    <g key="angry">
+      <circle cx="12" cy="12" r="10" fill={color} opacity={0.15} />
+      <circle cx="12" cy="12" r="10" stroke={color} strokeWidth={1.5} fill="none" />
+      <path d="M8 9.5l2.5-1.5M16 9.5l-2.5-1.5" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+      <circle cx="9" cy="10.5" r="1" fill={color} />
+      <circle cx="15" cy="10.5" r="1" fill={color} />
+      <path d="M9 15.5c1.5-2 4.5-2 6 0" stroke={color} strokeWidth={1.5} strokeLinecap="round" fill="none" />
+    </g>,
+    // Sad
+    <g key="sad">
+      <circle cx="12" cy="12" r="10" fill={color} opacity={0.15} />
+      <circle cx="12" cy="12" r="10" stroke={color} strokeWidth={1.5} fill="none" />
+      <circle cx="9" cy="10.5" r="1" fill={color} />
+      <circle cx="15" cy="10.5" r="1" fill={color} />
+      <path d="M9 15.5c1.5-1.5 4.5-1.5 6 0" stroke={color} strokeWidth={1.5} strokeLinecap="round" fill="none" />
+      <path d="M8.5 8.5c0 0 1-2 3.5-2s3.5 2 3.5 2" stroke={color} strokeWidth={1} strokeLinecap="round" fill="none" opacity={0.5} />
+    </g>,
+    // Neutral
+    <g key="neutral">
+      <circle cx="12" cy="12" r="10" fill={color} opacity={0.15} />
+      <circle cx="12" cy="12" r="10" stroke={color} strokeWidth={1.5} fill="none" />
+      <circle cx="9" cy="10.5" r="1" fill={color} />
+      <circle cx="15" cy="10.5" r="1" fill={color} />
+      <line x1="9" y1="15" x2="15" y2="15" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+    </g>,
+    // Happy
+    <g key="happy">
+      <circle cx="12" cy="12" r="10" fill={color} opacity={0.15} />
+      <circle cx="12" cy="12" r="10" stroke={color} strokeWidth={1.5} fill="none" />
+      <circle cx="9" cy="10.5" r="1" fill={color} />
+      <circle cx="15" cy="10.5" r="1" fill={color} />
+      <path d="M9 14.5c1.5 1.5 4.5 1.5 6 0" stroke={color} strokeWidth={1.5} strokeLinecap="round" fill="none" />
+    </g>,
+    // Very Happy
+    <g key="very-happy">
+      <circle cx="12" cy="12" r="10" fill={color} opacity={0.15} />
+      <circle cx="12" cy="12" r="10" stroke={color} strokeWidth={1.5} fill="none" />
+      <path d="M8 10c0 0 1-2 4-2s4 2 4 2" stroke={color} strokeWidth={1.5} strokeLinecap="round" fill="none" />
+      <circle cx="9.5" cy="10" r="0.5" fill={color} />
+      <circle cx="14.5" cy="10" r="0.5" fill={color} />
+      <path d="M8 14.5c1.5 2.5 6.5 2.5 8 0" stroke={color} strokeWidth={1.5} strokeLinecap="round" fill="none" />
+      <path d="M9 15c1.2 1.5 4.8 1.5 6 0" fill={color} opacity={0.25} />
+    </g>,
+  ];
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {paths[index]}
+    </svg>
+  );
+};
 
 export default function MoodSelector({ value, onChange, size = 'md' }: MoodSelectorProps) {
   const { t } = useLanguage();
-  const btnSize = size === 'sm' ? 'text-lg p-1.5' : 'text-2xl p-2';
+  const iconSize = size === 'sm' ? 20 : 28;
+  const btnSize = size === 'sm' ? 'p-1.5' : 'p-2';
   const isReadOnly = !onChange;
 
   if (isReadOnly) {
-    // 只读模式：只显示当前心情图标
     return (
-      <span className={`${btnSize} inline-flex items-center`} title={t(`mood.${value}` as any)}>
-        {moodIcons[value - 1]}
+      <span className="inline-flex items-center" title={t(`mood.${value}` as any)}>
+        <MoodFace index={value - 1} size={iconSize} />
       </span>
     );
   }
@@ -36,7 +92,7 @@ export default function MoodSelector({ value, onChange, size = 'md' }: MoodSelec
               : 'opacity-40 hover:opacity-80'
           }`}
         >
-          {moodIcons[m - 1]}
+          <MoodFace index={m - 1} size={iconSize} />
         </button>
       ))}
     </div>

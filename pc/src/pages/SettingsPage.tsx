@@ -1,12 +1,13 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { Download, Upload, Database, Languages, FolderOpen, AlertTriangle, Sun, Moon, Monitor, Keyboard, Brain, Bell, Lock, Sparkles } from 'lucide-react';
+import { Download, Upload, Database, Languages, FolderOpen, AlertTriangle, Sun, Moon, Monitor, Keyboard, Brain, Sparkles } from 'lucide-react';
 import { db } from '../db';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import { useLanguage } from '../i18n/useLanguage';
 import { useThemeStore, type ThemeMode } from '../stores/useThemeStore';
 import { useShortcutStore, type ShortcutAction } from '../stores/useShortcutStore';
+import { useNotificationStore } from '../stores/notificationStore';
 import { checkConflict } from '../utils/shortcutConflict';
 import type { Lang } from '../i18n/translations';
 import ModelStatus from '../components/ai/ModelStatus';
@@ -30,16 +31,27 @@ export default function SettingsPage() {
     setExporting(true);
     try {
       const data = {
-        version: 1,
+        version: 2,
         exportedAt: new Date().toISOString(),
         tasks: await db.tasks.toArray(),
         diaries: await db.diaries.toArray(),
         habits: await db.habits.toArray(),
         habitLogs: await db.habitLogs.toArray(),
         memories: await db.memories.toArray(),
+        memoryCandidates: await db.memoryCandidates.toArray(),
         dailyRecords: await db.dailyRecords.toArray(),
         quickCaptures: await db.quickCaptures.toArray(),
         categories: await db.categories.toArray(),
+        syncLogs: await db.syncLogs.toArray(),
+        quotes: await db.quotes.toArray(),
+        emotionRecords: await db.emotionRecords.toArray(),
+        behaviorRecords: await db.behaviorRecords.toArray(),
+        healthProfiles: await db.healthProfiles.toArray(),
+        crisisLogs: await db.crisisLogs.toArray(),
+        conversationSummaries: await db.conversationSummaries.toArray(),
+        assessments: await db.assessments.toArray(),
+        therapyRecords: await db.therapyRecords.toArray(),
+        feedbackLogs: await db.feedbackLogs.toArray(),
       };
 
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -77,7 +89,12 @@ export default function SettingsPage() {
         await db.delete();
         await db.open();
 
-        const tables = ['tasks', 'diaries', 'habits', 'habitLogs', 'memories', 'dailyRecords', 'quickCaptures', 'categories'] as const;
+        const tables = [
+          'tasks', 'diaries', 'habits', 'habitLogs', 'memories', 'memoryCandidates',
+          'dailyRecords', 'quickCaptures', 'categories', 'syncLogs', 'quotes',
+          'emotionRecords', 'behaviorRecords', 'healthProfiles', 'crisisLogs',
+          'conversationSummaries', 'assessments', 'therapyRecords', 'feedbackLogs',
+        ] as const;
         for (const table of tables) {
           if (data[table]?.length) {
             await (db[table] as any).bulkAdd(data[table]);
@@ -100,25 +117,29 @@ export default function SettingsPage() {
 
   const handleReset = useCallback(async () => {
     if (!window.confirm(t('settings.reset_confirm'))) return;
+    // 设置重置标记（不以 friendos_ 开头，不会被下面的过滤器清除）
+    localStorage.setItem('system_reset_flag', '1');
     await db.delete();
     // 只清除FriendOS相关的localStorage key，避免影响其他应用
     const friendosKeys = Object.keys(localStorage).filter(key =>
       key.startsWith('friendos_') || key.startsWith('lifeos_') || key.startsWith('use_')
     );
     friendosKeys.forEach(key => localStorage.removeItem(key));
-    window.location.reload();
+    // 重置 stores 状态
+    useNotificationStore.getState().reset();
+    useLanguage.getState().reset();
   }, [t]);
 
   const handleSeedDemo = useCallback(async () => {
-    if (!window.confirm('填充演示数据将清除当前所有数据，确定继续？')) return;
+    if (!window.confirm(t('settings.demo_data_confirm'))) return;
     const result = await seedDemoData();
     if (result.success) {
-      toast.success('演示数据填充成功！');
+      toast.success(t('settings.demo_data_success'));
       window.location.reload();
     } else {
-      toast.error('演示数据填充失败');
+      toast.error(t('settings.demo_data_fail'));
     }
-  }, []);
+  }, [t]);
 
   // Keyboard shortcut recording
   useEffect(() => {
@@ -181,7 +202,7 @@ export default function SettingsPage() {
             {t('settings.import')}
           </Button>
         </div>
-        <div className="mt-6 pt-4 border-t border-slate-100">
+        <div className="mt-6 pt-4 border-t" style={{ borderColor: 'var(--glass-border)' }}>
           <Button variant="danger" onClick={handleReset}>
             <AlertTriangle className="w-4 h-4" />
             {t('settings.reset')}
@@ -271,7 +292,7 @@ export default function SettingsPage() {
             </div>
           ))}
         </div>
-        <div className="mt-4 pt-3 border-t border-slate-100">
+        <div className="mt-4 pt-3 border-t" style={{ borderColor: 'var(--glass-border)' }}>
           <Button variant="secondary" size="sm" onClick={resetShortcuts}>
             {t('settings.shortcuts_reset')}
           </Button>
@@ -295,13 +316,13 @@ export default function SettingsPage() {
       <Card>
         <h3 className="text-sm font-semibold text-text-primary mb-1 flex items-center gap-2">
           <Brain className="w-4 h-4" />
-          情感分析模型状态
+          {t('settings.model_status')}
         </h3>
         <div className="mt-3">
           <ModelStatus />
         </div>
         <p className="text-xs text-text-muted mt-3">
-          关键词分析随时可用。训练 ONNX 模型可提升分析精度。
+          {t('settings.model_status_desc')}
         </p>
       </Card>
 
@@ -316,12 +337,12 @@ export default function SettingsPage() {
       <Card>
         <h3 className="text-sm font-semibold text-text-primary mb-1 flex items-center gap-2">
           <Sparkles className="w-4 h-4" />
-          演示数据
+          {t('settings.demo_data')}
         </h3>
-        <p className="text-xs text-text-muted mb-3">填充预设数据，方便演示和答辩展示。</p>
+        <p className="text-xs text-text-muted mb-3">{t('settings.demo_data_desc')}</p>
         <Button variant="secondary" onClick={handleSeedDemo}>
           <Sparkles className="w-4 h-4" />
-          填充演示数据
+          {t('settings.demo_data_btn')}
         </Button>
       </Card>
 

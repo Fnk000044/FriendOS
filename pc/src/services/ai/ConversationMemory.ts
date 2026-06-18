@@ -30,12 +30,12 @@ export async function saveConversationSummary(
 ): Promise<boolean> {
   try {
     // Only analyze user messages for summary
-    const userMessages = messages.filter(m => m.role === 'user');
+    const userMessages = messages.filter(m => m.role === 'user' && m.content);
     if (userMessages.length === 0) return false;
 
     // Generate summary from user messages（存储前消毒）
-    const summary = sanitizeUserInput(generateSummary(userMessages.map(m => m.content)));
-    const keyTopics = extractKeyTopics(userMessages.map(m => m.content)).map(sanitizeUserInput);
+    const summary = sanitizeUserInput(generateSummary(userMessages.map(m => m.content || '')));
+    const keyTopics = extractKeyTopics(userMessages.map(m => m.content || '')).map(sanitizeUserInput);
 
     // Save to database
     await db.conversationSummaries.add({

@@ -61,4 +61,11 @@ pc/test-electron-app/
 *.pak
 *.exe
 *.bin
+*.dat
 *.icd.json
+vk_swiftshader_icd.json
+
+# Electron/Chromium runtime files
+icudtl.dat
+LICENSES.chromium.html
+version

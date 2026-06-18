@@ -18,7 +18,7 @@ export default function SearchBar({ value, onChange, placeholder = '搜索...' }
         className="w-full pl-9 pr-4 py-2 rounded-btn border text-sm
           placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
           transition-all"
-        style={{ background: 'var(--bg-card-solid)', borderColor: 'var(--glass-border)' }}
+        style={{ background: 'var(--bg-card-solid)', borderColor: 'var(--border-input)' }}
       />
     </div>
   );

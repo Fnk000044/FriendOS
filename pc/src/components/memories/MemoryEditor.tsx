@@ -99,7 +99,7 @@ export default function MemoryEditor({ open, onClose, memory }: MemoryEditorProp
           <TagInput tags={tags} onChange={setTags} />
         </div>
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <div className="flex justify-end gap-2 pt-2 border-t" style={{ borderColor: 'var(--glass-border)' }}>
           <Button variant="secondary" onClick={onClose}>{t('memory.cancel')}</Button>
           <Button onClick={handleSave} disabled={!title.trim() || !content.trim()}>
             {isEditing ? t('memory.update') : t('memory.save')}

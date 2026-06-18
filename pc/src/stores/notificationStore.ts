@@ -20,6 +20,7 @@ interface NotificationState {
   toggleReminder: (id: string) => void;
   updateReminder: (id: string, updates: Partial<Reminder>) => void;
   initFromStorage: () => void;
+  reset: () => void;
 }
 
 const STORAGE_KEY = 'friendos_reminders';
@@ -103,6 +104,14 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   initFromStorage: () => {
     if (get().initialized) return;
 
+    // 检查重置标记：如果刚重置过，不加载默认提醒
+    const wasReset = localStorage.getItem('system_reset_flag');
+    if (wasReset) {
+      localStorage.removeItem('system_reset_flag');
+      set({ reminders: [], initialized: true });
+      return;
+    }
+
     const stored = localStorage.getItem(STORAGE_KEY);
     let reminders: Reminder[];
 
@@ -119,5 +128,10 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     set({ reminders, initialized: true });
     window.electronAPI?.notificationSetReminders?.(reminders);
     window.electronAPI?.notificationStartCheck?.();
+  },
+
+  reset: () => {
+    set({ reminders: [], initialized: false });
+    localStorage.removeItem(STORAGE_KEY);
   },
 }));

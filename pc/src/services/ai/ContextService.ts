@@ -63,7 +63,7 @@ export class ContextService {
         db.tasks.where('scheduledDate').equals(today).toArray(),
         db.tasks.where('status').equals('pending').filter(t => t.scheduledDate < today).limit(3).toArray(),
         db.diaries.where('date').between(sevenDaysAgo, today, true, true).toArray(),
-        db.habits.filter(h => !h.archived).limit(8).toArray(),
+        db.habits.where('archived').equals(0).limit(8).toArray(),
         db.habitLogs.where('date').equals(today).toArray(),
         db.memories.filter(m => !m.archived).reverse().limit(5).toArray(),
         getRecentSummaries(10),

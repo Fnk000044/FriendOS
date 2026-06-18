@@ -45,7 +45,7 @@ export function useAI() {
       await aiService.initialize(currentConfig);
       const currentMessages = useAIStore.getState().messages;
 
-      await aiService.sendMessageStream(text.trim(), currentMessages, (chunk) => {
+      const fullResponse = await aiService.sendMessageStream(text.trim(), currentMessages, (chunk) => {
         if (controller.signal.aborted) return;
         pendingChunk += chunk;
         if (!flushTimer) {
@@ -55,6 +55,19 @@ export function useAI() {
           }, STREAM_FLUSH_INTERVAL);
         }
       });
+
+      // 兜底：如果 onChunk 从未被调用（如 StubProvider），用返回值填充
+      if (fullResponse != null && fullResponse.length > 0) {
+        flushBuffer();
+        const msg = useAIStore.getState().messages.find(m => m.id === assistantMsgId);
+        if (msg && msg.content.trim().length === 0) {
+          useAIStore.setState((state) => ({
+            messages: state.messages.map((m) =>
+              m.id === assistantMsgId ? { ...m, content: fullResponse } : m
+            ),
+          }));
+        }
+      }
     } catch (err: any) {
       if (err instanceof Error && err.name === 'AbortError') return;
       const errorMsg = err?.message || t('assistant.error');
@@ -86,39 +99,9 @@ export function useAI() {
 
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim()) return;
-    if (abortControllerRef.current) return;
-
-    const store = useAIStore.getState();
-    const currentConfig = store.config;
-    if (currentConfig.provider === 'local') {
-      return sendMessageStream(text);
-    }
-
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-
-    store.addMessage({ role: 'user', content: text.trim() });
-    store.setLoading(true);
-    store.setError(null);
-
-    try {
-      await aiService.initialize(currentConfig);
-      const currentMessages = useAIStore.getState().messages;
-      const response = await aiService.sendMessage(text.trim(), currentMessages);
-      // 检查是否已被取消
-      if (controller.signal.aborted) return;
-      useAIStore.getState().addMessage({ role: 'assistant', content: response });
-    } catch (err: any) {
-      if (err instanceof Error && err.name === 'AbortError') return;
-      const errorMsg = err?.message || t('assistant.error');
-      useAIStore.getState().setError(errorMsg);
-      useAIStore.getState().addMessage({ role: 'assistant', content: `❌ ${errorMsg}` });
-    } finally {
-      abortControllerRef.current = null;
-      useAIStore.getState().setLoading(false);
-    }
-  }, [t, sendMessageStream]);
+    // 本地模型使用流式输出
+    return sendMessageStream(text);
+  }, [sendMessageStream]);
 
   const cancelStream = useCallback(() => {
     abortControllerRef.current?.abort();

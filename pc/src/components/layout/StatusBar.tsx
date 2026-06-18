@@ -33,7 +33,7 @@ export default function StatusBar() {
     [needsDiaries]
   );
   const habits = useLiveQuery(
-    () => needsHabits ? db.habits.filter(h => !h.archived).toArray() : [],
+    () => needsHabits ? db.habits.where('archived').equals(0).toArray() : [],
     [needsHabits]
   );
   const todayLogs = useLiveQuery(

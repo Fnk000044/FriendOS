@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { AIConfig, ChatMessage, ToneType, ProviderType, LocalModel } from '../services/ai/types';
+import type { AIConfig, ChatMessage, ToneType, LocalModel } from '../services/ai/types';
 
 interface AIStore {
   config: AIConfig;
@@ -20,9 +20,7 @@ interface AIStore {
 const defaultConfig: AIConfig = {
   provider: 'local',
   tone: 'friendly',
-  apiKey: '',
-  onlineProvider: 'deepseek',
-  model: 'deepseek-v4-flash',
+  model: 'qwen3.5:0.8b',
   localModel: null,
   localModelPath: '',
 };
@@ -53,6 +51,7 @@ export const useAIStore = create<AIStore>()(
         set((state) => {
           const newMsg = {
             ...msg,
+            content: msg.content || '',
             id,
             timestamp: new Date().toISOString(),
           };
@@ -71,9 +70,7 @@ export const useAIStore = create<AIStore>()(
       name: 'lifeos_ai_config',
       partialize: (state) => {
         const recentMessages = state.messages.slice(-50);
-        // API Key 仅存储在 Electron safeStorage 中，不写入 localStorage
-        const { apiKey: _apiKey, ...configWithoutKey } = state.config;
-        return { config: configWithoutKey, messages: recentMessages };
+        return { config: state.config, messages: recentMessages };
       },
     }
   )

@@ -59,7 +59,7 @@ export default function Modal({ open, onClose, title, children, maxWidth = 'max-
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
       <div
@@ -68,11 +68,15 @@ export default function Modal({ open, onClose, title, children, maxWidth = 'max-
         aria-modal="true"
         aria-label={title || '对话框'}
         tabIndex={-1}
-        className={`glass-card glass-glow shadow-xl w-full ${maxWidth} mx-4 max-h-[85vh] flex flex-col outline-none`}
-        style={{ animation: 'modalScaleIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+        className={`rounded-2xl shadow-xl w-full ${maxWidth} mx-4 max-h-[85vh] flex flex-col outline-none border`}
+        style={{
+          animation: 'modalScaleIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          background: 'var(--bg-card-solid, var(--bg-card))',
+          borderColor: 'var(--glass-border)',
+        }}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--glass-border)' }}>
             <h2 className="text-base font-semibold text-text-primary">{title}</h2>
             <button
               onClick={onClose}

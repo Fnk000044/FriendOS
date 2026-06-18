@@ -63,6 +63,7 @@ export function useDiary() {
     try {
       await db.diaries.delete(id);
       toast.success('日记已删除');
+      contextService.clearCache();
       return true;
     } catch (err) {
       console.error('[useDiary] deleteEntry error:', err);

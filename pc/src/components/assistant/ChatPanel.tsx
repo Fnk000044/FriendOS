@@ -9,19 +9,12 @@ import AISettingsModal from '../ai/AISettingsModal';
 import { useLanguage } from '../../i18n/useLanguage';
 import { useAI } from '../../hooks/useAI';
 
-// Crisis keywords for chat detection (same list as SentimentService)
-const CRISIS_WORDS = [
-  '自杀', '自残', '活不下去', '不想活', '死了算了', '结束生命',
-  '割腕', '跳楼', '吃药', '遗书', '告别', '没有意义', '活着没意思',
-  '解脱', '消失', '不想存在', '离开这个世界', '一了百了', '轻生',
-  '寻死', '赴死', '不想活了', '活够了', '活着太累', '不如死',
-  '想死', '去死', '死掉', '死吧', '不想活', '活不下去',
-  '想自杀', '想自残', '想结束', '想离开', '想消失',
+// 排除模式（不触发危机的常见表达）
+const CRISIS_EXCLUSIONS = [
+  '九死一生', '生不如死', '死心塌地', '死而后已',
+  '笑死', '困死了', '无聊到想死', '热死了', '累死了',
+  '饿死了', '烦死了', '笑死我了', '可爱死了',
 ];
-
-function hasCrisisContent(text: string): boolean {
-  return CRISIS_WORDS.some(word => text.includes(word));
-}
 
 interface ChatPanelProps {
   variant?: 'floating' | 'fullpage';
@@ -65,9 +58,18 @@ export default function ChatPanel({ variant = 'fullpage' }: ChatPanelProps) {
     if (!el || !el.value.trim() || loading) return;
     const text = el.value;
 
-    // Crisis detection for chat messages
-    if (hasCrisisContent(text)) {
-      showCrisis('high', 'chat', text);
+    // Crisis detection: use SentimentService 3-layer analysis via IPC
+    const isExcluded = CRISIS_EXCLUSIONS.some(pattern => text.includes(pattern));
+    if (!isExcluded && window.electronAPI?.sentimentAnalyze) {
+      window.electronAPI.sentimentAnalyze(text).then((result: any) => {
+        if (result?.level === 'high') {
+          showCrisis('high', 'chat', text);
+        }
+      }).catch(() => {
+        // Fallback: basic keyword check if IPC fails
+        const basicCrisis = ['想死', '不想活', '自杀', '活不下去', '结束生命'].some(w => text.includes(w));
+        if (basicCrisis) showCrisis('high', 'chat', text);
+      });
     }
 
     sendMessage(text);
@@ -125,7 +127,7 @@ export default function ChatPanel({ variant = 'fullpage' }: ChatPanelProps) {
                   className="flex items-center gap-1 text-xs text-text-muted hover:text-red-500 transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  清除对话
+                  {t('assistant.clear')}
                 </button>
               )}
             </div>

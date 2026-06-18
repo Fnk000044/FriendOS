@@ -39,12 +39,22 @@ export class LocalModelProvider implements AIProvider {
 
   /**
    * 从消息数组中提取 systemPrompt 和用户消息
-   * 对本地 0.6B 模型使用精简版提示词，避免模型混淆
+   * 使用 AIService 传入的完整系统提示词（含语气、上下文、对话历史）
    */
   private extractPromptParts(messages: { role: string; content: string }[]): {
     systemPrompt: string;
     userPrompt: string;
   } {
+    // 提取系统提示词（由 AIService 构建，含语气、上下文、对话历史）
+    // 注意：Qwen3.5 是思考模型，promptWithMeta 会启用思考模式，
+    // 导致所有 token 消耗在 <think> 中，onTextChunk 只收到空字符串。
+    // 必须在系统提示词末尾加 /no_think 禁用思考模式。
+    const systemMsg = messages.find(m => m.role === 'system');
+    const rawSystemPrompt = systemMsg?.content || '你是一个友善的AI助手。用简短的中文回答用户问题。';
+    const systemPrompt = rawSystemPrompt.endsWith('/no_think')
+      ? rawSystemPrompt
+      : rawSystemPrompt + ' /no_think';
+
     // 提取非 system 消息
     const nonSystem = messages.filter(m => m.role !== 'system');
 
@@ -52,7 +62,7 @@ export class LocalModelProvider implements AIProvider {
     const userMessages = nonSystem.filter(m => m.role === 'user');
     const lastUserMsg = userMessages[userMessages.length - 1]?.content || '';
 
-    // 历史对话（只保留最近 2 轮，0.6B 模型上下文有限）
+    // 历史对话（只保留最近 2 轮，0.8B 模型上下文有限）
     const historyMessages = nonSystem.filter(m => m !== userMessages[userMessages.length - 1]);
     let historyText = '';
     if (historyMessages.length > 0) {
@@ -61,9 +71,6 @@ export class LocalModelProvider implements AIProvider {
         `${m.role === 'user' ? '用户' : '助手'}：${m.content}`
       ).join('\n') + '\n\n';
     }
-
-    // 精简版系统提示词（0.6B 模型专用）
-    const systemPrompt = '你是一个友善的AI助手。用简短的中文回答用户问题，不要重复相同的话。';
 
     return {
       systemPrompt,
@@ -81,7 +88,7 @@ export class LocalModelProvider implements AIProvider {
     const result = await window.electronAPI.localModelComplete(userPrompt, {
       systemPrompt,
       temperature: 0.7,
-      maxTokens: 512,
+      maxTokens: 2048,
     });
 
     if (result.error) {
@@ -129,7 +136,7 @@ export class LocalModelProvider implements AIProvider {
             onChunk?.(data.token);
           }
         },
-        { systemPrompt, temperature: 0.5, maxTokens: 200 }
+        { systemPrompt, temperature: 0.7, maxTokens: 2048 }
       );
     });
   }

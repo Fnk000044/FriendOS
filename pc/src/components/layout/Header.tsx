@@ -1,6 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Menu, MessageCircle } from 'lucide-react';
+import { Menu, MessageCircle, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
 import { useLanguage } from '../../i18n/useLanguage';
 
@@ -21,7 +21,10 @@ const pageTitles: Record<string, string> = {
 
 export default function Header() {
   const location = useLocation();
+  const sidebarOpen = useUIStore((s) => s.sidebarOpen);
+  const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const toggleSidebarCollapsed = useUIStore((s) => s.toggleSidebarCollapsed);
   const aiAssistantOpen = useUIStore((s) => s.aiAssistantOpen);
   const toggleAiAssistant = useUIStore((s) => s.toggleAiAssistant);
   const { t, lang } = useLanguage();
@@ -34,6 +37,21 @@ export default function Header() {
     ? `${today.getMonth() + 1}月${today.getDate()}日 周${['日', '一', '二', '三', '四', '五', '六'][today.getDay()]}`
     : format(today, 'EEE, MMM d');
 
+  // 合并按钮逻辑：
+  // - 侧边栏隐藏 → Menu 图标，点击显示侧边栏
+  // - 侧边栏显示+展开 → PanelLeftClose，点击折叠
+  // - 侧边栏显示+折叠 → PanelLeft，点击展开
+  const handleSidebarToggle = () => {
+    if (!sidebarOpen) {
+      toggleSidebar();
+    } else {
+      toggleSidebarCollapsed();
+    }
+  };
+
+  const SidebarIcon = !sidebarOpen ? Menu : sidebarCollapsed ? PanelLeft : PanelLeftClose;
+  const sidebarLabel = !sidebarOpen ? '显示侧边栏' : sidebarCollapsed ? '展开侧边栏' : '折叠侧边栏';
+
   return (
     <header
       className="h-[var(--header-height)] border-b backdrop-blur-glass flex items-center justify-between px-6 sticky top-0 z-20"
@@ -41,14 +59,14 @@ export default function Header() {
     >
       <div className="flex items-center gap-3">
         <button
-          onClick={toggleSidebar}
-          aria-label="切换侧边栏"
+          onClick={handleSidebarToggle}
+          aria-label={sidebarLabel}
           className="p-2 rounded-xl text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-all duration-200"
         >
-          <Menu className="w-5 h-5" />
+          <SidebarIcon className="w-5 h-5" />
         </button>
         <h1 className="text-base font-semibold text-text-primary tracking-tight">{title}</h1>
-        <div className="w-px h-4 bg-slate-200 mx-1" />
+        <div className="w-px h-4 mx-1" style={{ background: 'var(--glass-border)' }} />
         <span className="text-xs text-text-muted font-medium">
           {dateDisplay}
         </span>

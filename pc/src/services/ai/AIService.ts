@@ -1,6 +1,4 @@
 import type { AIConfig, AIProvider, ChatMessage } from './types';
-import { StubProvider } from './providers/StubProvider';
-import { ApiProvider } from './providers/ApiProvider';
 import { LocalModelProvider } from './providers/LocalModelProvider';
 import { contextService } from './ContextService';
 import { buildSystemPrompt } from './prompts';
@@ -70,31 +68,19 @@ export class AIService {
   async initialize(config: AIConfig): Promise<void> {
     this.config = config;
 
-    if (config.provider === 'local') {
-      const localProvider = new LocalModelProvider();
-      await localProvider.initialize({
-        apiKey: '',
-        model: config.model,
-        tone: config.tone,
-        localModel: config.localModel,
-      });
-      if (await localProvider.isAvailable()) {
-        this.provider = localProvider;
-        return;
-      }
-
-      // Local not available, use stub
-      this.provider = new StubProvider();
+    const localProvider = new LocalModelProvider();
+    await localProvider.initialize({
+      apiKey: '',
+      model: config.model,
+      tone: config.tone,
+      localModel: config.localModel,
+    });
+    if (await localProvider.isAvailable()) {
+      this.provider = localProvider;
       return;
     }
 
-    // Online mode
-    this.provider = new ApiProvider();
-    await this.provider.initialize({
-      apiKey: config.apiKey,
-      model: config.onlineProvider === 'deepseek' ? 'deepseek-v4-flash' : config.model,
-      tone: config.tone,
-    });
+    throw new Error('本地模型加载失败，请检查模型文件是否存在');
   }
 
   async isAvailable(): Promise<boolean> {
@@ -141,7 +127,7 @@ ${context.implicitHints ? `\n## 含蓄表达提示\n${context.implicitHints}` : 
     // Prepare messages: system prompt + history + sanitized user message
     const messages = [
       { role: 'system' as const, content: systemPrompt },
-      ...history.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+      ...history.filter(m => m.content).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content || '' })),
       { role: 'user' as const, content: sanitizedMessage },
     ];
 
@@ -199,7 +185,7 @@ ${context.implicitHints ? `\n## 含蓄表达提示\n${context.implicitHints}` : 
     const systemPrompt = buildSystemPrompt(this.config.tone, contextText, conversationHistory);
     const messages = [
       { role: 'system' as const, content: systemPrompt },
-      ...history.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+      ...history.filter(m => m.content).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content || '' })),
       { role: 'user' as const, content: sanitizedMessage },
     ];
 

@@ -42,6 +42,7 @@ export function useHabits() {
   const updateHabit = useCallback(async (id: string, data: Partial<Habit>) => {
     try {
       await db.habits.update(id, data);
+      contextService.clearCache();
     } catch (err) {
       console.error('[useHabits] updateHabit error:', err);
       toast.error('更新习惯失败');

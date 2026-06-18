@@ -72,11 +72,17 @@ export default function CrisisInterventionModal() {
       aria-label={t('crisis.aria_label')}
       aria-describedby="crisis-description"
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      {/* Backdrop - red tint for crisis */}
+      <div className="absolute inset-0 bg-red-900/30 backdrop-blur-sm" />
 
-      {/* Modal */}
-      <div className="relative w-full max-w-lg mx-4 glass-card glass-glow rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      {/* Modal with pulse border */}
+      <div
+        className="relative w-full max-w-lg mx-4 glass-card rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        style={{
+          boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.7)',
+          animation: 'pulseBorder 1.5s ease-in-out infinite',
+        }}
+      >
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-500 to-purple-500 px-6 py-5 text-white">
           <div className="flex items-center gap-3 mb-2">
@@ -93,10 +99,10 @@ export default function CrisisInterventionModal() {
         {/* Content */}
         <div className="px-6 py-5 space-y-4">
           {/* Message */}
-          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
             <div className="flex items-start gap-2">
               <Shield className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
-              <div id="crisis-description" className="text-sm text-slate-700 leading-relaxed">
+              <div id="crisis-description" className="text-sm text-text-secondary leading-relaxed">
                 <p className="mb-2">
                   {t('crisis.description_1')}
                   <strong className="text-blue-700">{t('crisis.description_2')}</strong>
@@ -109,33 +115,33 @@ export default function CrisisInterventionModal() {
 
           {/* Hotlines */}
           <div className="space-y-2">
-            <h3 className="text-sm font-medium text-slate-600">{t('crisis.hotline_title')}</h3>
+            <h3 className="text-sm font-medium text-text-secondary">{t('crisis.hotline_title')}</h3>
             {HOTLINE_KEYS.map((hotline) => (
               <HotlineCard key={hotline.number} name={t(hotline.nameKey)} number={hotline.number} description={t(hotline.descKey)} />
             ))}
           </div>
 
           {/* Online Resources */}
-          <div className="text-xs text-slate-500 space-y-1">
+          <div className="text-xs text-text-muted space-y-1">
             <p className="flex items-center gap-1">
               <ExternalLink className="w-3 h-3" />
               {t('crisis.online_counseling')}
               <a
-                href="https://www.xinli001.com"
+                href="http://www.psych.ac.cn"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:underline"
               >
-                壹心理
+                中科院心理所
               </a>
               {' | '}
               <a
-                href="https://www.jiandanxinli.com"
+                href="http://www.crisisbj.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:underline"
               >
-                简单心理
+                北京心理危机干预中心
               </a>
             </p>
           </div>

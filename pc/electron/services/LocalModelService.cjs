@@ -17,6 +17,7 @@ let model = null;
 let context = null;
 let llamaModule = null;
 let currentModelId = null;
+let sequence = null;
 
 /**
  * Dynamically import node-llama-cpp (ESM module)
@@ -44,12 +45,11 @@ async function getLlamaModule() {
 async function ensureModel() {
   if (model && context) return;
 
-  const modelPath = getModelPath('qwen3:0.6b');
+  const modelPath = getModelPath('qwen3.5:0.8b');
   if (!modelPath) {
     throw new Error('No bundled model found. Please ensure the model file exists.');
   }
 
-  // 如果有旧模型，先释放
   if (model) await dispose();
 
   console.log('[LocalModelService] Loading model from:', modelPath);
@@ -59,15 +59,15 @@ async function ensureModel() {
 
   model = await llama.loadModel({ modelPath });
   context = await model.createContext({ contextSize: 4096 });
-  currentModelId = 'qwen3:0.6b';
+  sequence = context.getSequence();
+  currentModelId = 'qwen3.5:0.8b';
 
   console.log('[LocalModelService] Model loaded successfully');
 }
 
 /**
  * 创建一个新的 chat session
- * 每次调用都新建，避免不同调用方的对话历史互相污染
- * @param {string} [systemPrompt] - System prompt，由 LlamaChatSession 自动包装为 ChatML
+ * 复用同一个 sequence，通过 contextShift 管理上下文窗口
  */
 async function createSession(systemPrompt) {
   await ensureModel();
@@ -75,8 +75,8 @@ async function createSession(systemPrompt) {
   const { LlamaChatSession } = await getLlamaModule();
 
   const sessionOpts = {
-    contextSequence: context.getSequence(),
-    contextShift: { size: 200, strategy: 'eraseBeginning' },
+    contextSequence: sequence,
+    contextShift: { size: 512, strategy: 'eraseBeginning' },
   };
   if (systemPrompt) {
     sessionOpts.systemPrompt = systemPrompt;
@@ -87,8 +87,11 @@ async function createSession(systemPrompt) {
 
 /**
  * Non-streaming chat completion
- * @param {string} prompt - User message (plain text, NOT ChatML-formatted)
- * @param {object} options - { temperature, maxTokens, systemPrompt }
+ * Qwen3.5-0.8B optimal settings (non-thinking mode):
+ * - 通用对话: temp=0.7, top_p=0.8, top_k=20
+ * - 危机检测: temp=0.3 (由 SentimentService 传入)
+ * @param {string} prompt - User message
+ * @param {object} options - { temperature, maxTokens, topP, topK, systemPrompt }
  */
 async function complete(prompt, options = {}) {
   console.log('[LocalModelService] Complete called');
@@ -96,8 +99,17 @@ async function complete(prompt, options = {}) {
   const session = await createSession(options.systemPrompt);
 
   try {
-    const response = await session.prompt(prompt);
+    const response = await session.prompt(prompt, {
+      temperature: options.temperature ?? 0.7,
+      maxTokens: options.maxTokens ?? 512,
+      topP: options.topP ?? 0.8,
+      topK: options.topK ?? 20,
+    });
+    console.log('[LocalModelService] Response length:', response.length);
     return response.trim();
+  } catch (err) {
+    console.error('[LocalModelService] Complete error:', err);
+    throw err;
   } finally {
     session.dispose();
   }
@@ -110,9 +122,11 @@ async function complete(prompt, options = {}) {
  * @param {function} onChunk - Callback for each text chunk
  */
 async function completeStream(prompt, options = {}, onChunk) {
-  const { temperature = 0.7, systemPrompt, maxTokens = 512 } = options;
+  const { temperature = 0.7, systemPrompt, maxTokens = 2048, topP = 0.8, topK = 20 } = options;
 
   console.log('[LocalModelService] CompleteStream called');
+  console.log('[LocalModelService] System prompt length:', systemPrompt?.length || 0);
+  console.log('[LocalModelService] Prompt length:', prompt?.length || 0);
 
   const session = await createSession(systemPrompt);
 
@@ -122,7 +136,10 @@ async function completeStream(prompt, options = {}, onChunk) {
     await session.promptWithMeta(prompt, {
       temperature,
       maxTokens,
+      topP,
+      topK,
       onTextChunk: (text) => {
+        console.log('[LocalModelService] onTextChunk:', JSON.stringify(text));
         if (!contentStarted) {
           const combined = pendingWhitespace + text;
           const trimmed = combined.replace(/^[\s]+/, '');
@@ -137,6 +154,14 @@ async function completeStream(prompt, options = {}, onChunk) {
         }
       },
     });
+    // 如果流式输出结束但仍无内容，发出缓冲的空白（避免空响应误判）
+    if (!contentStarted && pendingWhitespace.trim().length > 0) {
+      onChunk(pendingWhitespace.trim());
+    }
+    console.log('[LocalModelService] Stream completed, contentStarted:', contentStarted);
+  } catch (err) {
+    console.error('[LocalModelService] CompleteStream error:', err);
+    throw err;
   } finally {
     session.dispose();
   }
@@ -146,6 +171,7 @@ async function completeStream(prompt, options = {}, onChunk) {
  * Dispose model and free memory
  */
 async function dispose() {
+  sequence = null;
   if (context) {
     await context.dispose();
     context = null;

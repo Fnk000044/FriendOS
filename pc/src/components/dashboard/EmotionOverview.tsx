@@ -5,7 +5,7 @@
 
 import { useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Activity, TrendingUp, TrendingDown, Minus, AlertTriangle, Heart } from 'lucide-react';
+import { Activity, TrendingUp, TrendingDown, Minus, Heart } from 'lucide-react';
 import { db } from '../../db';
 import { getDaysAgo } from '../../utils/date';
 import { useLanguage } from '../../i18n/useLanguage';

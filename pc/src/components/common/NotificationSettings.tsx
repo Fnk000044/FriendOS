@@ -3,11 +3,13 @@ import { Bell, BellOff, Plus, Trash2, Clock } from 'lucide-react';
 import Card from './Card';
 import Button from './Button';
 import { useNotificationStore, type Reminder } from '../../stores/notificationStore';
+import { useLanguage } from '../../i18n/useLanguage';
 
 const DAY_LABELS = ['日', '一', '二', '三', '四', '五', '六'];
 
 export default function NotificationSettings() {
   const { reminders, initFromStorage, toggleReminder, removeReminder, addReminder, updateReminder } = useNotificationStore();
+  const { t } = useLanguage();
   const [showAdd, setShowAdd] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newBody, setNewBody] = useState('');
@@ -46,12 +48,12 @@ export default function NotificationSettings() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Bell className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold text-text-primary">通知提醒</h3>
+          <h3 className="font-semibold text-text-primary">{t('notification.title')}</h3>
         </div>
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={handleTest}>测试通知</Button>
+          <Button variant="ghost" size="sm" onClick={handleTest}>{t('notification.test')}</Button>
           <Button size="sm" onClick={() => setShowAdd(!showAdd)}>
-            <Plus className="w-4 h-4 mr-1" /> 添加
+            <Plus className="w-4 h-4 mr-1" /> {t('notification.add')}
           </Button>
         </div>
       </div>
@@ -63,40 +65,40 @@ export default function NotificationSettings() {
             <select
               value={newType}
               onChange={(e) => setNewType(e.target.value as Reminder['type'])}
-              className="px-3 py-2 rounded-lg border text-sm"
-              style={{ borderColor: 'var(--glass-border)' }}
+              className="px-3 py-2 rounded-lg border text-sm text-text-primary"
+              style={{ borderColor: 'var(--border-input)', background: 'var(--bg-card-solid)' }}
             >
-              <option value="diary">日记提醒</option>
-              <option value="habit">习惯提醒</option>
-              <option value="custom">自定义</option>
+              <option value="diary">{t('notification.diary')}</option>
+              <option value="habit">{t('notification.habit')}</option>
+              <option value="custom">{t('notification.custom')}</option>
             </select>
             <input
               type="time"
               value={newTime}
               onChange={(e) => setNewTime(e.target.value)}
-              className="px-3 py-2 rounded-lg border text-sm"
-              style={{ borderColor: 'var(--glass-border)' }}
+              className="px-3 py-2 rounded-lg border text-sm text-text-primary"
+              style={{ borderColor: 'var(--border-input)', background: 'var(--bg-card-solid)' }}
             />
           </div>
           <input
             type="text"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
-            placeholder="提醒标题"
-            className="w-full px-3 py-2 rounded-lg border text-sm"
-            style={{ borderColor: 'var(--glass-border)' }}
+              placeholder={t('notification.title_placeholder')}
+            className="w-full px-3 py-2 rounded-lg border text-sm text-text-primary"
+            style={{ borderColor: 'var(--border-input)', background: 'var(--bg-card-solid)' }}
           />
           <input
             type="text"
             value={newBody}
             onChange={(e) => setNewBody(e.target.value)}
-            placeholder="提醒内容（可选）"
-            className="w-full px-3 py-2 rounded-lg border text-sm"
-            style={{ borderColor: 'var(--glass-border)' }}
+              placeholder={t('notification.body_placeholder')}
+            className="w-full px-3 py-2 rounded-lg border text-sm text-text-primary"
+            style={{ borderColor: 'var(--border-input)', background: 'var(--bg-card-solid)' }}
           />
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setShowAdd(false)}>取消</Button>
-            <Button size="sm" onClick={handleAdd}>添加</Button>
+            <Button variant="ghost" size="sm" onClick={() => setShowAdd(false)}>{t('notification.cancel')}</Button>
+            <Button size="sm" onClick={handleAdd}>{t('notification.add')}</Button>
           </div>
         </Card>
       )}
@@ -105,7 +107,7 @@ export default function NotificationSettings() {
       {reminders.length === 0 ? (
         <div className="text-center py-8 text-text-muted">
           <BellOff className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">暂无提醒</p>
+          <p className="text-sm">{t('notification.empty')}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -133,8 +135,8 @@ export default function NotificationSettings() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-sm text-text-primary">{reminder.title}</span>
-                  <span className="text-xs px-1.5 py-0.5 rounded bg-slate-100 text-text-muted">
-                    {reminder.type === 'diary' ? '日记' : reminder.type === 'habit' ? '习惯' : '自定义'}
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--bg-hover)] text-text-muted">
+                    {reminder.type === 'diary' ? t('notification.diary') : reminder.type === 'habit' ? t('notification.habit') : t('notification.custom')}
                   </span>
                 </div>
                 <p className="text-xs text-text-muted truncate">{reminder.body}</p>
@@ -147,7 +149,7 @@ export default function NotificationSettings() {
                 </div>
                 <button
                   onClick={() => removeReminder(reminder.id)}
-                  className="p-1 hover:bg-red-50 rounded text-red-400 hover:text-red-600"
+                  className="p-1 hover:bg-red-500/10 rounded text-red-400 hover:text-red-500"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -158,7 +160,7 @@ export default function NotificationSettings() {
       )}
 
       <p className="text-xs text-text-muted">
-        提醒会在设定时间通过系统通知发送。请确保系统通知权限已开启。
+        {t('notification.desc')}
       </p>
     </div>
   );

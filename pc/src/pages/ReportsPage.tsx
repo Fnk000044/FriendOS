@@ -56,10 +56,10 @@ export default function ReportsPage() {
   }, []);
 
   const trendIcon = aiReport?.highlights.trend === 'improving'
-    ? <TrendingUp className="w-4 h-4 text-green-500" />
+    ? <TrendingUp className="w-4 h-4 text-success" />
     : aiReport?.highlights.trend === 'declining'
-    ? <TrendingDown className="w-4 h-4 text-red-500" />
-    : <Minus className="w-4 h-4 text-slate-400" />;
+    ? <TrendingDown className="w-4 h-4 text-danger" />
+    : <Minus className="w-4 h-4 text-text-muted" />;
 
   return (
     <div className="space-y-6">
@@ -98,24 +98,24 @@ export default function ReportsPage() {
 
             {/* AI Report Section */}
             {aiReport && (
-              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-5 border border-indigo-100">
-                <h2 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                  <Brain className="w-5 h-5 text-indigo-500" />
-                  AI 分析报告
+              <div className="glass-card-accent rounded-xl p-5">
+                <h2 className="font-semibold text-text-primary mb-3 flex items-center gap-2">
+                  <Brain className="w-5 h-5 text-primary" />
+                  {t('report.ai_report')}
                   {trendIcon}
                 </h2>
-                <p className="text-sm text-slate-700 mb-4 leading-relaxed">{aiReport.summary}</p>
+                <p className="text-sm text-text-secondary mb-4 leading-relaxed">{aiReport.summary}</p>
 
                 {aiReport.insights.length > 0 && (
                   <div className="mb-4">
-                    <h3 className="text-xs font-medium text-slate-500 mb-2 flex items-center gap-1">
+                    <h3 className="text-xs font-medium text-text-muted mb-2 flex items-center gap-1">
                       <Lightbulb className="w-3.5 h-3.5" />
-                      洞察
+                      {t('report.insights')}
                     </h3>
                     <ul className="space-y-1.5">
                       {aiReport.insights.map((insight, i) => (
-                        <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
-                          <span className="text-indigo-400 mt-1">•</span>
+                        <li key={i} className="text-sm text-text-secondary flex items-start gap-2">
+                          <span className="text-primary mt-1">•</span>
                           <span>{insight}</span>
                         </li>
                       ))}
@@ -125,13 +125,13 @@ export default function ReportsPage() {
 
                 {aiReport.suggestions.length > 0 && (
                   <div>
-                    <h3 className="text-xs font-medium text-slate-500 mb-2 flex items-center gap-1">
+                    <h3 className="text-xs font-medium text-text-muted mb-2 flex items-center gap-1">
                       <Target className="w-3.5 h-3.5" />
-                      建议
+                      {t('report.suggestions')}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                       {aiReport.suggestions.map((suggestion, i) => (
-                        <div key={i} className="rounded-lg p-2.5 text-sm text-slate-600" style={{ background: 'var(--bg-card)' }}>
+                        <div key={i} className="rounded-lg p-2.5 text-sm text-text-secondary bg-surface-hover">
                           {suggestion}
                         </div>
                       ))}
@@ -143,18 +143,18 @@ export default function ReportsPage() {
 
             {/* Health Radar + Emotion Trend */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="glass-card rounded-xl p-5 shadow-sm">
-                <h2 className="font-semibold text-slate-800 mb-4">心理健康画像</h2>
+              <div className="glass-card rounded-xl p-5">
+                <h2 className="font-semibold text-text-primary mb-4">{t('report.health_radar')}</h2>
                 <HealthRadar dimensions={healthDimensions} hasData={emotionRecords.length > 0} />
               </div>
 
-              <div className="glass-card rounded-xl p-5 shadow-sm">
-                <h2 className="font-semibold text-slate-800 mb-4">情绪趋势</h2>
+              <div className="glass-card rounded-xl p-5">
+                <h2 className="font-semibold text-text-primary mb-4">{t('report.emotion_trend')}</h2>
                 {emotionRecords.length > 0 ? (
                   <EmotionTrend records={emotionRecords} days={30} />
                 ) : (
-                  <div className="h-48 flex items-center justify-center text-slate-400">
-                    <p className="text-sm">暂无情绪数据</p>
+                  <div className="h-48 flex items-center justify-center text-text-muted">
+                    <p className="text-sm">{t('report.no_emotion_data')}</p>
                   </div>
                 )}
               </div>
@@ -165,11 +165,11 @@ export default function ReportsPage() {
 
             {/* Charts */}
             {report && (
-              <>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <TaskChart data={report.chartData} />
                 <MoodChart data={report.chartData} />
                 <HabitChart data={report.chartData} />
-              </>
+              </div>
             )}
           </div>
         </div>

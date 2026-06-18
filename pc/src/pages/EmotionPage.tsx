@@ -11,18 +11,17 @@ import EmotionPrediction from '../components/emotion/EmotionPrediction';
 import { generateHealthProfile } from '../services/emotion/HealthProfileService';
 import type { HealthProfile } from '../db/models';
 
-const THIRTY_DAYS_AGO = getDaysAgo(30);
-
 export default function EmotionPage() {
   const navigate = useNavigate();
   const [selectedDays, setSelectedDays] = useState(7);
   const [healthProfile, setHealthProfile] = useState<HealthProfile | null>(null);
+  const thirtyDaysAgo = useMemo(() => getDaysAgo(30), []);
 
   // Get emotion records (shared date constant)
   const emotionRecords = useLiveQuery(async () => {
     return db.emotionRecords
       .where('date')
-      .aboveOrEqual(THIRTY_DAYS_AGO)
+      .aboveOrEqual(thirtyDaysAgo)
       .reverse()
       .sortBy('date');
   }, []);
@@ -31,7 +30,7 @@ export default function EmotionPage() {
   const behaviorRecords = useLiveQuery(async () => {
     return db.behaviorRecords
       .where('date')
-      .aboveOrEqual(THIRTY_DAYS_AGO)
+      .aboveOrEqual(thirtyDaysAgo)
       .sortBy('date');
   }, []);
 
@@ -96,10 +95,10 @@ export default function EmotionPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">情绪分析</h1>
-          <p className="text-sm text-slate-500 mt-1">无感识别你的心理健康状态</p>
+          <h1 className="text-2xl font-bold text-text-primary">情绪分析</h1>
+          <p className="text-sm text-text-muted mt-1">无感识别你的心理健康状态</p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-slate-500">
+        <div className="flex items-center gap-2 text-sm text-text-muted">
           <Activity className="w-4 h-4" />
           <span>实时监测中</span>
         </div>
@@ -108,51 +107,51 @@ export default function EmotionPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-4 gap-4">
         <div className="glass-card p-4">
-          <div className="flex items-center gap-2 text-slate-500 mb-2">
+          <div className="flex items-center gap-2 text-text-muted mb-2">
             <Calendar className="w-4 h-4" />
             <span className="text-xs">活跃天数</span>
           </div>
-          <p className="text-2xl font-bold text-slate-800">{hasData ? stats.activeDays : '-'}</p>
-          <p className="text-xs text-slate-400">近30天</p>
+          <p className="text-2xl font-bold text-text-primary">{hasData ? stats.activeDays : '-'}</p>
+          <p className="text-xs text-text-muted">近30天</p>
         </div>
 
         <div className="glass-card p-4">
-          <div className="flex items-center gap-2 text-slate-500 mb-2">
+          <div className="flex items-center gap-2 text-text-muted mb-2">
             <TrendingUp className="w-4 h-4" />
             <span className="text-xs">情绪指数</span>
           </div>
           <p className={`text-2xl font-bold ${
-            !hasData ? 'text-slate-400' :
+            !hasData ? 'text-text-muted' :
             stats.averageSentiment >= 60 ? 'text-green-600' :
             stats.averageSentiment >= 40 ? 'text-yellow-600' :
             'text-red-600'
           }`}>
             {hasData ? stats.averageSentiment : '-'}
           </p>
-          <p className="text-xs text-slate-400">/100</p>
+          <p className="text-xs text-text-muted">/100</p>
         </div>
 
         <div className="glass-card p-4">
-          <div className="flex items-center gap-2 text-slate-500 mb-2">
+          <div className="flex items-center gap-2 text-text-muted mb-2">
             <Brain className="w-4 h-4" />
             <span className="text-xs">分析记录</span>
           </div>
-          <p className="text-2xl font-bold text-slate-800">{stats.totalRecords}</p>
-          <p className="text-xs text-slate-400">条</p>
+          <p className="text-2xl font-bold text-text-primary">{stats.totalRecords}</p>
+          <p className="text-xs text-text-muted">条</p>
         </div>
 
         <div className="glass-card p-4">
-          <div className="flex items-center gap-2 text-slate-500 mb-2">
+          <div className="flex items-center gap-2 text-text-muted mb-2">
             <Activity className="w-4 h-4" />
             <span className="text-xs">高风险</span>
           </div>
           <p className={`text-2xl font-bold ${
-            !hasData ? 'text-slate-400' :
+            !hasData ? 'text-text-muted' :
             stats.highRiskCount > 0 ? 'text-red-600' : 'text-green-600'
           }`}>
             {stats.highRiskCount}
           </p>
-          <p className="text-xs text-slate-400">次</p>
+          <p className="text-xs text-text-muted">次</p>
         </div>
       </div>
 
@@ -161,13 +160,13 @@ export default function EmotionPage() {
         {/* Emotion Trend */}
         <div className="glass-card rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-slate-800">情绪趋势</h2>
+            <h2 className="font-semibold text-text-primary">情绪趋势</h2>
             <div className="flex gap-1">
               {[7, 14, 30].map(days => (
                 <button
                   key={days}
                   onClick={() => setSelectedDays(days)}
-                  className={`px-2 py-1 text-xs rounded-md transition-colors cursor-pointer ${
+                  className={`px-2 py-1 text-xs rounded-lg transition-colors cursor-pointer ${
                     selectedDays === days
                       ? 'bg-primary/10 text-primary'
                       : 'text-text-muted hover:bg-surface-hover'
@@ -181,12 +180,12 @@ export default function EmotionPage() {
           {emotionRecords && emotionRecords.length > 0 ? (
             <EmotionTrend records={emotionRecords || []} days={selectedDays} />
           ) : (
-            <div className="h-48 flex items-center justify-center text-slate-400">
+            <div className="h-48 flex items-center justify-center text-text-muted">
               <div className="text-center">
                 <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" aria-hidden="true" />
                 <p className="text-sm font-medium">暂无情绪数据</p>
                 <p className="text-xs mt-1">系统会通过日记、聊天等自动分析你的情绪状态</p>
-                <button onClick={() => navigate('/diary/new')} className="text-xs mt-1 text-indigo-500 hover:underline cursor-pointer">开始写第一篇日记吧 →</button>
+                <button onClick={() => navigate('/diary/new')} className="text-xs mt-1 text-primary hover:underline cursor-pointer">开始写第一篇日记吧 →</button>
               </div>
             </div>
           )}
@@ -194,18 +193,18 @@ export default function EmotionPage() {
 
         {/* Health Radar */}
         <div className="glass-card rounded-xl p-5 shadow-sm">
-          <h2 className="font-semibold text-slate-800 mb-4">心理健康画像</h2>
+          <h2 className="font-semibold text-text-primary mb-4">心理健康画像</h2>
           <HealthRadar dimensions={dimensions} hasData={hasData} />
         </div>
       </div>
 
       {/* Prediction */}
       <div className="glass-card rounded-xl p-5 shadow-sm">
-        <h2 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-indigo-500" />
+        <h2 className="font-semibold text-text-primary mb-3 flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-primary" />
           情绪趋势预测
         </h2>
-        <EmotionPrediction recentAvgMood={stats.averageSentiment / 20} />
+        <EmotionPrediction />
       </div>
 
       {/* Heatmap */}
@@ -215,15 +214,15 @@ export default function EmotionPage() {
 
       {/* Insights */}
       {healthProfile && healthProfile.insights.length > 0 && (
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-5 border border-indigo-100">
-          <h2 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-            <Brain className="w-5 h-5 text-indigo-500" />
+        <div className="glass-card-accent rounded-xl p-5">
+          <h2 className="font-semibold text-text-primary mb-3 flex items-center gap-2">
+            <Brain className="w-5 h-5 text-primary" />
             AI 洞察
           </h2>
           <ul className="space-y-2">
             {healthProfile.insights.map((insight, i) => (
-              <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
-                <span className="text-indigo-400 mt-1">•</span>
+              <li key={i} className="text-sm text-text-secondary flex items-start gap-2">
+                <span className="text-primary mt-1">•</span>
                 <span>{insight}</span>
               </li>
             ))}
@@ -234,10 +233,10 @@ export default function EmotionPage() {
       {/* Suggestions */}
       {healthProfile && healthProfile.suggestions.length > 0 && (
         <div className="glass-card rounded-xl p-5 shadow-sm">
-          <h2 className="font-semibold text-slate-800 mb-3">建议</h2>
+          <h2 className="font-semibold text-text-primary mb-3">建议</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {healthProfile.suggestions.map((suggestion, i) => (
-              <div key={i} className="bg-slate-50 rounded-lg p-3 text-sm text-slate-600">
+              <div key={i} className="bg-surface-hover rounded-lg p-3 text-sm text-text-secondary">
                 {suggestion}
               </div>
             ))}

@@ -182,9 +182,9 @@ function createWindow() {
   const { nativeImage } = require('electron');
   let iconPath;
   if (app.isPackaged) {
-    iconPath = path.join(path.dirname(app.getPath('exe')), 'resources', 'app.asar.unpacked', 'build', 'icon.png');
+    iconPath = path.join(path.dirname(app.getPath('exe')), 'resources', 'app.asar.unpacked', 'build', 'custom-icon.ico');
   } else {
-    iconPath = path.join(__dirname, '..', 'build', 'icon.png');
+    iconPath = path.join(__dirname, '..', 'build', 'custom-icon.ico');
   }
 
   let appIcon;
@@ -207,12 +207,11 @@ function createWindow() {
     title: 'FriendOS',
     icon: appIcon || undefined,
     webPreferences: {
-      preload: path.join(path.dirname(app.getPath('exe')), 'resources', 'app.asar', 'preload.cjs'),
+      preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
       webSecurity: true,
       allowRunningInsecureContent: false,
-      enableRemoteModule: false,
       enableRemoteModule: false,
     },
     show: false,
@@ -396,13 +395,11 @@ ipcMain.handle('local-model-list', async () => {
 // Initialize local model
 ipcMain.handle('local-model-init', async (_event, modelPath) => {
   try {
-    const { dispose } = require('./services/LocalModelService.cjs');
     const { getModelPath } = require('./services/ModelRegistry.cjs');
-    await dispose(); // Clear any cached model
+    const FS = require('fs');
 
     // Always prefer the registry path over the frontend path
-    const registryPath = getModelPath('qwen3:0.6b');
-    const FS = require('fs');
+    const registryPath = getModelPath('qwen3.5:0.8b');
 
     if (registryPath && FS.existsSync(registryPath)) {
       console.log('[local-model-init] Using registry path:', registryPath);
@@ -431,6 +428,8 @@ ipcMain.handle('local-model-complete', async (_event, prompt, options = {}) => {
     const response = await complete(prompt, {
       temperature: options.temperature || 0.7,
       maxTokens: options.maxTokens || 256,
+      topP: options.topP || 0.8,
+      topK: options.topK || 20,
       systemPrompt: options.systemPrompt,
     });
     return { response };
@@ -450,6 +449,8 @@ ipcMain.on('local-model-complete-stream', async (event, prompt, options = {}) =>
     await completeStream(prompt, {
       temperature: options.temperature || 0.7,
       maxTokens: options.maxTokens || 512,
+      topP: options.topP || 0.8,
+      topK: options.topK || 20,
       systemPrompt: options.systemPrompt,
     }, (token) => {
       event.sender.send('local-model-chunk', { token });
@@ -593,6 +594,16 @@ ipcMain.handle('sentiment-set-api-key', async (_event, key) => {
 });
 
 // ── API Key 加密存储 IPC Handlers ─────────────────────────────
+ipcMain.handle('api-key-exists', async (_event, name) => {
+  try {
+    const { getApiKey } = require('./services/ApiKeyStore.cjs');
+    const key = getApiKey(name);
+    return !!key;
+  } catch (err) {
+    return false;
+  }
+});
+
 ipcMain.handle('api-key-get', async (_event, name) => {
   try {
     const { getApiKey } = require('./services/ApiKeyStore.cjs');
@@ -625,22 +636,52 @@ ipcMain.handle('sentiment-get-model-status', async () => {
   }
 });
 
-// 安全：设置 Content Security Policy（仅开发模式启用严格 CSP）
-if (isDev) {
-  app.whenReady().then(() => {
-    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-      const csp = "default-src 'self' http://localhost:5173; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5173; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://localhost:5173 ws://localhost:5173 https://api.deepseek.com;";
-      callback({
-        responseHeaders: {
-          ...details.responseHeaders,
-          'Content-Security-Policy': [csp],
-        },
-      });
+// ── 综合风险评分 IPC Handlers ─────────────────────────────────
+ipcMain.handle('risk:calculate', async (_event, data) => {
+  try {
+    const { calculateRiskScore } = require('./services/RiskScoringEngine.cjs');
+    return calculateRiskScore(data);
+  } catch (err) {
+    console.error('[risk:calculate] Error:', err);
+    return {
+      totalScore: 0,
+      riskLevel: 'low',
+      riskLevelInfo: { min: 0, max: 25, label: '低', color: '#22C55E' },
+      breakdown: {},
+      factors: [],
+      summary: '无法计算风险评分',
+      timestamp: Date.now(),
+      error: err.message,
+    };
+  }
+});
+
+ipcMain.handle('risk:getTrend', async (_event, dailyScores, days = 7) => {
+  try {
+    const { calculateRiskTrend } = require('./services/RiskScoringEngine.cjs');
+    return calculateRiskTrend(dailyScores, days);
+  } catch (err) {
+    console.error('[risk:getTrend] Error:', err);
+    return { trend: 'stable', change: 0, data: [], average: 0, error: err.message };
+  }
+});
+
+// 安全：设置 Content Security Policy
+app.whenReady().then(() => {
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const csp = isDev
+      ? "default-src 'self' http://localhost:5173; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5173; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://localhost:5173 ws://localhost:5173 https://api.deepseek.com https://api.openai.com https://api.anthropic.com;"
+      : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.deepseek.com https://api.openai.com https://api.anthropic.com;";
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [csp],
+      },
     });
-  }).catch((err) => {
-    console.error('[FriendOS] CSP setup failed:', err);
   });
-}
+}).catch((err) => {
+  console.error('[FriendOS] CSP setup failed:', err);
+});
 
 app.whenReady().then(createWindow).catch((err) => {
   console.error('[FriendOS] Failed to start:', err);

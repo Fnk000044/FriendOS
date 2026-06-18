@@ -30,22 +30,22 @@ export default function HotlineCard({ name, number, description }: HotlineCardPr
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-lg border hover:border-slate-300 transition-colors" style={{ background: 'var(--bg-card)', borderColor: 'var(--glass-border)' }}>
-      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-        <Phone className="w-5 h-5 text-blue-600" />
+      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+        <Phone className="w-5 h-5 text-blue-500" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-slate-800">{name}</p>
-        <p className="text-lg font-bold text-blue-600 tracking-wide">{number}</p>
+        <p className="text-sm font-medium text-text-primary">{name}</p>
+        <p className="text-lg font-bold text-blue-500 tracking-wide">{number}</p>
         {description && (
-          <p className="text-xs text-slate-500 mt-0.5">{description}</p>
+          <p className="text-xs text-text-muted mt-0.5">{description}</p>
         )}
       </div>
       <button
         onClick={handleCopy}
         className={`flex-shrink-0 p-2 rounded-md transition-all ${
           copied
-            ? 'bg-green-100 text-green-600'
-            : 'text-slate-500 hover:bg-slate-200'
+            ? 'bg-green-500/10 text-green-500'
+            : 'text-text-muted hover:bg-[var(--bg-hover)]'
         }`}
         style={copied ? undefined : { background: 'var(--bg-hover)' }}
         title="复制号码"

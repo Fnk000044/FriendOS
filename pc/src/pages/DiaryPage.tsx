@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Plus } from 'lucide-react';
@@ -12,12 +12,20 @@ import { getToday } from '../utils/date';
 export default function DiaryPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [selectedDate, setSelectedDate] = useState(getToday());
 
-  // 性能优化：只查询日期字段，减少内存占用
   const entryDates = useLiveQuery(
     () => db.diaries.orderBy('date').reverse().toArray(entries => entries.map(e => e.date)),
   ) || [];
+
+  const handleSelectDate = useCallback(async (date: string) => {
+    // 查找该日期的日记是否存在
+    const entry = await db.diaries.where('date').equals(date).first();
+    if (entry) {
+      navigate(`/diary/${entry.id}`);
+    } else {
+      navigate(`/diary/new?date=${date}`);
+    }
+  }, [navigate]);
 
   return (
     <div className="space-y-6">
@@ -32,8 +40,8 @@ export default function DiaryPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
         <DiaryCalendar
           entryDates={entryDates}
-          selectedDate={selectedDate}
-          onSelectDate={setSelectedDate}
+          selectedDate={getToday()}
+          onSelectDate={handleSelectDate}
         />
         <DiaryList />
       </div>

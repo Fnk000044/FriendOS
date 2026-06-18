@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Plus, Sun, Clock, CheckCircle2, RefreshCw } from 'lucide-react';
 import TaskStats from '../components/tasks/TaskStats';
@@ -15,7 +15,6 @@ import { getToday } from '../utils/date';
 export default function TasksPage() {
   const { t } = useLanguage();
   const { toggleTask } = useTasks();
-  const refreshRef = useRef(0);
   const [showNewModal, setShowNewModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
@@ -28,8 +27,8 @@ export default function TasksPage() {
       db.tasks.where('[status+scheduledDate]').equals(['pending', today]).toArray(),
       db.tasks.where('status').equals('pending').filter(t => t.scheduledDate < today).toArray(),
       db.tasks.where('[status+scheduledDate]').equals(['completed', today]).toArray(),
-      // isRollover 无索引，使用 filter
-      db.tasks.filter(t => t.isRollover === true).toArray(),
+      // 利用 isRollover 索引
+      db.tasks.where('isRollover').equals(1).toArray(),
     ]);
     return { today: todayPending, pending: overduePending, completed: todayCompleted, rollover };
   }, [today]);
@@ -38,7 +37,6 @@ export default function TasksPage() {
 
   const handleToggle = (task: Task) => {
     toggleTask(task.id, task.status);
-    refreshRef.current++;
   };
 
   const handleTaskClick = (task: Task) => {
@@ -131,7 +129,7 @@ export default function TasksPage() {
       <TaskDetailModal
         task={null}
         open={showNewModal}
-        onClose={() => { setShowNewModal(false); refreshRef.current++; }}
+        onClose={() => setShowNewModal(false)}
       />
     </div>
   );

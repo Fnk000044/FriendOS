@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CheckSquare, Square, RotateCw, BookOpen, CheckSquare as CheckIcon, X, Brain } from 'lucide-react';
+import { CheckSquare, Square, RotateCw, BookOpen, X, Brain } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db } from '../../db';
 import { useMemoryCandidates } from '../../hooks/useMemoryCandidates';
@@ -159,7 +159,7 @@ export default function MemoryCandidatesPanel() {
       {selectedCount > 0 && (
         <div className="sticky bottom-0 flex items-center justify-center gap-3 py-4 backdrop-blur border-t rounded-b-card" style={{ background: 'var(--bg-card-solid)', borderColor: 'var(--glass-border)' }}>
           <Button onClick={handleConfirmSelected}>
-            <CheckIcon className="w-4 h-4" />
+            <CheckSquare className="w-4 h-4" />
             {t('memory.candidates_confirm', { n: selectedCount })}
           </Button>
           <Button variant="secondary" onClick={handleRejectSelected}>

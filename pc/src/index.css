@@ -43,6 +43,7 @@
   --bg-card-solid: #FFFFFF;
   --glass-border: rgba(255, 255, 255, 0.55);
   --glass-border-gradient: linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.3));
+  --border-input: #d1d5db;
   --glass-blur: 16px;
   --glass-glow: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(255, 255, 255, 0.1);
 
@@ -76,6 +77,7 @@
   --mood-5: #14B8A6;
 
   --sidebar-width: 240px;
+  --sidebar-width-collapsed: 68px;
   --header-height: 56px;
   --radius-card: 16px;
   --radius-button: 10px;
@@ -105,6 +107,7 @@
   --bg-hover: rgba(51, 65, 85, 0.8);
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-border-gradient: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04));
+  --border-input: #475569;
   --glass-glow: inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(255, 255, 255, 0.02);
 
   --text-primary: #F1F5F9;
@@ -242,6 +245,22 @@ body {
   66% { content: '...'; }
 }
 
+/* Blinking cursor for streaming text */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* Crisis modal pulse border */
+@keyframes pulseBorder {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+}
+
 /* Shake animation for validation errors */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
@@ -265,6 +284,21 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.page-transition-enter {
+  animation: pageTransitionEnter 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes pageTransitionEnter {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -427,6 +461,105 @@ body {
   animation: shimmer 2s infinite;
 }
 
+/* ══ 窗口入场动画 ══ */
+@keyframes windowAppear {
+  from { opacity: 0; transform: scale(0.97) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.window-appear {
+  animation: windowAppear 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* ══ 卡片浮入动画 ══ */
+@keyframes cardFloat {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.card-float {
+  animation: cardFloat 0.35s ease-out forwards;
+}
+
+/* ══ 扫描线动画（THRM 风格） ══ */
+@keyframes scanLine {
+  0% { transform: translateX(-100%); opacity: 0; }
+  50% { opacity: 0.15; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+.scan-line::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
+  animation: scanLine 5.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ══ 呼吸发光动画 ══ */
+@keyframes breatheGlow {
+  0%, 100% { box-shadow: 0 0 0 0 var(--color-primary-glow); }
+  50% { box-shadow: 0 0 12px 4px var(--color-primary-glow); }
+}
+.breathe-glow {
+  animation: breatheGlow 3s ease-in-out infinite;
+}
+
+/* ══ 进度条光谱滑动 ══ */
+@keyframes spectrumSlide {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.spectrum-slide {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  background-size: 200% 100%;
+  animation: spectrumSlide 2s infinite;
+}
+
+/* ══ 弹性出现动画 ══ */
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.9); }
+  70% { transform: scale(1.03); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.pop-in {
+  animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ══ 列表交错入场 ══ */
+@keyframes staggerFadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.stagger-animate > * {
+  opacity: 0;
+  animation: staggerFadeUp 0.3s ease-out forwards;
+}
+.stagger-animate > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-animate > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-animate > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-animate > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-animate > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-animate > *:nth-child(6) { animation-delay: 250ms; }
+.stagger-animate > *:nth-child(7) { animation-delay: 300ms; }
+.stagger-animate > *:nth-child(8) { animation-delay: 350ms; }
+
+/* ══ 数字滚动动画 ══ */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.count-up {
+  animation: countUp 0.4s ease-out forwards;
+}
+
+/* ══ 状态指示器脉冲 ══ */
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+.status-pulse {
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -462,11 +595,111 @@ a,
 input,
 textarea,
 select {
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
 }
 
 /* Custom selection color */
 ::selection {
   background-color: var(--color-primary);
   color: white;
+}
+
+/* Chat markdown styles */
+.chat-markdown p { margin: 0 0 0.5em; }
+.chat-markdown p:last-child { margin-bottom: 0; }
+.chat-markdown ul, .chat-markdown ol { margin: 0.25em 0; padding-left: 1.5em; }
+.chat-markdown li { margin: 0.15em 0; }
+.chat-markdown code {
+  background: var(--bg-hover);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  font-size: 0.875em;
+}
+.chat-markdown pre {
+  background: var(--bg-hover);
+  border-radius: 8px;
+  padding: 0.75em 1em;
+  margin: 0.5em 0;
+  overflow-x: auto;
+}
+.chat-markdown pre code {
+  background: none;
+  padding: 0;
+}
+.chat-markdown a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+.chat-markdown blockquote {
+  border-left: 3px solid var(--primary);
+  padding-left: 0.75em;
+  margin: 0.5em 0;
+  opacity: 0.8;
+}
+.chat-markdown table {
+  border-collapse: collapse;
+  margin: 0.5em 0;
+  width: 100%;
+}
+.chat-markdown th, .chat-markdown td {
+  border: 1px solid var(--glass-border);
+  padding: 0.35em 0.65em;
+  text-align: left;
+}
+.chat-markdown th {
+  background: var(--bg-hover);
+  font-weight: 600;
+}
+.chat-markdown h1, .chat-markdown h2, .chat-markdown h3 {
+  font-weight: 600;
+  margin: 0.75em 0 0.25em;
+}
+.chat-markdown h1 { font-size: 1.25em; }
+.chat-markdown h2 { font-size: 1.125em; }
+.chat-markdown h3 { font-size: 1em; }
+.chat-markdown hr {
+  border: none;
+  border-top: 1px solid var(--glass-border);
+  margin: 0.75em 0;
+}
+
+/* Loading page animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { 
+    opacity: 0; 
+    transform: scale(0.8); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0; 
+    transform: translateX(-20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateX(0); 
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.5s ease-out forwards;
+}
+
+.animate-slide-up {
+  opacity: 0;
+  animation: slideUp 0.5s ease-out forwards;
 }

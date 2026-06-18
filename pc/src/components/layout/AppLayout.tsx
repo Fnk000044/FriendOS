@@ -7,8 +7,13 @@ import { useUIStore } from '../../stores/uiStore';
 
 export default function AppLayout() {
   const sidebarOpen = useUIStore((s) => s.sidebarOpen);
+  const collapsed = useUIStore((s) => s.sidebarCollapsed);
   const aiAssistantOpen = useUIStore((s) => s.aiAssistantOpen);
   const location = useLocation();
+
+  const sidebarMargin = sidebarOpen
+    ? (collapsed ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width)')
+    : '0';
 
   return (
     <div className="min-h-screen relative overflow-hidden noise-overlay" style={{ background: 'var(--bg-gradient)' }}>
@@ -32,11 +37,11 @@ export default function AppLayout() {
       </div>
 
       <Sidebar />
-      <div className="relative z-10 pt-8 transition-all duration-300 ease-out" style={{ marginLeft: sidebarOpen ? 'var(--sidebar-width)' : '0' }}>
+      <div className="relative z-10 pt-8 transition-all duration-200 ease-out" style={{ marginLeft: sidebarMargin }}>
         <Header />
         <div className="flex" style={{ height: 'calc(100vh - 32px - var(--header-height) - 28px)' }}>
           <main className="flex-1 px-7 py-6 max-w-6xl mx-auto overflow-y-auto min-w-0" role="main" aria-label="主内容区">
-            <div key={location.pathname} className="page-enter">
+            <div key={location.pathname} className="page-transition-enter">
               <Outlet />
             </div>
           </main>
@@ -44,7 +49,7 @@ export default function AppLayout() {
           {aiAssistantOpen && (
             <div className="overflow-hidden shrink-0 transition-all duration-300 ease-out w-[400px]">
               <aside
-                className="w-[400px] h-full border-l overflow-y-auto backdrop-blur-glass"
+                className="w-[400px] h-full border-l backdrop-blur-glass flex flex-col"
                 style={{ background: 'var(--bg-card)', borderColor: 'var(--glass-border)', boxShadow: '-4px 0 24px rgba(0,0,0,0.04)' }}
                 role="complementary"
                 aria-label="AI助手面板"

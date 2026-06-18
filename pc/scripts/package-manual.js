@@ -117,17 +117,20 @@ async function main() {
     }
   }
 
-  // Copy Qwen3 GGUF model to unpacked (cannot be loaded from inside asar)
+  // Copy GGUF model to unpacked (cannot be loaded from inside asar)
   const modelsUnpackedDir = join(staging, 'app.asar.unpacked', 'models');
-  const qwenModelSrc = join(root, '..', 'models', 'Qwen3-0.6B-Q4_K_M.gguf');
-  const qwenModelDest = join(modelsUnpackedDir, 'Qwen3-0.6B-Q4_K_M.gguf');
-  if (existsSync(qwenModelSrc)) {
-    console.log('Copying Qwen3 GGUF model (379 MB)...');
-    mkdirSync(modelsUnpackedDir, { recursive: true });
-    copyFileSync(qwenModelSrc, qwenModelDest);
-    console.log('Qwen3 model copied.');
+  const modelsSrcDir = join(root, '..', 'models');
+  mkdirSync(modelsUnpackedDir, { recursive: true });
+
+  const modelFile = 'Qwen3.5-0.8B-IQ4_NL.gguf';
+  const modelSrc = join(modelsSrcDir, modelFile);
+  if (existsSync(modelSrc)) {
+    const sizeMB = Math.round(statSync(modelSrc).size / 1024 / 1024);
+    console.log(`Copying ${modelFile} (${sizeMB} MB)...`);
+    copyFileSync(modelSrc, join(modelsUnpackedDir, modelFile));
+    console.log('Model copied.');
   } else {
-    console.log('Qwen3 model not found at:', qwenModelSrc);
+    console.log('Model not found:', modelSrc);
   }
 
   // Copy sentiment ONNX model + vocab to app.asar.unpacked
@@ -147,8 +150,8 @@ async function main() {
   }
 
   // Copy icon to resources folder (for taskbar icon)
-  const iconSrc = join(root, 'build', 'icon.png');
-  const iconDest = join(staging, 'app.asar.unpacked', 'build', 'icon.png');
+  const iconSrc = join(root, 'build', 'custom-icon.ico');
+  const iconDest = join(staging, 'app.asar.unpacked', 'build', 'custom-icon.ico');
   if (existsSync(iconSrc)) {
     console.log('Copying app icon...');
     mkdirSync(join(staging, 'app.asar.unpacked', 'build'), { recursive: true });

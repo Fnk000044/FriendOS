@@ -168,6 +168,13 @@ export interface EmotionRecord {
   createdAt: string;
 }
 
+export interface TypingBehavior {
+  avgSpeed: number;        // 平均打字速度 (字符/分钟)
+  deleteRate: number;      // 删除键比例 (0-1)
+  pauseRate: number;       // 停顿次数/分钟
+  sessionDuration: number; // 会话时长 (分钟)
+}
+
 export interface BehaviorRecord {
   id: string;
   date: string;
@@ -180,6 +187,7 @@ export interface BehaviorRecord {
   habitsTotal: number;
   activeHours: number[];
   chatMessages: number;
+  typingBehavior?: TypingBehavior | null; // 打字行为数据（无感识别）
   createdAt: string;
 }
 

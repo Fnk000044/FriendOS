@@ -2,7 +2,7 @@ export type Lang = 'zh-CN' | 'en';
 
 export type TranslationKey =
   | 'app.title'
-  | 'nav.dashboard' | 'nav.tasks' | 'nav.diary' | 'nav.habits' | 'nav.memories' | 'nav.emotion' | 'nav.therapy' | 'nav.reports' | 'nav.settings' | 'nav.sync'
+  | 'nav.dashboard' | 'nav.risk' | 'nav.tasks' | 'nav.diary' | 'nav.habits' | 'nav.memories' | 'nav.emotion' | 'nav.therapy' | 'nav.reports' | 'nav.settings' | 'nav.sync'
   | 'nav.assistant' | 'nav.knowledge' | 'nav.resources' | 'nav.assessment'
   | 'nav.data_local'
   | 'sync.title' | 'sync.description' | 'sync.scan_to_connect'
@@ -17,6 +17,8 @@ export type TranslationKey =
   | 'quick_capture.saved_as' | 'quick_capture.hint'
   | 'assistant.title' | 'assistant.placeholder' | 'assistant.send'
   | 'assistant.loading' | 'assistant.welcome_title' | 'assistant.welcome_desc' | 'assistant.error'
+  | 'assistant.suggest_analyze' | 'assistant.suggest_status' | 'assistant.suggest_help'
+  | 'assistant.clear'
   | 'welcome.title' | 'welcome.subtitle' | 'welcome.select_lang' | 'welcome.start'
   | 'welcome.zh_desc' | 'welcome.en_desc'
   | 'task.title' | 'task.input_placeholder' | 'task.all' | 'task.pending' | 'task.completed' | 'task.overdue'
@@ -41,8 +43,11 @@ export type TranslationKey =
   | 'report.task_chart' | 'report.mood_chart' | 'report.habit_chart'
   | 'report.total' | 'report.completed'
   | 'report.loading' | 'report.select_hint'
+  | 'report.ai_report' | 'report.insights' | 'report.suggestions' | 'report.health_radar' | 'report.emotion_trend' | 'report.no_emotion_data'
+  | 'report.no_data' | 'report.today' | 'report.avg_rate' | 'report.trend'
   | 'settings.title' | 'settings.data_mgmt' | 'settings.data_desc' | 'settings.export' | 'settings.import'
   | 'settings.storage_info' | 'settings.storage_desc' | 'settings.about' | 'settings.about_desc'
+  | 'settings.model_status' | 'settings.model_status_desc' | 'settings.demo_data' | 'settings.demo_data_desc' | 'settings.demo_data_btn' | 'settings.demo_data_confirm' | 'settings.demo_data_success' | 'settings.demo_data_fail'
   | 'settings.open_folder' | 'settings.reset' | 'settings.reset_confirm'
   | 'settings.theme' | 'settings.theme_system' | 'settings.theme_light' | 'settings.theme_dark'
   | 'settings.shortcuts' | 'settings.shortcuts_desc'
@@ -51,8 +56,13 @@ export type TranslationKey =
   | 'settings.ai' | 'settings.ai_desc' | 'settings.ai_tone'
   | 'settings.ai_tone_professional' | 'settings.ai_tone_friendly' | 'settings.ai_tone_concise' | 'settings.ai_tone_encouraging'
   | 'settings.ai_tone_counselor'
+  | 'settings.ai_mode_online' | 'settings.ai_mode_offline' | 'settings.ai_offline_tip'
   | 'settings.ai_provider' | 'settings.ai_api_key' | 'settings.ai_api_key_placeholder'
   | 'settings.ai_model'
+  | 'notification.title' | 'notification.test' | 'notification.add' | 'notification.cancel'
+  | 'notification.diary' | 'notification.habit' | 'notification.custom'
+  | 'notification.title_placeholder' | 'notification.body_placeholder'
+  | 'notification.empty' | 'notification.desc'
   | 'settings.online_model_title' | 'settings.online_model_desc' | 'settings.online_provider' | 'settings.online_model_hint'
   | 'mode_selection.title' | 'mode_selection.online' | 'mode_selection.online_desc'
   | 'mode_selection.offline' | 'mode_selection.offline_desc' | 'mode_selection.hint'
@@ -107,6 +117,7 @@ export const translations: Translations = {
     'app.title': '知己',
 
     'nav.dashboard': '仪表盘',
+    'nav.risk': '风险评估',
     'nav.tasks': '任务管理',
     'nav.diary': '日记',
     'nav.habits': '习惯',
@@ -143,6 +154,10 @@ export const translations: Translations = {
     'assistant.welcome_title': '你好，我是知己AI',
     'assistant.welcome_desc': '我可以帮你分析计划、总结近况、提供建议',
     'assistant.error': '发生错误，请稍后再试',
+    'assistant.suggest_analyze': '分析我的计划',
+    'assistant.suggest_status': '看看我的状态',
+    'assistant.suggest_help': '你能做什么',
+    'assistant.clear': '清除对话',
 
     'header.quick_capture': 'Ctrl+K 快速记录',
 
@@ -312,6 +327,16 @@ export const translations: Translations = {
     'report.completed': '已完成',
     'report.loading': '生成报告中...',
     'report.select_hint': '选择一个报告类型开始分析',
+    'report.ai_report': 'AI 分析报告',
+    'report.insights': '洞察',
+    'report.suggestions': '建议',
+    'report.health_radar': '心理健康画像',
+    'report.emotion_trend': '情绪趋势',
+    'report.no_emotion_data': '暂无情绪数据',
+    'report.no_data': '暂无数据',
+    'report.today': '今日',
+    'report.avg_rate': '平均完成率',
+    'report.trend': '趋势',
 
     'settings.title': '设置',
     'settings.data_mgmt': '数据管理',
@@ -322,6 +347,14 @@ export const translations: Translations = {
     'settings.storage_desc': '数据存储在浏览器 IndexedDB 中',
     'settings.about': '关于知己',
     'settings.about_desc': '个人管理系统 v1.0，所有数据本地存放，不上传任何服务器',
+    'settings.model_status': '情感分析模型状态',
+    'settings.model_status_desc': '关键词分析随时可用。训练 ONNX 模型可提升分析精度。',
+    'settings.demo_data': '演示数据',
+    'settings.demo_data_desc': '填充预设数据，方便演示和答辩展示。',
+    'settings.demo_data_btn': '填充演示数据',
+    'settings.demo_data_confirm': '填充演示数据将清除当前所有数据，确定继续？',
+    'settings.demo_data_success': '演示数据填充成功！',
+    'settings.demo_data_fail': '演示数据填充失败',
     'settings.open_folder': '打开存储文件夹',
     'settings.reset': '恢复初始化',
     'settings.reset_confirm': '确定要恢复初始化吗？所有数据将被清除，此操作不可恢复。',
@@ -346,10 +379,24 @@ export const translations: Translations = {
     'settings.ai_tone_concise': '简洁',
     'settings.ai_tone_encouraging': '鼓励',
     'settings.ai_tone_counselor': '心理咨询师',
+    'settings.ai_mode_online': '在线模式',
+    'settings.ai_mode_offline': '离线模式',
+    'settings.ai_offline_tip': '离线模式：使用本地模型，无需网络，保护隐私。首次加载约需 3-5 秒。',
     'settings.ai_provider': 'AI模型',
     'settings.ai_api_key': 'API密钥',
     'settings.ai_api_key_placeholder': '输入API密钥（暂存本地）',
     'settings.ai_model': '模型',
+    'notification.title': '通知提醒',
+    'notification.test': '测试通知',
+    'notification.add': '添加',
+    'notification.cancel': '取消',
+    'notification.diary': '日记提醒',
+    'notification.habit': '习惯提醒',
+    'notification.custom': '自定义',
+    'notification.title_placeholder': '提醒标题',
+    'notification.body_placeholder': '提醒内容（可选）',
+    'notification.empty': '暂无提醒',
+    'notification.desc': '提醒会在设定时间通过系统通知发送。请确保系统通知权限已开启。',
     'settings.online_model_title': '配置在线模型',
     'settings.online_model_desc': '选择在线模型服务商并输入 API Key',
     'settings.online_provider': '模型服务商',
@@ -460,6 +507,7 @@ export const translations: Translations = {
     'app.title': 'ZhiJi',
 
     'nav.dashboard': 'Dashboard',
+    'nav.risk': 'Risk Assessment',
     'nav.tasks': 'Tasks',
     'nav.diary': 'Diary',
     'nav.habits': 'Habits',
@@ -496,6 +544,10 @@ export const translations: Translations = {
     'assistant.welcome_title': "Hello, I'm ZhiJi AI",
     'assistant.welcome_desc': 'I can analyze plans, summarize status, offer advice',
     'assistant.error': 'An error occurred, please try again later',
+    'assistant.suggest_analyze': 'Analyze my plans',
+    'assistant.suggest_status': 'Check my status',
+    'assistant.suggest_help': 'What can you do',
+    'assistant.clear': 'Clear chat',
 
     'header.quick_capture': 'Ctrl+K Quick Capture',
 
@@ -666,6 +718,16 @@ export const translations: Translations = {
     'report.completed': 'Completed',
     'report.loading': 'Generating report...',
     'report.select_hint': 'Select a report type to start',
+    'report.ai_report': 'AI Analysis Report',
+    'report.insights': 'Insights',
+    'report.suggestions': 'Suggestions',
+    'report.health_radar': 'Health Profile',
+    'report.emotion_trend': 'Emotion Trend',
+    'report.no_emotion_data': 'No emotion data yet',
+    'report.no_data': 'No data',
+    'report.today': 'Today',
+    'report.avg_rate': 'Avg. Rate',
+    'report.trend': 'Trend',
 
     'settings.title': 'Settings',
     'settings.data_mgmt': 'Data Management',
@@ -676,6 +738,14 @@ export const translations: Translations = {
     'settings.storage_desc': 'Data stored in browser IndexedDB',
     'settings.about': 'About ZhiJi',
     'settings.about_desc': 'Personal Management System v1.0. All data stored locally, no server upload.',
+    'settings.model_status': 'Sentiment Analysis Model',
+    'settings.model_status_desc': 'Keyword analysis is always available. Training the ONNX model improves accuracy.',
+    'settings.demo_data': 'Demo Data',
+    'settings.demo_data_desc': 'Fill with preset data for demos and presentations.',
+    'settings.demo_data_btn': 'Fill Demo Data',
+    'settings.demo_data_confirm': 'Filling demo data will clear all current data. Continue?',
+    'settings.demo_data_success': 'Demo data filled successfully!',
+    'settings.demo_data_fail': 'Failed to fill demo data',
     'settings.open_folder': 'Open Data Folder',
     'settings.reset': 'Factory Reset',
     'settings.reset_confirm': 'Are you sure? All data will be cleared. This action cannot be undone.',
@@ -700,10 +770,24 @@ export const translations: Translations = {
     'settings.ai_tone_concise': 'Concise',
     'settings.ai_tone_encouraging': 'Encouraging',
     'settings.ai_tone_counselor': 'Counselor',
+    'settings.ai_mode_online': 'Online',
+    'settings.ai_mode_offline': 'Offline',
+    'settings.ai_offline_tip': 'Offline: Uses local model, no network needed, privacy-first. First load takes ~3-5 seconds.',
     'settings.ai_provider': 'AI Model',
     'settings.ai_api_key': 'API Key',
     'settings.ai_api_key_placeholder': 'Enter API key (stored locally)',
     'settings.ai_model': 'Model',
+    'notification.title': 'Notifications',
+    'notification.test': 'Test',
+    'notification.add': 'Add',
+    'notification.cancel': 'Cancel',
+    'notification.diary': 'Diary',
+    'notification.habit': 'Habit',
+    'notification.custom': 'Custom',
+    'notification.title_placeholder': 'Reminder title',
+    'notification.body_placeholder': 'Reminder body (optional)',
+    'notification.empty': 'No reminders',
+    'notification.desc': 'Reminders will be sent via system notifications at the scheduled time. Please ensure notification permissions are enabled.',
     'settings.online_model_title': 'Configure Online Model',
     'settings.online_model_desc': 'Select online model provider and enter API Key',
     'settings.online_provider': 'Model Provider',

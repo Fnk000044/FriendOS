@@ -17,6 +17,7 @@ export default React.memo(function TaskItem({ task, onToggle, onClick }: TaskIte
   const isCompleted = task.status === 'completed';
   const [isCompleting, setIsCompleting] = useState(false);
   const [isAppearing, setIsAppearing] = useState(true);
+  const [showBounce, setShowBounce] = useState(false);
   const pConfig = PRIORITY_CONFIG[task.priority];
   const isOverdue = !isCompleted && task.scheduledDate < getToday();
   const categoryTag = task.tags.find((tag) => CATEGORY_COLOR_MAP[tag]);
@@ -29,9 +30,12 @@ export default React.memo(function TaskItem({ task, onToggle, onClick }: TaskIte
 
   useEffect(() => {
     if (isCompleting) {
+      // 触发弹跳动画
+      setShowBounce(true);
       const timer = setTimeout(() => {
         onToggle();
         setIsCompleting(false);
+        setShowBounce(false);
       }, 300);
       return () => clearTimeout(timer);
     }
@@ -48,19 +52,33 @@ export default React.memo(function TaskItem({ task, onToggle, onClick }: TaskIte
   return (
     <div
       className={`group flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300
-        ${isCompleting ? 'bg-slate-50/50 opacity-60 scale-95' : isCompleted ? '' : 'hover:bg-surface-hover cursor-pointer'}
-        ${isAppearing ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
+        ${isCompleting ? 'bg-green-50/50' : isCompleted ? '' : 'hover:bg-surface-hover cursor-pointer'}
+        ${isAppearing ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'}`}
+      style={{
+        transition: isAppearing ? 'opacity 200ms ease-out, transform 200ms ease-out' : undefined,
+      }}
     >
-      <button onClick={(e) => { e.stopPropagation(); handleToggle(); }} className="shrink-0">
+      <button
+        onClick={(e) => { e.stopPropagation(); handleToggle(); }}
+        className={`shrink-0 transition-transform duration-200 ${showBounce ? 'scale-125' : 'scale-100'}`}
+      >
         {isCompleted ? (
-          <CheckCircle2 className="w-4 h-4 text-primary" />
+          <CheckCircle2 className="w-5 h-5 text-green-500" />
         ) : (
-          <Circle className="w-4 h-4 text-text-muted group-hover:text-primary transition-colors" />
+          <Circle className={`w-5 h-5 transition-colors duration-200 ${
+            isCompleting ? 'text-green-400' : 'text-text-muted group-hover:text-primary'
+          }`} />
         )}
       </button>
 
       <div className="flex-1 flex items-start min-w-0 relative" onClick={onClick}>
-        <p className={`text-sm break-words leading-snug py-0.5 max-w-[45%] ${isCompleted ? 'line-through text-text-muted' : 'text-text-primary'}`}>
+        <p className={`text-sm break-words leading-snug py-0.5 max-w-[45%] transition-all duration-300 ${
+          isCompleted
+            ? 'line-through text-text-muted'
+            : isCompleting
+              ? 'text-green-600 line-through'
+              : 'text-text-primary'
+        }`}>
           {task.title}
         </p>
         <Badge variant={pConfig.variant} size="sm" className="absolute left-1/2 -translate-x-1/2 self-center font-semibold shadow-sm">{t(pConfig.key)}</Badge>
@@ -84,7 +102,7 @@ export default React.memo(function TaskItem({ task, onToggle, onClick }: TaskIte
         {isOverdue && (
           <span className="text-[10px] text-red-500">{t('task.expired')}</span>
         )}
-        <button onClick={(e) => { e.stopPropagation(); onClick(); }} className="opacity-0 group-hover:opacity-100 transition-opacity">
+        <button onClick={(e) => { e.stopPropagation(); onClick(); }} className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <ChevronRight className="w-4 h-4 text-text-muted" />
         </button>
       </div>

@@ -3,10 +3,12 @@ import { getToday } from '../utils/date';
 
 interface UIState {
   sidebarOpen: boolean;
+  sidebarCollapsed: boolean;
   quickCaptureOpen: boolean;
   aiAssistantOpen: boolean;
   currentDate: string;
   toggleSidebar: () => void;
+  toggleSidebarCollapsed: () => void;
   openQuickCapture: () => void;
   closeQuickCapture: () => void;
   toggleAiAssistant: () => void;
@@ -15,10 +17,12 @@ interface UIState {
 
 export const useUIStore = create<UIState>((set) => ({
   sidebarOpen: true,
+  sidebarCollapsed: false,
   quickCaptureOpen: false,
   aiAssistantOpen: false,
   currentDate: getToday(),
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
+  toggleSidebarCollapsed: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
   openQuickCapture: () => set({ quickCaptureOpen: true }),
   closeQuickCapture: () => set({ quickCaptureOpen: false }),
   toggleAiAssistant: () => set((s) => ({ aiAssistantOpen: !s.aiAssistantOpen })),

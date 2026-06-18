@@ -1,112 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { assessRisk, getRiskColor, getRiskLabel } from '../RiskAssessment';
-import type { EmotionRecord, BehaviorRecord } from '../../../db/models';
-
-// Mock data
-const createEmotionRecord = (riskLevel: string): EmotionRecord => ({
-  id: '1',
-  date: '2026-06-13',
-  source: 'diary',
-  moodScore: 3,
-  emotions: { joy: 0.3, sadness: 0.4, anger: 0.1, fear: 0.1, surprise: 0.05, disgust: 0.05 },
-  riskLevel: riskLevel as EmotionRecord['riskLevel'],
-  sentimentScore: -0.2,
-  createdAt: '2026-06-13T10:00:00Z',
-});
-
-const defaultBehaviorTrends = {
-  consecutiveNoDiary: 0,
-  consecutiveLowMood: 0,
-  taskCompletionDrop: false,
-  habitBreakDays: 0,
-  averageMood: 3.5,
-  averageTaskRate: 0.7,
-  averageHabitRate: 0.8,
-  moodVolatility: 0.5,
-  lateNightRatio: 0.2,
-};
+import { mapCrisisToCSSRS, getRiskColor, getRiskLabel, getCSSRSDescription } from '../RiskAssessment';
 
 describe('RiskAssessment', () => {
-  describe('assessRisk', () => {
-    it('should return low risk for healthy input', () => {
-      const result = assessRisk({
-        recentEmotions: [],
-        behaviorRecord: null,
-        behaviorTrends: defaultBehaviorTrends,
-      });
-      expect(result.riskLevel).toBe('low');
-      expect(result.riskScore).toBeLessThan(10);
-    });
-
-    it('should return critical for C-SSRS level 5-6', () => {
-      const result = assessRisk({
-        recentEmotions: [],
-        behaviorRecord: null,
-        behaviorTrends: defaultBehaviorTrends,
-        crisisKeywords: true,
-        crisisLevel: 4, // maps to C-SSRS level 5
-      });
-      expect(result.riskLevel).toBe('critical');
-      expect(result.riskScore).toBe(100);
-    });
-
-    it('should return high for C-SSRS level 3-4', () => {
-      const result = assessRisk({
-        recentEmotions: [],
-        behaviorRecord: null,
-        behaviorTrends: defaultBehaviorTrends,
-        crisisKeywords: true,
-        crisisLevel: 3, // maps to C-SSRS level 3
-      });
-      expect(result.riskLevel).toBe('high');
-      expect(result.riskScore).toBeGreaterThanOrEqual(60);
-    });
-
-    it('should accumulate risk from high-risk emotions', () => {
-      const result = assessRisk({
-        recentEmotions: [createEmotionRecord('high')],
-        behaviorRecord: null,
-        behaviorTrends: defaultBehaviorTrends,
-      });
-      expect(result.riskScore).toBeGreaterThanOrEqual(40);
-    });
-
-    it('should accumulate risk from consecutive low mood', () => {
-      const result = assessRisk({
-        recentEmotions: [],
-        behaviorRecord: null,
-        behaviorTrends: {
-          ...defaultBehaviorTrends,
-          consecutiveLowMood: 3,
-        },
-      });
-      expect(result.riskScore).toBeGreaterThanOrEqual(30);
-    });
-
-    it('should accumulate risk from task completion drop', () => {
-      const result = assessRisk({
-        recentEmotions: [],
-        behaviorRecord: null,
-        behaviorTrends: {
-          ...defaultBehaviorTrends,
-          taskCompletionDrop: true,
-        },
-      });
-      expect(result.riskScore).toBeGreaterThanOrEqual(10);
-    });
-
-    it('should return medium for risk score 40-79', () => {
-      // High-risk emotions (40) + some other factors
-      const result = assessRisk({
-        recentEmotions: [createEmotionRecord('high')],
-        behaviorRecord: null,
-        behaviorTrends: {
-          ...defaultBehaviorTrends,
-          taskCompletionDrop: true,
-        },
-      });
-      expect(result.riskScore).toBeGreaterThanOrEqual(40);
-    });
+  describe('mapCrisisToCSSRS', () => {
+    it('should map 0 to 0', () => expect(mapCrisisToCSSRS(0)).toBe(0));
+    it('should map 1 to 1', () => expect(mapCrisisToCSSRS(1)).toBe(1));
+    it('should map 2 to 2', () => expect(mapCrisisToCSSRS(2)).toBe(2));
+    it('should map 3 to 3', () => expect(mapCrisisToCSSRS(3)).toBe(3));
+    it('should map 4 to 5', () => expect(mapCrisisToCSSRS(4)).toBe(5));
+    it('should map unknown to 0', () => expect(mapCrisisToCSSRS(99)).toBe(0));
   });
 
   describe('getRiskColor', () => {
@@ -126,6 +28,15 @@ describe('RiskAssessment', () => {
       expect(getRiskLabel('medium')).toBe('中等风险');
       expect(getRiskLabel('high')).toBe('高风险');
       expect(getRiskLabel('critical')).toBe('极高风险');
+    });
+  });
+
+  describe('getCSSRSDescription', () => {
+    it('should return correct descriptions', () => {
+      expect(getCSSRSDescription(0)).toBe('无自杀意念');
+      expect(getCSSRSDescription(1)).toBe('希望死去');
+      expect(getCSSRSDescription(5)).toBe('有自杀计划和意图');
+      expect(getCSSRSDescription(99)).toBe('未知');
     });
   });
 });

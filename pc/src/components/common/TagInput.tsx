@@ -29,7 +29,7 @@ export default function TagInput({ tags, onChange, placeholder = '输入标签�
   return (
     <div
       className="flex flex-wrap items-center gap-1.5 px-3 py-2 rounded-btn border focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all min-h-[38px]"
-      style={{ borderColor: 'var(--glass-border)' }}
+      style={{ borderColor: 'var(--border-input)' }}
       role="group"
       aria-label="标签输入"
     >

@@ -3,9 +3,10 @@
  * 三层分析：关键词预筛 → ONNX 情感 → Qwen3 语义判定
  *
  * 设计原则：
- * 1. 关键词只做宽松触发，不做否定检测（安全第一，宁可误报不漏报）
+ * 1. 关键词做宽松触发 + 简单否定窗口检测（减少误报）
  * 2. ONNX 提供情感概率参考
  * 3. Qwen3 理解语义，做最终判定
+ * 4. 危机检测采用三级确认：关键词 → ONNX → Qwen3
  */
 
 const path = require('path');
@@ -27,13 +28,27 @@ const moduleState = {
   vocabLoaded: false,
 };
 
-// ── 危机关键词（宽松匹配，不做否定检测）─────────────────────────
+// ── 危机关键词 ─────────────────────────────────────────────────
 const CRISIS_KEYWORDS = [
   '想死', '不想活', '活不下去', '死了算了', '去死', '一了百了',
   '自杀', '自残', '割腕', '跳楼', '结束生命',
   '遗书', '告别', '准备去死',
   '想消失', '离开这个世界', '活着没意思', '解脱', '撑不下去',
   '活够了', '没意义', '没有意义',
+];
+
+// ── 否定词（关键词前 5 个字符内出现则排除）──────────────────────
+const NEGATION_WORDS = ['不', '没', '别', '勿', '未', '莫', '非', '无', '不会', '不要', '不是'];
+
+// ── 排除模式（不触发危机的常见表达）────────────────────────────
+const CRISIS_EXCLUSIONS = [
+  // 成语/俗语
+  '九死一生', '生不如死', '死心塌地', '死而后已', '死得其所',
+  '死去活来', '半死不活', '要死要活', '死皮赖脸', '死缠烂打',
+  // 网络非自杀用语
+  '笑死', '困死了', '无聊到想死', '热死了', '累死了', '饿死了',
+  '尴尬死了', '烦死了', '丑死了', '贵死了', '冷死了',
+  '笑死我了', '可爱死了', '好吃死了',
 ];
 
 // ── 情感词 ──────────────────────────────────────────────────────
@@ -65,12 +80,28 @@ function keywordScan(text) {
 
   const cleanText = text.replace(/[，。！？、；：""''（）【】《》\s,.!?;:()\[\]{}<>]/g, '');
 
-  // 检测危机词（宽松匹配，不做否定检测）
+  // 检查排除模式
+  const isExcluded = CRISIS_EXCLUSIONS.some(pattern => cleanText.includes(pattern));
+
+  // 检测危机词（带否定窗口检测）
   const matchedCrisis = [];
   for (const word of CRISIS_KEYWORDS) {
-    if (cleanText.includes(word)) {
+    const idx = cleanText.indexOf(word);
+    if (idx === -1) continue;
+
+    // 否定窗口：检查关键词前 5 个字符内是否有否定词
+    const windowStart = Math.max(0, idx - 5);
+    const window = cleanText.substring(windowStart, idx);
+    const hasNegation = NEGATION_WORDS.some(neg => window.includes(neg));
+
+    if (!hasNegation) {
       matchedCrisis.push(word);
     }
+  }
+
+  // 如果命中排除模式，清空危机关键词
+  if (isExcluded) {
+    matchedCrisis.length = 0;
   }
 
   // 统计情感词
@@ -182,14 +213,18 @@ async function qwenAnalyze(text, context = {}) {
 async function analyzeEnhanced(text) {
   const timestamp = Date.now();
 
-  // 第1层：关键词预筛
+  // 第1层：关键词预筛（含否定词排除）
   const scan = keywordScan(text);
 
   // 第2层：ONNX 情感分析
   const onnx = await analyzeWithONNX(text);
   const negativeProb = onnx ? onnx.negativeProb : scan.negativeProb;
 
-  // 判断是否需要 Qwen3
+  // 三级确认：关键词 → ONNX → Qwen3
+  // Level 1: 关键词命中 → 标记"疑似"（不直接判定为 high）
+  // Level 2: ONNX 负面概率 >70% → 升级为"可能"
+  // Level 3: Qwen3 上下文判断 → 最终确认
+
   const needQwen = scan.hasCrisis || negativeProb > 0.5;
 
   // 第3层：Qwen3 语义判定
@@ -201,12 +236,13 @@ async function analyzeEnhanced(text) {
     });
   }
 
-  // 合并结果（Qwen3 优先）
+  // 合并结果（三级确认）
   let level = 'low';
   let crisisLevel = 0;
   let method = 'keyword';
 
   if (qwenResult) {
+    // Level 3 确认：Qwen3 最终判定
     method = 'qwen';
     if (qwenResult.crisisLevel === 'high') {
       level = 'high';
@@ -215,9 +251,15 @@ async function analyzeEnhanced(text) {
       level = 'medium';
       crisisLevel = 1;
     }
-  } else if (scan.hasCrisis) {
+  } else if (scan.hasCrisis && negativeProb > 0.7) {
+    // Level 2 确认：关键词 + ONNX 双重确认
     level = 'high';
-    crisisLevel = 3;
+    crisisLevel = 2;
+    method = 'onnx';
+  } else if (scan.hasCrisis) {
+    // Level 1：仅关键词命中，标记为 medium（疑似）
+    level = 'medium';
+    crisisLevel = 1;
   } else if (negativeProb > 0.7) {
     level = 'medium';
     method = onnx ? 'onnx' : 'keyword';

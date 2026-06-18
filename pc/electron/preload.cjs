@@ -65,6 +65,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openExternal: (path) => ipcRenderer.invoke('open-external', path),
 
   // API Key encrypted storage (via Electron safeStorage)
+  apiKeyExists: (name) => ipcRenderer.invoke('api-key-exists', name),
   apiKeyGet: (name) => ipcRenderer.invoke('api-key-get', name),
   apiKeySet: (name, value) => ipcRenderer.invoke('api-key-set', name, value),
 
@@ -107,6 +108,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   behaviorAnalyzeDaily: (record, context) => ipcRenderer.invoke('behavior:analyzeDaily', record, context),
   behaviorAnalyzeTrends: (records) => ipcRenderer.invoke('behavior:analyzeTrends', records),
   behaviorGenerateSummary: (trends) => ipcRenderer.invoke('behavior:generateSummary', trends),
+
+  // Risk scoring engine
+  riskCalculate: (data) => ipcRenderer.invoke('risk:calculate', data),
+  riskGetTrend: (dailyScores, days) => ipcRenderer.invoke('risk:getTrend', dailyScores, days),
 
   // Notifications
   notificationSetReminders: (reminders) => ipcRenderer.invoke('notification:setReminders', reminders),

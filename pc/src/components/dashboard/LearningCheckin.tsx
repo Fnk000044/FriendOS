@@ -16,7 +16,7 @@ export default function LearningCheckin() {
 
   const checkinData = useLiveQuery(async () => {
     const [allHabits, todayLogs, weekLogs] = await Promise.all([
-      db.habits.filter(h => !h.archived).toArray(),
+      db.habits.where('archived').equals(0).toArray(),
       db.habitLogs.where('date').equals(today).toArray(),
       db.habitLogs.where('date').between(weekAgo, today, true, true).toArray(),
     ]);

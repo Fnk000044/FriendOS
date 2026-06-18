@@ -150,6 +150,7 @@ interface ElectronAPI {
   openExternal: (path: string) => Promise<{ success: boolean; error?: string }>;
 
   // API Key encrypted storage (via Electron safeStorage)
+  apiKeyExists: (name: string) => Promise<boolean>;
   apiKeyGet: (name: string) => Promise<string>;
   apiKeySet: (name: string, value: string) => Promise<{ success: boolean; error?: string }>;
 

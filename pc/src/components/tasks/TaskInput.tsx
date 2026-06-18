@@ -39,7 +39,7 @@ export default function TaskInput({ onCreated }: TaskInputProps) {
     <div>
       <div
         className="flex items-center gap-2 rounded-btn border px-4 py-2.5 focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all"
-        style={{ background: 'var(--bg-card-solid)', borderColor: 'var(--glass-border)' }}
+        style={{ background: 'var(--bg-card-solid)', borderColor: 'var(--border-input)' }}
       >
         <Plus className="w-5 h-5 text-text-muted shrink-0" />
         <input

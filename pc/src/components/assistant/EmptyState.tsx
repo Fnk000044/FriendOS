@@ -22,16 +22,16 @@ export default function EmptyState({ onStart }: EmptyStateProps) {
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-lg">
         <SuggestionCard
-          text="分析我的计划"
-          onClick={() => onStart?.('分析我的计划')}
+          text={t('assistant.suggest_analyze')}
+          onClick={() => onStart?.(t('assistant.suggest_analyze'))}
         />
         <SuggestionCard
-          text="看看我的状态"
-          onClick={() => onStart?.('看看我的状态')}
+          text={t('assistant.suggest_status')}
+          onClick={() => onStart?.(t('assistant.suggest_status'))}
         />
         <SuggestionCard
-          text="你能做什么"
-          onClick={() => onStart?.('你能做什么')}
+          text={t('assistant.suggest_help')}
+          onClick={() => onStart?.(t('assistant.suggest_help'))}
         />
       </div>
     </div>

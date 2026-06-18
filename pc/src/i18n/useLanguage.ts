@@ -6,6 +6,7 @@ interface LanguageState {
   lang: Lang;
   initialized: boolean;
   setLang: (lang: Lang) => void;
+  reset: () => void;
   t: (key: TranslationKey, params?: Record<string, string | number>) => string;
 }
 
@@ -24,6 +25,10 @@ export const useLanguage = create<LanguageState>((set, get) => ({
     localStorage.setItem('lifeos_lang', lang);
     set({ lang, initialized: true });
     document.documentElement.lang = lang === 'zh-CN' ? 'zh-CN' : 'en';
+  },
+  reset: () => {
+    localStorage.removeItem('lifeos_lang');
+    set({ initialized: false });
   },
   t: (key: TranslationKey, params?: Record<string, string | number>) => {
     const { lang } = get();

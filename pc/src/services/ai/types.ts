@@ -1,8 +1,5 @@
 export type ToneType = 'professional' | 'friendly' | 'concise' | 'encouraging' | 'counselor';
 
-export type ProviderType = 'local' | 'online';
-export type OnlineProvider = 'deepseek' | 'openai' | 'anthropic';
-
 export interface LocalModel {
   id: string;
   name: string;
@@ -12,10 +9,8 @@ export interface LocalModel {
 }
 
 export interface AIConfig {
-  provider: ProviderType;
+  provider: 'local';
   tone: ToneType;
-  apiKey: string;
-  onlineProvider: OnlineProvider;
   model: string;
   localModel: LocalModel | null;
   localModelPath: string;
@@ -60,10 +55,4 @@ export const TONE_LABELS: Record<ToneType, string> = {
   concise: 'settings.ai_tone_concise',
   encouraging: 'settings.ai_tone_encouraging',
   counselor: 'settings.ai_tone_counselor',
-};
-
-export const ONLINE_PROVIDER_LABELS: Record<OnlineProvider, string> = {
-  deepseek: 'DeepSeek',
-  openai: 'OpenAI',
-  anthropic: 'Anthropic',
 };

@@ -14,15 +14,15 @@ export default function WeeklyReportCard() {
   };
 
   const trendConfig = {
-    improving: { icon: TrendingUp, color: 'text-green-600', label: '改善中' },
-    stable: { icon: Minus, color: 'text-slate-600', label: '稳定' },
-    declining: { icon: TrendingDown, color: 'text-amber-600', label: '下降中' },
+    improving: { icon: TrendingUp, color: 'text-green-500', label: '改善中' },
+    stable: { icon: Minus, color: 'text-text-muted', label: '稳定' },
+    declining: { icon: TrendingDown, color: 'text-amber-500', label: '下降中' },
   };
 
   return (
     <div className="glass-card rounded-xl p-5 shadow-sm">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-semibold text-slate-800 flex items-center gap-2">
+        <h2 className="font-semibold text-text-primary flex items-center gap-2">
           <Calendar className="w-5 h-5 text-indigo-500" />
           本周心理健康报告
         </h2>
@@ -53,7 +53,7 @@ export default function WeeklyReportCard() {
       {report && (
         <div className="space-y-4">
           {/* Summary */}
-          <p className="text-sm text-slate-700 leading-relaxed">{report.summary}</p>
+          <p className="text-sm text-text-secondary leading-relaxed">{report.summary}</p>
 
           {/* Trend */}
           <div className="flex items-center gap-2">
@@ -86,8 +86,8 @@ export default function WeeklyReportCard() {
                 <CheckCircle2 className="w-3 h-3" />
                 亮点
               </p>
-              {report.highlights.map((h, i) => (
-                <p key={i} className="text-xs text-slate-600 ml-4">• {h}</p>
+               {report.highlights.map((h, i) => (
+                <p key={i} className="text-xs text-text-secondary ml-4">• {h}</p>
               ))}
             </div>
           )}
@@ -95,12 +95,12 @@ export default function WeeklyReportCard() {
           {/* Concerns */}
           {report.concerns.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-amber-600 mb-1 flex items-center gap-1">
+              <p className="text-xs font-medium text-amber-500 mb-1 flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" />
                 需关注
               </p>
               {report.concerns.map((c, i) => (
-                <p key={i} className="text-xs text-slate-600 ml-4">• {c}</p>
+                <p key={i} className="text-xs text-text-secondary ml-4">• {c}</p>
               ))}
             </div>
           )}
@@ -114,7 +114,7 @@ export default function WeeklyReportCard() {
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {report.suggestions.map((s, i) => (
-                  <div key={i} className="bg-slate-50 rounded-lg p-2 text-xs text-slate-600">
+                  <div key={i} className="bg-[var(--bg-hover)] rounded-lg p-2 text-xs text-text-secondary">
                     {s}
                   </div>
                 ))}
@@ -129,9 +129,9 @@ export default function WeeklyReportCard() {
 
 function StatBadge({ label, value }: { label: string; value: string }) {
   return (
-    <div className="text-center p-2 rounded-lg bg-slate-50">
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className="text-sm font-semibold text-slate-700">{value}</p>
+    <div className="text-center p-2 rounded-lg" style={{ background: 'var(--bg-hover)' }}>
+      <p className="text-xs text-text-muted">{label}</p>
+      <p className="text-sm font-semibold text-text-primary">{value}</p>
     </div>
   );
 }

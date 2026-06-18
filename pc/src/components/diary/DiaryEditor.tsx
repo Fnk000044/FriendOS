@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { format } from 'date-fns';
@@ -15,6 +15,16 @@ import { useCrisisStore } from '../../stores/crisisStore';
 import GuidedJournal, { JOURNAL_TEMPLATES, type JournalTemplate } from './GuidedJournal';
 import EmotionPicker from './EmotionPicker';
 
+// 打字行为追踪器 - 参考 StudentLife (2014)
+interface TypingSession {
+  startTime: number;
+  keyCount: number;
+  deleteCount: number;
+  pauseCount: number;
+  lastKeyTime: number;
+  totalChars: number;
+}
+
 export default function DiaryEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -26,7 +36,10 @@ export default function DiaryEditor() {
     [id],
   );
 
-  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  // 支持 ?date= 参数指定日期
+  const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+  const dateParam = urlParams.get('date');
+  const [date, setDate] = useState(dateParam || format(new Date(), 'yyyy-MM-dd'));
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [mood, setMood] = useState<1 | 2 | 3 | 4 | 5>(3);
@@ -43,6 +56,57 @@ export default function DiaryEditor() {
   const [showTemplates, setShowTemplates] = useState(false);
   const showCrisis = useCrisisStore((s) => s.show);
 
+  // 打字行为追踪
+  const typingSessionRef = useRef<TypingSession>({
+    startTime: Date.now(),
+    keyCount: 0,
+    deleteCount: 0,
+    pauseCount: 0,
+    lastKeyTime: Date.now(),
+    totalChars: 0,
+  });
+  const PAUSE_THRESHOLD = 2000; // 2秒无输入视为停顿
+
+  // 追踪打字行为
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    const session = typingSessionRef.current;
+    const now = Date.now();
+
+    // 检测停顿（超过2秒无输入）
+    if (now - session.lastKeyTime > PAUSE_THRESHOLD && session.lastKeyTime > session.startTime) {
+      session.pauseCount++;
+    }
+
+    session.keyCount++;
+    session.lastKeyTime = now;
+
+    // 检测删除键
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      session.deleteCount++;
+    }
+  }, []);
+
+  // 计算打字行为指标
+  const calculateTypingMetrics = useCallback(() => {
+    const session = typingSessionRef.current;
+    const durationMinutes = (Date.now() - session.startTime) / 60000;
+
+    if (durationMinutes < 0.1 || session.keyCount < 10) {
+      return null; // 数据不足
+    }
+
+    const avgSpeed = Math.round(session.totalChars / durationMinutes);
+    const deleteRate = session.keyCount > 0 ? session.deleteCount / session.keyCount : 0;
+    const pauseRate = session.pauseCount / durationMinutes;
+
+    return {
+      avgSpeed,
+      deleteRate: Math.round(deleteRate * 100) / 100,
+      pauseRate: Math.round(pauseRate * 10) / 10,
+      sessionDuration: Math.round(durationMinutes * 10) / 10,
+    };
+  }, []);
+
   useEffect(() => {
     if (existingEntry) {
       setDate(existingEntry.date);
@@ -53,6 +117,12 @@ export default function DiaryEditor() {
       setTags(existingEntry.tags || []);
     }
   }, [existingEntry]);
+
+  // 添加键盘事件监听
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
   const handleTemplateSelect = (template: JournalTemplate) => {
     setSelectedTemplate(template.id);
@@ -108,11 +178,6 @@ export default function DiaryEditor() {
         }
 
         setSentimentResult(result);
-
-        // 触发危机干预弹窗（高风险时）
-        if (result.level === 'high') {
-          showCrisis('high', 'diary', content);
-        }
 
         if (result?.needCloud && api?.sentimentCloudAnalyze) {
           const cloud = await api.sentimentCloudAnalyze(content, { mood });
@@ -174,6 +239,10 @@ export default function DiaryEditor() {
       // 保存行为记录（无感采集）
       try {
         const existingBehavior = await db.behaviorRecords.where('date').equals(date).first();
+
+        // 计算打字行为指标
+        const typingMetrics = calculateTypingMetrics();
+
         const behaviorData = {
           id: existingBehavior?.id || crypto.randomUUID(),
           date,
@@ -186,6 +255,8 @@ export default function DiaryEditor() {
           habitsTotal: existingBehavior?.habitsTotal || 0,
           activeHours: existingBehavior?.activeHours || [new Date().getHours()],
           chatMessages: existingBehavior?.chatMessages || 0,
+          // 打字行为数据（无感识别创新）
+          typingBehavior: typingMetrics || existingBehavior?.typingBehavior || null,
           createdAt: existingBehavior?.createdAt || new Date().toISOString(),
         };
 
@@ -193,6 +264,15 @@ export default function DiaryEditor() {
           await db.behaviorRecords.update(existingBehavior.id, behaviorData);
         } else {
           await db.behaviorRecords.add(behaviorData);
+        }
+
+        // 调用行为分析引擎（如果可用）
+        if (typingMetrics && window.electronAPI?.behaviorAnalyzeDaily) {
+          try {
+            await window.electronAPI.behaviorAnalyzeDaily(behaviorData, {});
+          } catch (err) {
+            console.error('[DiaryEditor] Behavior analysis error:', err);
+          }
         }
       } catch (err) {
         console.error('[DiaryEditor] Failed to save behavior record:', err);
@@ -204,6 +284,14 @@ export default function DiaryEditor() {
           console.error('[DiaryEditor] Failed to generate health profile:', err);
         });
       });
+
+      // 保存后延迟30秒检查是否需要危机干预
+      if (sentimentResult?.level === 'high') {
+        const savedContent = content;
+        setTimeout(() => {
+          showCrisis('high', 'diary', savedContent);
+        }, 30000);
+      }
 
       // Navigate first, then update state (prevents state update on unmounted component)
       navigate('/diary');
@@ -307,9 +395,15 @@ export default function DiaryEditor() {
 
         <textarea
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(e) => {
+            const newContent = e.target.value;
+            setContent(newContent);
+            // 追踪打字字符数
+            typingSessionRef.current.totalChars = newContent.length;
+          }}
           placeholder={t('diary.content_placeholder')}
-          className="w-full min-h-[300px] text-sm leading-relaxed outline-none resize-none placeholder:text-text-muted bg-transparent"
+          className="w-full min-h-[300px] text-sm leading-relaxed outline-none resize-none placeholder:text-text-muted bg-transparent border rounded-lg px-4 py-3"
+          style={{ borderColor: 'var(--border-input)' }}
         />
 
         {/* Sentiment Analysis Results - always visible */}

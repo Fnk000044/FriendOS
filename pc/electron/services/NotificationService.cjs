@@ -279,6 +279,76 @@ function registerHandlers(ipcMain, getMainWindow) {
   });
 }
 
+// ── Risk Notification ──────────────────────────────────────────
+
+let lastRiskLevel = 'low';
+let consecutiveAnomalyDays = 0;
+
+/**
+ * 检查风险等级变化并发送通知
+ * @param {object} riskResult - 风险评分结果
+ * @param {object} mainWindow - 主窗口实例
+ */
+function checkRiskAndNotify(riskResult, mainWindow) {
+  if (!riskResult) return;
+
+  const { riskLevel, totalScore } = riskResult;
+  const prevLevel = lastRiskLevel;
+
+  // 风险等级映射为数值
+  const levelValues = { low: 0, medium_low: 1, medium: 2, high: 3, critical: 4 };
+  const currentVal = levelValues[riskLevel] || 0;
+  const prevVal = levelValues[prevLevel] || 0;
+
+  // 风险等级上升到中以上 → 推送通知
+  if (currentVal >= 2 && prevVal < 2) {
+    sendNotification('知己关怀', '近期状态有变化，建议关注自己的心理健康');
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('notification:sent', {
+        id: 'risk-alert',
+        title: '知己关怀',
+        body: '近期状态有变化，建议关注自己的心理健康',
+        time: new Date().toISOString(),
+      });
+    }
+  }
+
+  // 高/危急 → 推送更紧急的通知
+  if (currentVal >= 3 && prevVal < 3) {
+    sendNotification('知己紧急关怀', '检测到您近期压力较大，建议进行呼吸练习或寻求帮助');
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('notification:sent', {
+        id: 'risk-critical',
+        title: '知己紧急关怀',
+        body: '检测到您近期压力较大，建议进行呼吸练习或寻求帮助',
+        time: new Date().toISOString(),
+      });
+    }
+  }
+
+  // 连续异常天数追踪
+  if (currentVal >= 2) {
+    consecutiveAnomalyDays++;
+  } else {
+    consecutiveAnomalyDays = 0;
+  }
+
+  // 连续3天异常 → 推送
+  if (consecutiveAnomalyDays === 3) {
+    sendNotification('知己问候', '已经好几天没写日记了，要不要聊聊？');
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('notification:sent', {
+        id: 'risk-consecutive',
+        title: '知己问候',
+        body: '已经好几天没写日记了，要不要聊聊？',
+        time: new Date().toISOString(),
+      });
+    }
+  }
+
+  lastRiskLevel = riskLevel;
+}
+
 module.exports = {
   setReminders,
   getReminders,
@@ -288,5 +358,6 @@ module.exports = {
   startReminderCheck,
   stopReminderCheck,
   sendNotification,
+  checkRiskAndNotify,
   registerHandlers,
 };

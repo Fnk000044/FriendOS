@@ -26,7 +26,7 @@ export default function DashboardPage() {
   const counts = useLiveQuery(async () => {
     const [t, h, l] = await Promise.all([
       db.tasks.where('scheduledDate').equals(today).count(),
-      db.habits.filter(h => !h.archived).count(),
+      db.habits.where('archived').equals(0).count(),
       db.habitLogs.where('date').equals(today).count(),
     ]);
     return { tasks: t, habits: h, logs: l };

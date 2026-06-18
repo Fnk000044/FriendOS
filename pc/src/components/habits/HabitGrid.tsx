@@ -19,7 +19,7 @@ export default function HabitGrid({ onEditHabit }: HabitGridProps) {
 
   const gridData = useLiveQuery(async () => {
     const [habits, todayLogs] = await Promise.all([
-      db.habits.filter(h => !h.archived).toArray(),
+      db.habits.where('archived').equals(0).toArray(),
       db.habitLogs.where('date').equals(today).toArray(),
     ]);
     return { habits, todayLogs };
