@@ -2,6 +2,7 @@ import { useCallback, useRef, useEffect } from 'react';
 import { useAIStore } from '../stores/aiStore';
 import { aiService } from '../services/ai/AIService';
 import { useLanguage } from '../i18n/useLanguage';
+import { saveConversationSummary } from '../services/ai/ConversationMemory';
 
 const STREAM_FLUSH_INTERVAL = 16;
 
@@ -43,6 +44,16 @@ export function useAI() {
     try {
       const currentConfig = useAIStore.getState().config;
       await aiService.initialize(currentConfig);
+      // 本地模型懒初始化：首次发送时若未就绪，先初始化
+      const { localModelReady, setLocalModelReady } = useAIStore.getState();
+      if (!localModelReady && currentConfig.provider === 'local' && window.electronAPI?.localModelInit) {
+        try {
+          await window.electronAPI.localModelInit(currentConfig.localModelPath || '');
+          setLocalModelReady(true);
+        } catch (initErr) {
+          console.warn('[useAI] local model init failed, will proceed anyway:', initErr);
+        }
+      }
       const currentMessages = useAIStore.getState().messages;
 
       const fullResponse = await aiService.sendMessageStream(text.trim(), currentMessages, (chunk) => {
@@ -91,6 +102,13 @@ export function useAI() {
             msg.id === assistantMsgId ? { ...msg, content: '⚠️ AI 未能生成回复，请重试。' } : msg
           ),
         }));
+      }
+      // 保存对话摘要（尝试提取记忆候选）
+      try {
+        const msgs = useAIStore.getState().messages.map(m => ({ role: m.role, content: m.content || '' }));
+        await saveConversationSummary(msgs);
+      } catch (summaryErr) {
+        console.warn('Failed to save conversation summary:', summaryErr);
       }
       abortControllerRef.current = null;
       useAIStore.getState().setLoading(false);

@@ -3,6 +3,8 @@ import { format, subDays } from 'date-fns';
 import { db } from '../../db';
 import { CheckSquare, BookOpen, Target, ClipboardList } from 'lucide-react';
 import { useLanguage } from '../../i18n/useLanguage';
+import AnimatedNumber from '../common/AnimatedNumber';
+import { StatCardSkeleton } from '../common/Skeleton';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -14,10 +16,10 @@ interface StatCardProps {
 
 function StatCard({ icon, label, value, statusText, color }: StatCardProps) {
   return (
-    <div className="glass-card-accent p-4 flex flex-col h-full glass-card-hover cursor-pointer" style={{ '--accent-color': color } as React.CSSProperties}>
+    <div className="glass-card-accent p-4 flex flex-col h-full" style={{ '--accent-color': color } as React.CSSProperties}>
       <div className="flex items-center gap-2.5 mb-3">
         <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform duration-200 hover:scale-110"
+          className="w-9 h-9 rounded-xl flex items-center justify-center"
           style={{ backgroundColor: `${color}12`, color }}
         >
           {icon}
@@ -25,7 +27,7 @@ function StatCard({ icon, label, value, statusText, color }: StatCardProps) {
         <span className="text-xs font-medium text-text-secondary">{label}</span>
       </div>
       <div className="flex-1 flex items-end">
-        <span className="text-3xl font-bold tabular-nums" style={{ color }}>{value}</span>
+        <AnimatedNumber value={value} className="text-3xl font-bold tabular-nums" />
       </div>
       <div className="mt-3 pt-2.5 border-t" style={{ borderColor: 'var(--glass-border)' }}>
         <span className="text-xs text-text-muted font-medium">{statusText}</span>
@@ -56,6 +58,15 @@ export default function QuickStats() {
   const studyHabits = data?.studyHabits;
   const todayLogs = data?.todayLogs;
   const weeklyDiaries = data?.weeklyDiaries;
+
+  // 加载中时显示骨架屏，避免闪现 0 值
+  if (data === undefined) {
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 items-stretch stagger-in">
+        {Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)}
+      </div>
+    );
+  }
 
   const pendingCount = todayTasks?.filter((t) => t.status === 'pending').length || 0;
   const totalCount = todayTasks?.length || 0;

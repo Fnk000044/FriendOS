@@ -12,7 +12,7 @@ import { useLanguage } from '../../i18n/useLanguage';
 import SentimentBadge, { CloudAnalysisBanner } from './SentimentBadge';
 import type { SentimentResult, CloudAnalysisResult } from '../../hooks/useSentiment';
 import { useCrisisStore } from '../../stores/crisisStore';
-import GuidedJournal, { JOURNAL_TEMPLATES, type JournalTemplate } from './GuidedJournal';
+import GuidedJournal, { JOURNAL_TEMPLATES, type JournalTemplate, GuidedJournalWizard } from './GuidedJournal';
 import EmotionPicker from './EmotionPicker';
 
 // 打字行为追踪器 - 参考 StudentLife (2014)
@@ -54,6 +54,7 @@ export default function DiaryEditor() {
   const [showBanner, setShowBanner] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('free');
   const [showTemplates, setShowTemplates] = useState(false);
+  const [wizardTemplate, setWizardTemplate] = useState<JournalTemplate | null>(null);
   const showCrisis = useCrisisStore((s) => s.show);
 
   // 打字行为追踪
@@ -133,19 +134,19 @@ export default function DiaryEditor() {
       return;
     }
 
-    // Apply template prompts
-    const templateContent = template.prompts.join('\n');
-    setContent(templateContent);
+    // 引导式模板：进入分步问答向导
+    setWizardTemplate(template);
+  };
 
-    // Set title based on template
-    const templateDate = format(new Date(), 'MM月dd日');
-    const templateNames: Record<string, string> = {
-      gratitude: `${templateDate} 感恩日记`,
-      achievement: `${templateDate} 成就日记`,
-      emotion_trigger: `${templateDate} 情绪分析`,
-      goodnight: `${templateDate} 晚安日记`,
-    };
-    setTitle(templateNames[template.id] || '');
+  const handleWizardComplete = (result: { title: string; content: string }) => {
+    setTitle(result.title);
+    setContent(result.content);
+    setWizardTemplate(null);
+  };
+
+  const handleWizardCancel = () => {
+    setWizardTemplate(null);
+    setSelectedTemplate('free');
   };
 
   // Analyze sentiment when content changes (仅分析，不写数据库)
@@ -391,6 +392,17 @@ export default function DiaryEditor() {
             onSelect={handleTemplateSelect}
             selectedId={selectedTemplate}
           />
+        )}
+
+        {/* 引导式日记向导 */}
+        {wizardTemplate && (
+          <div className="glass-card rounded-lg p-4 border" style={{ borderColor: 'var(--glass-border)' }}>
+            <GuidedJournalWizard
+              template={wizardTemplate}
+              onComplete={handleWizardComplete}
+              onCancel={handleWizardCancel}
+            />
+          </div>
         )}
 
         <textarea

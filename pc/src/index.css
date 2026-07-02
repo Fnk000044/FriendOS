@@ -444,6 +444,21 @@ body {
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
+/* ══ 流式输出闪烁光标 ══ */
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* ══ 省略号动画 ══ */
+@keyframes ellipsis {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+  100% { content: ''; }
+}
+
 .stagger-in > * {
   opacity: 0;
   animation: fadeSlideUp 0.4s ease-out forwards;

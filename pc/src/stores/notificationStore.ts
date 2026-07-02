@@ -131,6 +131,11 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   },
 
   reset: () => {
+    // 清掉 pending 的 debounced save，避免 reset 后旧 timer 把已删除的 reminders 重新写回
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+      saveTimer = null;
+    }
     set({ reminders: [], initialized: false });
     localStorage.removeItem(STORAGE_KEY);
   },

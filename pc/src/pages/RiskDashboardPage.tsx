@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid, Area, AreaChart } from 'recharts';
-import { Shield, TrendingUp, TrendingDown, Minus, AlertTriangle, Activity, Brain, MessageSquare, BookOpen, ClipboardList } from 'lucide-react';
+import { Shield, TrendingUp, TrendingDown, Minus, AlertTriangle, Activity, Brain, MessageSquare, BookOpen, ClipboardList, RefreshCw } from 'lucide-react';
 import { db } from '../db';
 import { getDaysAgo, getToday, formatLocalDate } from '../utils/date';
 import { useLanguage } from '../i18n/useLanguage';
+import AnimatedNumber from '../components/common/AnimatedNumber';
 import type { RiskLevel } from '../db/models';
 
 interface RiskBreakdown {
@@ -40,9 +41,11 @@ const RISK_COLORS: Record<RiskLevel, { bg: string; text: string; border: string 
 };
 
 export default function RiskDashboardPage() {
+  const { t } = useLanguage();
   const [selectedDays, setSelectedDays] = useState(7);
   const [riskResult, setRiskResult] = useState<RiskResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [trendData, setTrendData] = useState<{ date: string; score: number }[]>([]);
 
   const THIRTY_DAYS_AGO = getDaysAgo(30);
@@ -95,6 +98,7 @@ export default function RiskDashboardPage() {
       }
 
       setIsLoading(true);
+      setError(null);
 
       try {
         // 准备行为数据
@@ -107,13 +111,17 @@ export default function RiskDashboardPage() {
         };
 
         // 调用风险评分引擎
-        const result = await window.electronAPI.riskCalculate({
+        const result = await window.electronAPI?.riskCalculate?.({
           emotionRecords: emotionRecords.slice(0, 30),
           behaviorData,
           assessments,
           conversationSummaries: conversationSummaries?.slice(0, 10) || [],
           diaries: diaries.slice(0, 14),
         });
+
+        if (!result) {
+          throw new Error('riskCalculate unavailable');
+        }
 
         setRiskResult(result);
 
@@ -122,12 +130,14 @@ export default function RiskDashboardPage() {
         setTrendData(trend);
       } catch (err) {
         console.error('Risk calculation failed:', err);
+        setError(t('error.title'));
       } finally {
         setIsLoading(false);
       }
     };
 
     calculateRisk();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [emotionRecords, behaviorRecords, assessments, conversationSummaries, diaries, selectedDays]);
 
   // 计算连续无日记天数
@@ -212,6 +222,9 @@ export default function RiskDashboardPage() {
         score = Math.round((5 - dayDiary.mood) * 20);
       }
 
+      void dayBehavior;
+      void assessments;
+
       result.push({ date: shortDate, score: Math.min(100, Math.max(0, score)) });
     }
 
@@ -273,6 +286,44 @@ export default function RiskDashboardPage() {
     );
   }
 
+  // 风险计算失败时显示 inline error（带重试按钮），而非静默半空页面
+  if (error && !riskResult) {
+    return (
+      <div className="max-w-4xl mx-auto py-12">
+        <div className="glass-card rounded-2xl p-8 text-center" role="alert">
+          <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-3">
+            <AlertTriangle className="w-6 h-6 text-red-500" aria-hidden="true" />
+          </div>
+          <p className="text-sm font-medium text-text-primary mb-1">{t('error.title')}</p>
+          <p className="text-xs text-text-muted mb-4">{error}</p>
+          <button
+            type="button"
+            onClick={() => {
+              setError(null);
+              setIsLoading(true);
+              // 触发 effect 重新计算：通过 state 变更
+              setSelectedDays(d => (d === 7 ? 8 : 7));
+              setTimeout(() => setSelectedDays(7), 0);
+            }}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/10 cursor-pointer transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" aria-hidden="true" />
+            {t('error.retry')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // tooltip 内容样式：使用 CSS 变量以适配深色模式
+  const tooltipContentStyle = {
+    backgroundColor: 'var(--bg-card-solid, #fff)',
+    border: '1px solid var(--glass-border, #E2E8F0)',
+    borderRadius: '8px',
+    fontSize: '12px',
+    color: 'var(--text-primary, #0F172A)',
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6" role="main" aria-label="风险评估仪表盘">
       {/* 页面标题 */}
@@ -284,20 +335,25 @@ export default function RiskDashboardPage() {
           </h1>
           <p className="text-sm text-text-muted mt-1">综合多维度数据分析，无感识别心理健康风险</p>
         </div>
-        <div className="flex gap-2">
-          {[7, 14, 30].map(days => (
-            <button
-              key={days}
-              onClick={() => setSelectedDays(days)}
-              className={`px-4 py-2 rounded-[10px] text-sm font-medium transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                selectedDays === days
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'bg-surface-hover text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              {days}天
-            </button>
-          ))}
+        <div className="flex gap-2" role="group" aria-label="时间范围选择">
+          {[7, 14, 30].map(days => {
+            const active = selectedDays === days;
+            return (
+              <button
+                key={days}
+                type="button"
+                onClick={() => setSelectedDays(days)}
+                aria-pressed={active}
+                className={`px-4 py-2 rounded-[10px] text-sm font-medium transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                  active
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'bg-surface-hover text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                {days}天
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -308,9 +364,11 @@ export default function RiskDashboardPage() {
             <div>
               <p className="text-sm text-text-muted mb-1">综合风险指数</p>
               <div className="flex items-baseline gap-2">
-                <span className={`text-5xl font-bold ${RISK_COLORS[riskResult.riskLevel].text}`}>
-                  {riskResult.totalScore}
-                </span>
+                <AnimatedNumber
+                  value={riskResult.totalScore}
+                  duration={800}
+                  className={`text-5xl font-bold ${RISK_COLORS[riskResult.riskLevel].text}`}
+                />
                 <span className="text-lg text-text-muted">/100</span>
               </div>
               <p className={`text-sm font-medium mt-2 ${RISK_COLORS[riskResult.riskLevel].text}`}>
@@ -319,7 +377,7 @@ export default function RiskDashboardPage() {
             </div>
             <div className="text-right">
               <p className="text-sm text-text-muted mb-2">风险等级</p>
-              <div className="flex gap-1">
+              <div className="flex gap-1" role="img" aria-label={`风险等级：${riskResult.riskLevelInfo.label}`}>
                 {(['low', 'medium_low', 'medium', 'high', 'critical'] as RiskLevel[]).map(level => (
                   <div
                     key={level}
@@ -331,7 +389,7 @@ export default function RiskDashboardPage() {
               </div>
             </div>
           </div>
-          <p className="text-sm text-text-secondary mt-4 p-3 bg-white/50 rounded-lg">
+          <p className="text-sm text-text-secondary mt-4 p-3 bg-white/50 dark:bg-white/5 rounded-lg">
             {riskResult.summary}
           </p>
         </div>
@@ -341,7 +399,7 @@ export default function RiskDashboardPage() {
       {behaviorRecords && behaviorRecords.length >= 7 && (
         <div className="glass-card rounded-2xl p-6">
           <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-            <Activity className="w-5 h-5 text-primary" />
+            <Activity className="w-5 h-5 text-primary" aria-hidden="true" />
             与个人基线对比
           </h3>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -370,7 +428,6 @@ export default function RiskDashboardPage() {
               ];
 
               return items.map((item, i) => {
-                const diffPercent = parseFloat(item.baseline) > 0 ? ((item.diff / parseFloat(item.baseline)) * 100) : 0;
                 const isDown = item.diff < -0.1;
                 const isUp = item.diff > 0.1;
                 return (
@@ -379,11 +436,11 @@ export default function RiskDashboardPage() {
                     <p className="text-lg font-semibold text-text-primary">{item.recent}{item.unit}</p>
                     <div className="flex items-center gap-1 mt-1">
                       {isDown ? (
-                        <TrendingDown className="w-3 h-3 text-amber-500" />
+                        <TrendingDown className="w-3 h-3 text-amber-500" aria-hidden="true" />
                       ) : isUp ? (
-                        <TrendingUp className="w-3 h-3 text-green-500" />
+                        <TrendingUp className="w-3 h-3 text-green-500" aria-hidden="true" />
                       ) : (
-                        <Minus className="w-3 h-3 text-text-muted" />
+                        <Minus className="w-3 h-3 text-text-muted" aria-hidden="true" />
                       )}
                       <span className={`text-xs ${isDown ? 'text-amber-500' : isUp ? 'text-green-500' : 'text-text-muted'}`}>
                         基线 {item.baseline}{item.unit}
@@ -406,23 +463,18 @@ export default function RiskDashboardPage() {
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                  <PolarGrid stroke="#E2E8F0" />
+                  <PolarGrid stroke="var(--glass-border, #E2E8F0)" />
                   <PolarAngleAxis
                     dataKey="dimension"
-                    tick={{ fontSize: 12, fill: '#64748B' }}
+                    tick={{ fontSize: 12, fill: 'var(--text-muted, #64748B)' }}
                   />
                   <PolarRadiusAxis
                     angle={30}
                     domain={[0, 100]}
-                    tick={{ fontSize: 10, fill: '#94A3B8' }}
+                    tick={{ fontSize: 10, fill: 'var(--text-muted, #94A3B8)' }}
                   />
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#fff',
-                      border: '1px solid #E2E8F0',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                    }}
+                    contentStyle={tooltipContentStyle}
                     formatter={(value: number) => [`${value}`, '健康指数']}
                   />
                   <Radar
@@ -450,24 +502,19 @@ export default function RiskDashboardPage() {
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trendData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border, #E2E8F0)" />
                   <XAxis
                     dataKey="date"
-                    tick={{ fontSize: 11, fill: '#94A3B8' }}
+                    tick={{ fontSize: 11, fill: 'var(--text-muted, #94A3B8)' }}
                     tickLine={false}
                   />
                   <YAxis
                     domain={[0, 100]}
-                    tick={{ fontSize: 11, fill: '#94A3B8' }}
+                    tick={{ fontSize: 11, fill: 'var(--text-muted, #94A3B8)' }}
                     tickLine={false}
                   />
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#fff',
-                      border: '1px solid #E2E8F0',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                    }}
+                    contentStyle={tooltipContentStyle}
                     formatter={(value: number) => [`${value}`, '风险指数']}
                   />
                   <defs>
@@ -503,7 +550,7 @@ export default function RiskDashboardPage() {
               <div
                 key={key}
                 role="listitem"
-                className="p-4 rounded-xl bg-surface-hover transition-all duration-200 hover:bg-surface-card hover:shadow-sm cursor-default"
+                className="p-4 rounded-xl bg-surface-hover/50"
               >
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-primary" aria-hidden="true">{signalIcons[key]}</span>
@@ -550,7 +597,7 @@ export default function RiskDashboardPage() {
               <div
                 key={index}
                 role="listitem"
-                className="flex items-center gap-3 p-3 rounded-lg bg-surface-hover transition-all duration-200 hover:bg-surface-card"
+                className="flex items-center gap-3 p-3 rounded-lg bg-surface-hover/50"
               >
                 <div className={`w-2 h-2 rounded-full ${
                   factor.weight >= 30 ? 'bg-red-500' :

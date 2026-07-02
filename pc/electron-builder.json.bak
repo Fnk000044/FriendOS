@@ -30,7 +30,7 @@
     "icon": "build/custom-icon.ico",
     "target": [
       {
-        "target": "dir",
+        "target": "nsis",
         "arch": ["x64"]
       }
     ],

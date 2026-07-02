@@ -14,12 +14,11 @@ interface LoadingPageProps {
 export default function LoadingPage({ onComplete }: LoadingPageProps) {
   const [steps, setSteps] = useState<LoadingStep[]>([
     { id: 'onnx', label: '加载情感分析模型', status: 'pending' },
-    { id: 'local', label: '初始化本地AI模型', status: 'pending' },
     { id: 'ready', label: '准备就绪', status: 'pending' },
   ]);
 
   const updateStep = (id: string, status: LoadingStep['status']) => {
-    setSteps(prev => prev.map(step => 
+    setSteps(prev => prev.map(step =>
       step.id === id ? { ...step, status } : step
     ));
   };
@@ -27,21 +26,16 @@ export default function LoadingPage({ onComplete }: LoadingPageProps) {
   useEffect(() => {
     const preloadModels = async () => {
       try {
-        // 1. 预加载 ONNX 情感分析模型
+        // 1. 预加载 ONNX 情感分析模型（较轻，保留阻塞）
         updateStep('onnx', 'loading');
         if (window.electronAPI?.sentimentGetModelStatus) {
           await window.electronAPI.sentimentGetModelStatus();
         }
         updateStep('onnx', 'done');
 
-        // 2. 预加载本地 AI 模型 (Qwen)
-        updateStep('local', 'loading');
-        if (window.electronAPI?.localModelInit) {
-          await window.electronAPI.localModelInit('');
-        }
-        updateStep('local', 'done');
+        // 本地 LLM 不再阻塞启动，改为首次发消息时懒初始化（见 useAI.ts）
 
-        // 3. 完成
+        // 2. 完成
         updateStep('ready', 'loading');
         await new Promise(resolve => setTimeout(resolve, 500));
         updateStep('ready', 'done');

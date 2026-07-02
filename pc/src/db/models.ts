@@ -1,3 +1,5 @@
+import type { ChatMessage } from '../services/ai/types';
+
 export interface Task {
   id: string;
   title: string;
@@ -228,6 +230,14 @@ export interface ConversationSummary {
   keyTopics: string[];
   emotionalState: string;
   createdAt: string;
+}
+
+export interface Conversation {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Assessment {

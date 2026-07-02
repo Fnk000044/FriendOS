@@ -165,6 +165,15 @@ interface ElectronAPI {
   notificationTest: () => Promise<any>;
   onNotificationSent: (callback: (data: any) => void) => void;
   removeNotificationSent: () => void;
+
+  // Risk calculation engine (best-effort; may be unavailable in some builds)
+  riskCalculate?: (params: {
+    emotionRecords: any[];
+    behaviorData: Record<string, unknown>;
+    assessments: any[];
+    conversationSummaries: any[];
+    diaries: any[];
+  }) => Promise<any>;
 }
 
 interface Window {

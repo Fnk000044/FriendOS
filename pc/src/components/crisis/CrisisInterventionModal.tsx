@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Heart, X, Shield, ExternalLink } from 'lucide-react';
 import HotlineCard from './HotlineCard';
 import { useCrisisStore } from '../../stores/crisisStore';
@@ -13,11 +13,121 @@ const HOTLINE_KEYS = [
   { nameKey: 'crisis.hotline_hope_name' as const, number: '400-179-1885', descKey: 'crisis.hotline_hope_desc' as const },
 ];
 
+/**
+ * 危机警报音频（Web Audio API，无需外部音频文件）
+ * - high：播放一次短促双音
+ * - critical：循环播放直到用户交互
+ */
+/**
+ * Checks if the user prefers reduced motion.
+ */
+function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function useCrisisAlertAudio(riskLevel: string | null, visible: boolean) {
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const loopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rafRef = useRef<number | null>(null);
+
+  // 单次警报音
+  const playBeep = useCallback(() => {
+    try {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      const ctx = audioCtxRef.current;
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const now = ctx.currentTime;
+      // 两个短促音
+      [0, 0.18].forEach((offset) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(880, now + offset);
+        osc.type = 'square';
+        gain.gain.setValueAtTime(0.0001, now + offset);
+        gain.gain.exponentialRampToValueAtTime(0.25, now + offset + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.15);
+        osc.start(now + offset);
+        osc.stop(now + offset + 0.16);
+      });
+    } catch (err) {
+      console.error('[CrisisAudio] playBeep failed:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    // 如果用户开启了 reduced-motion，critical 级别仅播放一次，high 级别跳过
+    if (prefersReducedMotion()) {
+      if (visible && riskLevel === 'critical') {
+        playBeep();
+      }
+      return;
+    }
+
+    if (!visible || riskLevel !== 'critical') {
+      // 清理循环
+      if (loopTimerRef.current) {
+        clearTimeout(loopTimerRef.current);
+        loopTimerRef.current = null;
+      }
+      return;
+    }
+
+    // critical：每 2 秒循环播放
+    const loop = () => {
+      playBeep();
+      loopTimerRef.current = setTimeout(loop, 2000);
+    };
+    // 首次立即播放
+    rafRef.current = requestAnimationFrame(() => loop());
+
+    return () => {
+      if (loopTimerRef.current) {
+        clearTimeout(loopTimerRef.current);
+        loopTimerRef.current = null;
+      }
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, [visible, riskLevel, playBeep]);
+
+  // high 级别仅播放一次
+  useEffect(() => {
+    if (visible && riskLevel === 'high' && !prefersReducedMotion()) {
+      playBeep();
+    }
+  }, [visible, riskLevel, playBeep]);
+
+  // 关闭 AudioContext
+  useEffect(() => {
+    return () => {
+      if (audioCtxRef.current) {
+        try { audioCtxRef.current.close(); } catch { /* ignore */ }
+        audioCtxRef.current = null;
+      }
+    };
+  }, []);
+}
+
 export default function CrisisInterventionModal() {
   const { visible, riskLevel, triggerSource, triggerContent, hide } = useCrisisStore();
   const { t } = useLanguage();
   const [countdown, setCountdown] = useState(5);
   const [canClose, setCanClose] = useState(false);
+
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const dismissBtnRef = useRef<HTMLButtonElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+
+  useCrisisAlertAudio(riskLevel, visible);
 
   useEffect(() => {
     if (!visible) {
@@ -25,6 +135,11 @@ export default function CrisisInterventionModal() {
       setCanClose(false);
       return;
     }
+
+    // 保存触发元素焦点，关闭后恢复
+    previouslyFocusedRef.current = document.activeElement as HTMLElement;
+    // modal 打开后自动聚焦到 dismiss 按钮
+    setTimeout(() => dismissBtnRef.current?.focus(), 0);
 
     const timer = setInterval(() => {
       setCountdown((prev) => {
@@ -60,7 +175,53 @@ export default function CrisisInterventionModal() {
     }
 
     hide();
+    // 恢复触发元素焦点
+    setTimeout(() => previouslyFocusedRef.current?.focus(), 0);
   }, [canClose, hide, riskLevel, triggerContent, triggerSource]);
+
+  // 焦点陷阱 + Escape 关闭
+  useEffect(() => {
+    if (!visible) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape 关闭（仅当可关闭时）
+      if (e.key === 'Escape' && canClose) {
+        e.preventDefault();
+        handleDismiss();
+        return;
+      }
+
+      // Tab 循环：在 dialog 内聚焦元素间循环
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [visible, canClose, handleDismiss]);
 
   if (!visible) return null;
 
@@ -77,7 +238,9 @@ export default function CrisisInterventionModal() {
 
       {/* Modal with pulse border */}
       <div
-        className="relative w-full max-w-lg mx-4 glass-card rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        ref={dialogRef}
+        tabIndex={-1}
+        className="relative w-full max-w-lg mx-4 glass-card rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 outline-none"
         style={{
           boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.7)',
           animation: 'pulseBorder 1.5s ease-in-out infinite',
@@ -87,7 +250,7 @@ export default function CrisisInterventionModal() {
         <div className="bg-gradient-to-r from-blue-500 to-purple-500 px-6 py-5 text-white">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.2)' }}>
-              <Heart className="w-6 h-6" />
+              <Heart className="w-6 h-6" aria-hidden="true" />
             </div>
             <div>
               <h2 className="text-lg font-bold">{t('crisis.title')}</h2>
@@ -101,7 +264,7 @@ export default function CrisisInterventionModal() {
           {/* Message */}
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
             <div className="flex items-start gap-2">
-              <Shield className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+              <Shield className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" aria-hidden="true" />
               <div id="crisis-description" className="text-sm text-text-secondary leading-relaxed">
                 <p className="mb-2">
                   {t('crisis.description_1')}
@@ -124,7 +287,7 @@ export default function CrisisInterventionModal() {
           {/* Online Resources */}
           <div className="text-xs text-text-muted space-y-1">
             <p className="flex items-center gap-1">
-              <ExternalLink className="w-3 h-3" />
+              <ExternalLink className="w-3 h-3" aria-hidden="true" />
               {t('crisis.online_counseling')}
               <a
                 href="http://www.psych.ac.cn"
@@ -132,7 +295,7 @@ export default function CrisisInterventionModal() {
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:underline"
               >
-                中科院心理所
+                {t('crisis.online_link_cas_label')}
               </a>
               {' | '}
               <a
@@ -141,7 +304,7 @@ export default function CrisisInterventionModal() {
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:underline"
               >
-                北京心理危机干预中心
+                {t('crisis.online_link_bj_label')}
               </a>
             </p>
           </div>
@@ -150,12 +313,13 @@ export default function CrisisInterventionModal() {
         {/* Footer */}
         <div className="px-6 py-4 border-t" style={{ background: 'var(--bg-hover)', borderColor: 'var(--glass-border)' }}>
           <button
+            ref={dismissBtnRef}
             onClick={handleDismiss}
             disabled={!canClose}
             className={`w-full py-3 px-4 rounded-lg text-sm font-medium transition-all ${
               canClose
                 ? 'bg-slate-800 text-white hover:bg-slate-700 cursor-pointer'
-                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-slate-200 text-slate-500 font-semibold cursor-not-allowed'
             }`}
           >
             {canClose ? t('crisis.close_button') : t('crisis.countdown', { seconds: countdown })}
@@ -165,11 +329,13 @@ export default function CrisisInterventionModal() {
         {/* Close button (only when countdown is done) */}
         {canClose && (
           <button
+            ref={closeBtnRef}
             onClick={handleDismiss}
+            aria-label={t('crisis.close_button')}
             className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors cursor-pointer"
             style={{ background: 'rgba(255,255,255,0.2)' }}
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         )}
       </div>

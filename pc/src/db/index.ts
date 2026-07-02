@@ -3,7 +3,7 @@ import type {
   Task, DiaryEntry, Habit, HabitLog, Memory, MemoryCandidate,
   DailyRecord, QuickCapture, Category, SyncLog, Quote,
   EmotionRecord, BehaviorRecord, HealthProfile, CrisisLog,
-  ConversationSummary, Assessment, TherapyRecord, FeedbackLog
+  ConversationSummary, Conversation, Assessment, TherapyRecord, FeedbackLog
 } from './models';
 
 export class FriendOSDatabase extends Dexie {
@@ -23,6 +23,7 @@ export class FriendOSDatabase extends Dexie {
   healthProfiles!: EntityTable<HealthProfile, 'id'>;
   crisisLogs!: EntityTable<CrisisLog, 'id'>;
   conversationSummaries!: EntityTable<ConversationSummary, 'id'>;
+  conversations!: EntityTable<Conversation, 'id'>;
   assessments!: EntityTable<Assessment, 'id'>;
   therapyRecords!: EntityTable<TherapyRecord, 'id'>;
   feedbackLogs!: EntityTable<FeedbackLog, 'id'>;
@@ -76,6 +77,11 @@ export class FriendOSDatabase extends Dexie {
     // v7: 添加用户反馈表
     this.version(7).stores({
       feedbackLogs: '&id, type, feedback, createdAt',
+    });
+
+    // v8: 添加完整对话历史表
+    this.version(8).stores({
+      conversations: '&id, createdAt, updatedAt',
     });
   }
 }

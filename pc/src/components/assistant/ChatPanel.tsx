@@ -1,13 +1,13 @@
 import { useRef, useEffect, useCallback } from 'react';
 import { useState } from 'react';
-import { Send, Loader2, Trash2, Settings } from 'lucide-react';
+import { Send, Loader2, Trash2, Plus, History } from 'lucide-react';
 import { useAIStore } from '../../stores/aiStore';
 import { useCrisisStore } from '../../stores/crisisStore';
 import ChatMessageComponent from './ChatMessage';
 import EmptyState from './EmptyState';
-import AISettingsModal from '../ai/AISettingsModal';
 import { useLanguage } from '../../i18n/useLanguage';
 import { useAI } from '../../hooks/useAI';
+import { db } from '../../db';
 
 // 排除模式（不触发危机的常见表达）
 const CRISIS_EXCLUSIONS = [
@@ -24,9 +24,13 @@ export default function ChatPanel({ variant = 'fullpage' }: ChatPanelProps) {
   const { t } = useLanguage();
   const { sendMessage, messages, loading } = useAI();
   const clearMessages = useAIStore((s) => s.clearMessages);
-  const [showAISettings, setShowAISettings] = useState(false);
+  const startNewConversation = useAIStore((s) => s.startNewConversation);
+  const loadConversation = useAIStore((s) => s.loadConversation);
+  const activeConversationId = useAIStore((s) => s.activeConversationId);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyList, setHistoryList] = useState<Array<{ id: string; title: string; updatedAt: string }>>([]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -96,45 +100,93 @@ export default function ChatPanel({ variant = 'fullpage' }: ChatPanelProps) {
 
   const hasMessages = messages.length > 0;
 
+  // 加载历史会话列表
+  const refreshHistory = useCallback(async () => {
+    try {
+      const list = await db.conversations
+        .orderBy('updatedAt')
+        .reverse()
+        .limit(20)
+        .toArray();
+      setHistoryList(list.map(c => ({ id: c.id, title: c.title, updatedAt: c.updatedAt })));
+    } catch {
+      // DB 尚未升级时表不存在，忽略
+    }
+  }, []);
+
+  const handleToggleHistory = useCallback(() => {
+    if (!showHistory) refreshHistory();
+    setShowHistory(v => !v);
+  }, [showHistory, refreshHistory]);
+
+  const handleLoadHistory = useCallback(async (id: string) => {
+    await loadConversation(id);
+    setShowHistory(false);
+  }, [loadConversation]);
+
+  const handleNewConversation = useCallback(() => {
+    startNewConversation();
+    setShowHistory(false);
+  }, [startNewConversation]);
+
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden relative">
       {/* Header bar */}
       <div className="flex items-center justify-between px-1 py-2 border-b shrink-0" style={{ borderColor: 'var(--glass-border)' }}>
-        {variant === 'floating' ? (
+        <span className="text-sm font-medium text-text-primary">
+          {hasMessages ? t('assistant.title') : ''}
+        </span>
+        <div className="flex items-center gap-1">
           <button
-            onClick={() => setShowAISettings(true)}
-            className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
-            title="AI 设置"
+            onClick={handleNewConversation}
+            aria-label={t('assistant.clear')}
+            title={t('assistant.clear')}
+            className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
           >
-            <Settings className="w-4 h-4" />
+            <Plus className="w-4 h-4" />
           </button>
-        ) : (
-          <>
-            <span className="text-sm font-medium text-text-primary">
-              {hasMessages ? t('assistant.title') : ''}
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setShowAISettings(true)}
-                className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
-                title="AI 设置"
-              >
-                <Settings className="w-4 h-4" />
-              </button>
-              {hasMessages && (
-                <button
-                  onClick={clearMessages}
-                  className="flex items-center gap-1 text-xs text-text-muted hover:text-red-500 transition-colors"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  {t('assistant.clear')}
-                </button>
-              )}
-            </div>
-          </>
-        )}
+          <button
+            onClick={handleToggleHistory}
+            aria-label="历史对话"
+            title="历史对话"
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              showHistory ? 'text-primary bg-primary/10' : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
+            }`}
+          >
+            <History className="w-4 h-4" />
+          </button>
+          {hasMessages && (
+            <button
+              onClick={clearMessages}
+              className="flex items-center gap-1 text-xs text-text-muted hover:text-red-500 transition-colors cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              {t('assistant.clear')}
+            </button>
+          )}
+        </div>
       </div>
-      <AISettingsModal open={showAISettings} onClose={() => setShowAISettings(false)} />
+
+      {/* 历史会话抽屉 */}
+      {showHistory && (
+        <div className="absolute top-11 right-0 z-30 w-72 max-h-80 overflow-y-auto glass-card rounded-lg shadow-xl border" style={{ borderColor: 'var(--glass-border)' }}>
+          {historyList.length === 0 ? (
+            <p className="text-xs text-text-muted text-center py-6">暂无历史对话</p>
+          ) : historyList.map(c => (
+            <button
+              key={c.id}
+              onClick={() => handleLoadHistory(c.id)}
+              className={`w-full text-left px-3 py-2.5 border-b transition-colors cursor-pointer hover:bg-surface-hover ${
+                c.id === activeConversationId ? 'bg-primary/5' : ''
+              }`}
+              style={{ borderColor: 'var(--glass-border)' }}
+            >
+              <p className="text-sm text-text-primary truncate">{c.title || '(无标题)'}</p>
+              <p className="text-[10px] text-text-muted mt-0.5">{c.updatedAt?.slice(0, 16).replace('T', ' ')}</p>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Messages area - scrollable */}
       <div className="flex-1 overflow-y-auto min-h-0 py-4 px-1 space-y-4">

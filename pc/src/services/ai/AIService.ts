@@ -3,6 +3,8 @@ import { LocalModelProvider } from './providers/LocalModelProvider';
 import { contextService } from './ContextService';
 import { buildSystemPrompt } from './prompts';
 import { getRecentSummaries, formatSummariesForContext } from './ConversationMemory';
+// 注：getRecentSummaries/formatSummariesForContext 现已由 ContextService 统一收集，此处保留导入供未来扩展
+void getRecentSummaries; void formatSummariesForContext;
 
 /**
  * 用户输入消毒
@@ -116,10 +118,8 @@ ${context.recentMemories}
 ${context.semesterInfo || '无法识别学期阶段'}
 ${context.implicitHints ? `\n## 含蓄表达提示\n${context.implicitHints}` : ''}`;
 
-    // 获取对话历史摘要，传递给系统提示
-    // 修复：AI无上下文记忆问题
-    const summaries = await getRecentSummaries(5);
-    const conversationHistory = formatSummariesForContext(summaries);
+    // 复用 ContextService 已收集的对话摘要，避免重复查询
+    const conversationHistory = context.conversationHistory || '- 暂无对话历史';
 
     // Build system prompt with tone, context and conversation history
     const systemPrompt = buildSystemPrompt(this.config.tone, contextText, conversationHistory);
@@ -173,14 +173,8 @@ ${context.recentMemories}
 ${context.semesterInfo || '无法识别学期阶段'}
 ${context.implicitHints ? `\n## 含蓄表达提示\n${context.implicitHints}` : ''}`;
 
-    // 获取对话历史摘要，传递给系统提示
-    let conversationHistory = '';
-    try {
-      const summaries = await getRecentSummaries(5);
-      conversationHistory = formatSummariesForContext(summaries);
-    } catch (err) {
-      console.error('[AIService] getRecentSummaries failed:', err);
-    }
+    // 复用 ContextService 已收集的对话摘要，避免重复查询
+    const conversationHistory = context.conversationHistory || '';
 
     const systemPrompt = buildSystemPrompt(this.config.tone, contextText, conversationHistory);
     const messages = [

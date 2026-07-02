@@ -6,6 +6,7 @@ import EmptyState from '../common/EmptyState';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { useState, useMemo } from 'react';
 import MemoryEditor from './MemoryEditor';
+import { Plus } from 'lucide-react';
 import { useLanguage } from '../../i18n/useLanguage';
 
 interface MemoryGridProps {
@@ -17,6 +18,7 @@ export default function MemoryGrid({ categoryFilter, searchQuery }: MemoryGridPr
   const { t } = useLanguage();
   const { deleteMemory, togglePin } = useMemories();
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const memories = useLiveQuery(
     () => db.memories
@@ -39,7 +41,7 @@ export default function MemoryGrid({ categoryFilter, searchQuery }: MemoryGridPr
       result = result.filter(
         (m) => m.title.toLowerCase().includes(q) ||
           m.content.toLowerCase().includes(q) ||
-          m.tags.some((t) => t.includes(q)),
+          m.tags.some((tag) => tag.includes(q)),
       );
     }
 
@@ -54,14 +56,36 @@ export default function MemoryGrid({ categoryFilter, searchQuery }: MemoryGridPr
   if (!filtered) return <LoadingSpinner text={t('memory.loading')} />;
 
   if (filtered.length === 0) {
-    return <EmptyState title={t('memory.no_memories')} description={t('memory.no_memories_desc')} />;
+    return (
+      <>
+        <EmptyState
+          title={t('memory.no_memories')}
+          description={t('memory.no_memories_desc')}
+          action={
+            <button
+              type="button"
+              onClick={() => setCreating(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/10 cursor-pointer transition-colors"
+            >
+              <Plus className="w-4 h-4" aria-hidden="true" />
+              {t('memory.create')}
+            </button>
+          }
+        />
+        <MemoryEditor
+          open={creating}
+          onClose={() => setCreating(false)}
+          memory={null}
+        />
+      </>
+    );
   }
 
   const editingMemory = editingId ? memories?.find((m) => m.id === editingId) || null : null;
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-animate">
         {filtered.map((memory) => (
           <MemoryCard
             key={memory.id}

@@ -46,7 +46,7 @@ export default function OnboardingTour({ onComplete }: OnboardingTourProps) {
 
   return (
     <div className="fixed inset-0 z-[90] bg-black/30 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="glass-card glass-glow rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 border rounded-2xl w-full max-w-md shadow-2xl overflow-hidden" style={{ borderColor: 'var(--glass-border)' }}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-4">
           <div className="flex gap-1.5">

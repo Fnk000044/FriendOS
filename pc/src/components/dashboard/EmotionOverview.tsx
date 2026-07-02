@@ -9,6 +9,8 @@ import { Activity, TrendingUp, TrendingDown, Minus, Heart } from 'lucide-react';
 import { db } from '../../db';
 import { getDaysAgo } from '../../utils/date';
 import { useLanguage } from '../../i18n/useLanguage';
+import AnimatedNumber from '../common/AnimatedNumber';
+import { CardSkeleton } from '../common/Skeleton';
 
 const RISK_COLORS: Record<string, string> = {
   low: 'text-green-600 bg-green-50',
@@ -42,6 +44,7 @@ export default function EmotionOverview() {
   }, []);
 
   const profile = healthProfile;
+  const isLoading = healthProfile === undefined || recentEmotions === undefined;
   const index = profile?.emotionalHealthIndex ?? null;
   const riskLevel = profile?.riskLevel ?? 'low';
   const insight = profile?.insights?.[0] ?? null;
@@ -74,11 +77,13 @@ export default function EmotionOverview() {
         )}
       </div>
 
-      {index !== null ? (
+      {isLoading ? (
+        <CardSkeleton lines={4} />
+      ) : index !== null ? (
         <>
           <div className="flex items-center gap-4 mb-3">
             <div className="relative w-16 h-16 shrink-0">
-              <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
+              <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36" role="img" aria-label={`${t('therapy.tr_step2_intensity')} ${index}`}>
                 <defs>
                   <linearGradient id="healthGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor={index >= 70 ? '#22c55e' : index >= 40 ? '#f59e0b' : '#ef4444'} />
@@ -97,7 +102,11 @@ export default function EmotionOverview() {
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>{index}</span>
+                <AnimatedNumber
+                  value={index}
+                  duration={700}
+                  className="text-lg font-bold tabular-nums"
+                />
               </div>
             </div>
             <div className="flex-1 min-w-0">

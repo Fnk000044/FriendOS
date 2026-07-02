@@ -12,6 +12,7 @@ interface TaskSectionProps {
   children: ReactNode;
   emptyText?: string;
   isRollover?: boolean;
+  stagger?: boolean; // 是否启用列表项交错入场动画
 }
 
 export default function TaskSection({
@@ -24,6 +25,7 @@ export default function TaskSection({
   children,
   emptyText,
   isRollover,
+  stagger = false,
 }: TaskSectionProps) {
   const { t } = useLanguage();
 
@@ -37,15 +39,19 @@ export default function TaskSection({
         </div>
         {showAddButton && onAdd && (
           <button
+            type="button"
             onClick={onAdd}
-            className="flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary text-xs font-medium rounded-btn hover:bg-primary/20 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary text-xs font-medium rounded-btn hover:bg-primary/20 transition-colors cursor-pointer"
           >
-            <Plus className="w-3 h-3" />
+            <Plus className="w-3 h-3" aria-hidden="true" />
             {t('task.new_task')}
           </button>
         )}
       </div>
-      <div className="divide-y" style={{ '--tw-divide-opacity': '0.3', '--tw-divide-color': 'var(--glass-border)' } as React.CSSProperties}>
+      <div
+        className={`divide-y ${stagger && count > 0 ? 'stagger-animate' : ''}`}
+        style={{ '--tw-divide-opacity': '0.3', '--tw-divide-color': 'var(--glass-border)' } as React.CSSProperties}
+      >
         {count === 0 ? (
           <p className="px-4 py-6 text-sm text-text-muted text-center">
             {emptyText || t('task.no_tasks')}
@@ -55,7 +61,7 @@ export default function TaskSection({
         )}
       </div>
       {isRollover && count > 0 && (
-        <div className="px-4 py-2 bg-amber-50 text-amber-600 text-xs text-center">
+        <div className="px-4 py-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs text-center">
           {t('task.rolled_to_tomorrow')}
         </div>
       )}

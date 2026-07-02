@@ -115,6 +115,68 @@ export default function SettingsPage() {
     window.electronAPI?.openDataFolder();
   }, []);
 
+  // 自动备份提醒：记录上次备份时间，应用启动时按间隔提醒
+  const [autoBackupEnabled, setAutoBackupEnabled] = useState<boolean>(() => {
+    const v = localStorage.getItem('friendos_auto_backup_enabled');
+    return v === '1';
+  });
+  const [backupInterval, setBackupInterval] = useState<'daily' | 'weekly' | 'monthly'>(() => {
+    const v = localStorage.getItem('friendos_backup_interval');
+    return (v as 'daily' | 'weekly' | 'monthly') || 'weekly';
+  });
+  const [lastBackupDate, setLastBackupDate] = useState<string | null>(() =>
+    localStorage.getItem('friendos_last_backup_date')
+  );
+
+  const BACKUP_INTERVAL_MS: Record<string, number> = {
+    daily: 24 * 60 * 60 * 1000,
+    weekly: 7 * 24 * 60 * 60 * 1000,
+    monthly: 30 * 24 * 60 * 60 * 1000,
+  };
+
+  const recordBackup = useCallback(() => {
+    const today = getToday();
+    setLastBackupDate(today);
+    localStorage.setItem('friendos_last_backup_date', today);
+  }, []);
+
+  const handleBackupNow = useCallback(async () => {
+    await handleExport();
+    recordBackup();
+  }, [handleExport, recordBackup]);
+
+  // 应用启动时检查是否需要提醒备份
+  useEffect(() => {
+    if (!autoBackupEnabled) return;
+    const intervalMs = BACKUP_INTERVAL_MS[backupInterval];
+    const last = lastBackupDate ? new Date(lastBackupDate + 'T00:00:00').getTime() : 0;
+    const elapsed = Date.now() - last;
+    if (elapsed >= intervalMs) {
+      const days = Math.floor(elapsed / (24 * 60 * 60 * 1000));
+      toast(
+        lang === 'zh-CN'
+          ? `距离上次备份已超过 ${days} 天，建议立即备份`
+          : `It has been over ${days} days since your last backup. Please back up now.`,
+        { duration: 6000 }
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const toggleAutoBackup = useCallback(() => {
+    setAutoBackupEnabled((prev) => {
+      const next = !prev;
+      localStorage.setItem('friendos_auto_backup_enabled', next ? '1' : '0');
+      return next;
+    });
+  }, []);
+
+  const handleIntervalChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value as 'daily' | 'weekly' | 'monthly';
+    setBackupInterval(val);
+    localStorage.setItem('friendos_backup_interval', val);
+  }, []);
+
   const handleReset = useCallback(async () => {
     if (!window.confirm(t('settings.reset_confirm'))) return;
     // 设置重置标记（不以 friendos_ 开头，不会被下面的过滤器清除）
@@ -217,26 +279,30 @@ export default function SettingsPage() {
         </h3>
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={() => setLang('zh-CN')}
-            className={`px-4 py-2 text-sm rounded-btn border transition-all ${
+            aria-pressed={lang === 'zh-CN'}
+            className={`px-4 py-2 text-sm rounded-btn border transition-all cursor-pointer ${
               lang === 'zh-CN'
                 ? 'border-primary bg-primary/10 text-primary font-medium'
                 : 'text-text-muted hover:border-slate-300'
             }`}
             style={lang === 'zh-CN' ? undefined : { borderColor: 'var(--glass-border)' }}
           >
-            🇨🇳 中文
+            中文
           </button>
           <button
+            type="button"
             onClick={() => setLang('en')}
-            className={`px-4 py-2 text-sm rounded-btn border transition-all ${
+            aria-pressed={lang === 'en'}
+            className={`px-4 py-2 text-sm rounded-btn border transition-all cursor-pointer ${
               lang === 'en'
                 ? 'border-primary bg-primary/10 text-primary font-medium'
                 : 'text-text-muted hover:border-slate-300'
             }`}
             style={lang === 'en' ? undefined : { borderColor: 'var(--glass-border)' }}
           >
-            🇺🇸 English
+            English
           </button>
         </div>
       </Card>
@@ -250,8 +316,10 @@ export default function SettingsPage() {
           {(['system', 'light', 'dark'] as ThemeMode[]).map((mode) => (
             <button
               key={mode}
+              type="button"
               onClick={() => setThemeMode(mode)}
-              className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-btn border transition-all ${
+              aria-pressed={themeMode === mode}
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-btn border transition-all cursor-pointer ${
                 themeMode === mode
                   ? 'border-primary bg-primary/10 text-primary font-medium'
                   : 'text-text-muted hover:border-slate-300'
@@ -344,6 +412,56 @@ export default function SettingsPage() {
           <Sparkles className="w-4 h-4" />
           {t('settings.demo_data_btn')}
         </Button>
+      </Card>
+
+      <Card>
+        <h3 className="text-sm font-semibold text-text-primary mb-1 flex items-center gap-2">
+          <Download className="w-4 h-4" />
+          自动备份提醒
+        </h3>
+        <p className="text-xs text-text-muted mb-3">
+          定期提醒备份数据，防止意外丢失
+        </p>
+        <div className="flex flex-col space-y-3">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={autoBackupEnabled}
+              onChange={toggleAutoBackup}
+              className="w-4 h-4 rounded accent-teal-500"
+            />
+            <span className="text-xs font-medium text-text-primary">
+              启用备份提醒
+            </span>
+          </label>
+          <div className="flex items-center gap-3">
+            <label htmlFor="backup-interval" className="text-xs text-text-secondary cursor-pointer">
+              {lang === 'zh-CN' ? '提醒间隔' : 'Interval'}
+            </label>
+            <select
+              id="backup-interval"
+              value={backupInterval}
+              onChange={handleIntervalChange}
+              disabled={!autoBackupEnabled}
+              aria-label={lang === 'zh-CN' ? '备份提醒间隔' : 'Backup reminder interval'}
+              className="text-xs px-2 py-1 rounded-btn border bg-transparent disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              style={{ borderColor: 'var(--glass-border)', color: 'var(--text-primary)' }}
+            >
+              <option value="daily">{lang === 'zh-CN' ? '每天' : 'Daily'}</option>
+              <option value="weekly">{lang === 'zh-CN' ? '每周' : 'Weekly'}</option>
+              <option value="monthly">{lang === 'zh-CN' ? '每月' : 'Monthly'}</option>
+            </select>
+          </div>
+          <div className="flex items-center justify-between text-xs text-text-muted">
+            <span>
+              {lang === 'zh-CN' ? '上次备份：' : 'Last backup: '}{lastBackupDate || (lang === 'zh-CN' ? '从未' : 'never')}
+            </span>
+            <Button variant="secondary" size="sm" onClick={handleBackupNow} disabled={exporting}>
+              <Download className="w-3.5 h-3.5" />
+              {exporting ? (lang === 'zh-CN' ? '备份中...' : 'Backing up...') : (lang === 'zh-CN' ? '立即备份' : 'Back up now')}
+            </Button>
+          </div>
+        </div>
       </Card>
 
       <Card>

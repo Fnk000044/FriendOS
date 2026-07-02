@@ -510,7 +510,7 @@ export async function seedDemoData() {
   }
 }
 
-// 暴露到全局，方便在控制台调用
-if (typeof window !== 'undefined') {
+// 暴露到全局，仅开发模式可用
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as any).seedDemoData = seedDemoData;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import AppLayout from './components/layout/AppLayout';
@@ -7,6 +7,7 @@ import CrisisInterventionModal from './components/crisis/CrisisInterventionModal
 import ProactiveGreeting from './components/ai/ProactiveGreeting';
 import WelcomePage from './pages/WelcomePage';
 import LoadingPage from './components/common/LoadingPage';
+import LoadingSpinner from './components/common/LoadingSpinner';
 import { useUIStore } from './stores/uiStore';
 import { useShortcutStore } from './stores/useShortcutStore';
 import { parseShortcut } from './utils/shortcutConflict';
@@ -18,20 +19,22 @@ import TitleBar from './components/layout/TitleBar';
 import LockScreen from './components/common/LockScreen';
 import OnboardingTour from './components/common/OnboardingTour';
 import { useAppLockStore } from './stores/appLockStore';
+import { useAIStore } from './stores/aiStore';
+// 首屏 Dashboard 保持 eager 加载，其余路由懒加载以减小首屏体积
 import DashboardPage from './pages/DashboardPage';
-import TasksPage from './pages/TasksPage';
-import DiaryPage from './pages/DiaryPage';
-import DiaryEditor from './components/diary/DiaryEditor';
-import HabitsPage from './pages/HabitsPage';
-import MemoriesPage from './pages/MemoriesPage';
-import EmotionPage from './pages/EmotionPage';
-import TherapyPage from './pages/TherapyPage';
-import ReportsPage from './pages/ReportsPage';
-import SettingsPage from './pages/SettingsPage';
-import SyncPage from './pages/SyncPage';
-import AssistantPage from './pages/AssistantPage';
-import AssessmentPage from './pages/AssessmentPage';
-import RiskDashboardPage from './pages/RiskDashboardPage';
+const TasksPage = lazy(() => import('./pages/TasksPage'));
+const DiaryPage = lazy(() => import('./pages/DiaryPage'));
+const DiaryEditor = lazy(() => import('./components/diary/DiaryEditor'));
+const HabitsPage = lazy(() => import('./pages/HabitsPage'));
+const MemoriesPage = lazy(() => import('./pages/MemoriesPage'));
+const EmotionPage = lazy(() => import('./pages/EmotionPage'));
+const TherapyPage = lazy(() => import('./pages/TherapyPage'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const SyncPage = lazy(() => import('./pages/SyncPage'));
+const AssistantPage = lazy(() => import('./pages/AssistantPage'));
+const AssessmentPage = lazy(() => import('./pages/AssessmentPage'));
+const RiskDashboardPage = lazy(() => import('./pages/RiskDashboardPage'));
 
 function PageErrorBoundary({ children }: { children: React.ReactNode }) {
   return <ErrorBoundary>{children}</ErrorBoundary>;
@@ -96,6 +99,11 @@ export default function App() {
     initAppLock();
   }, [initAppLock]);
 
+  // 启动时自动进入新对话（而非恢复上次消息）
+  useEffect(() => {
+    useAIStore.getState().startNewConversation();
+  }, []);
+
   // Sync showWelcome with initialized state (handles reset)
   useEffect(() => {
     if (!initialized) {
@@ -155,20 +163,20 @@ export default function App() {
         <Routes>
           <Route element={<AppLayout />}>
             <Route index element={<PageErrorBoundary><DashboardPage /></PageErrorBoundary>} />
-            <Route path="tasks" element={<PageErrorBoundary><TasksPage /></PageErrorBoundary>} />
-            <Route path="diary" element={<PageErrorBoundary><DiaryPage /></PageErrorBoundary>} />
-            <Route path="diary/new" element={<PageErrorBoundary><DiaryEditor /></PageErrorBoundary>} />
-            <Route path="diary/:id" element={<PageErrorBoundary><DiaryEditor /></PageErrorBoundary>} />
-            <Route path="habits" element={<PageErrorBoundary><HabitsPage /></PageErrorBoundary>} />
-            <Route path="memories" element={<PageErrorBoundary><MemoriesPage /></PageErrorBoundary>} />
-            <Route path="emotion" element={<PageErrorBoundary><EmotionPage /></PageErrorBoundary>} />
-            <Route path="therapy" element={<PageErrorBoundary><TherapyPage /></PageErrorBoundary>} />
-            <Route path="reports" element={<PageErrorBoundary><ReportsPage /></PageErrorBoundary>} />
-            <Route path="settings" element={<PageErrorBoundary><SettingsPage /></PageErrorBoundary>} />
-            <Route path="sync" element={<PageErrorBoundary><SyncPage /></PageErrorBoundary>} />
-            <Route path="assistant" element={<PageErrorBoundary><AssistantPage /></PageErrorBoundary>} />
-            <Route path="assessment" element={<PageErrorBoundary><AssessmentPage /></PageErrorBoundary>} />
-            <Route path="risk" element={<PageErrorBoundary><RiskDashboardPage /></PageErrorBoundary>} />
+            <Route path="tasks" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><TasksPage /></Suspense></PageErrorBoundary>} />
+            <Route path="diary" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><DiaryPage /></Suspense></PageErrorBoundary>} />
+            <Route path="diary/new" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><DiaryEditor /></Suspense></PageErrorBoundary>} />
+            <Route path="diary/:id" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><DiaryEditor /></Suspense></PageErrorBoundary>} />
+            <Route path="habits" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><HabitsPage /></Suspense></PageErrorBoundary>} />
+            <Route path="memories" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><MemoriesPage /></Suspense></PageErrorBoundary>} />
+            <Route path="emotion" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><EmotionPage /></Suspense></PageErrorBoundary>} />
+            <Route path="therapy" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><TherapyPage /></Suspense></PageErrorBoundary>} />
+            <Route path="reports" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><ReportsPage /></Suspense></PageErrorBoundary>} />
+            <Route path="settings" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><SettingsPage /></Suspense></PageErrorBoundary>} />
+            <Route path="sync" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><SyncPage /></Suspense></PageErrorBoundary>} />
+            <Route path="assistant" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><AssistantPage /></Suspense></PageErrorBoundary>} />
+            <Route path="assessment" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><AssessmentPage /></Suspense></PageErrorBoundary>} />
+            <Route path="risk" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><RiskDashboardPage /></Suspense></PageErrorBoundary>} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
