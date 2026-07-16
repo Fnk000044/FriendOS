@@ -28,7 +28,7 @@ const STORYLINE_DIARIES = [
   {
     date: getDateOffset(-13),
     title: '新的学期开始了',
-    content: '今天是开学第一天，见到了好久不见的同学们，大家都很兴奋。领了新书，制定了这学期的学习计划。下午和室友一起去操场跑步，晚上在食堂吃了好吃的。感觉精力充沛，对新学期充满期待！',
+    content: '今天是开学第一天，见到了好久不见的同学们，大家都很兴奋。领了新书，制定了这学期的学习计划。下午和室友一起去操场跑步，晚上在食堂吃了好吃的。用 AI 工具整理了课程笔记，感觉效率提升了不少。精力充沛，对新学期充满期待！',
     mood: 5,
     weather: '☀️',
     tags: ['开学', '积极'],
@@ -36,7 +36,7 @@ const STORYLINE_DIARIES = [
   {
     date: getDateOffset(-12),
     title: '充实的一天',
-    content: '上午上了高等数学课，老师讲得很清楚。下午去图书馆自习了3个小时，把上周的作业都完成了。晚上参加了社团活动，认识了几个新朋友。今天效率很高，感觉很棒。',
+    content: '上午上了高等数学课，老师讲得很清楚。下午去图书馆自习了3个小时，用 AI 助手把上周的作业都完成了。晚上参加了社团活动，认识了几个新朋友。今天效率很高，感觉很棒。',
     mood: 5,
     weather: '☀️',
     tags: ['学习', '社交'],
@@ -44,7 +44,7 @@ const STORYLINE_DIARIES = [
   {
     date: getDateOffset(-11),
     title: '和朋友聚餐',
-    content: '今天和高中同学约了聚餐，聊了很多近况。大家都在各自的学校努力着，互相鼓励。回来的路上心情很好，觉得有这样的朋友很幸运。晚上看了一部电影放松了一下。',
+    content: '今天和高中同学约了线上聚餐，开了视频聊了很多近况。大家都在各自的学校努力着，互相鼓励。回来的路上心情很好，觉得有这样的朋友很幸运。晚上看了一部电影放松了一下。',
     mood: 4,
     weather: '🌤️',
     tags: ['社交', '开心'],
@@ -52,7 +52,7 @@ const STORYLINE_DIARIES = [
   {
     date: getDateOffset(-10),
     title: '学习状态不错',
-    content: '今天在图书馆待了一整天，把数据结构的作业做完了。虽然有些题目很难，但最后都解出来了，很有成就感。晚上做了30分钟运动，出了一身汗感觉很舒服。',
+    content: '今天在图书馆待了一整天，把数据结构的作业做完了。用 AI 工具辅助理解了几个难懂的算法，最后都自己解出来了，很有成就感。晚上做了30分钟运动，出了一身汗感觉很舒服。',
     mood: 4,
     weather: '☀️',
     tags: ['学习', '运动'],
@@ -112,7 +112,7 @@ const STORYLINE_DIARIES = [
   {
     date: getDateOffset(-3),
     title: '考试考砸了',
-    content: '今天考了高数，好多题都不会。考完就知道砸了。感觉一切都没有意义。',
+    content: '今天考了高数，好多题都不会。考完就知道砸了。AI 助手帮我复习的内容好像都没考到。感觉一切都没有意义。',
     mood: 1,
     weather: '🌧️',
     tags: ['考试', '失败'],
@@ -510,7 +510,7 @@ export async function seedDemoData() {
   }
 }
 
-// 暴露到全局，仅开发模式可用
-if (typeof window !== 'undefined' && import.meta.env.DEV) {
+// 暴露到全局，所有模式可用（演示/答辩时方便加载；需在 SettingsPage 加确认弹窗防误清空）
+if (typeof window !== 'undefined') {
   (window as any).seedDemoData = seedDemoData;
 }

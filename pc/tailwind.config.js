@@ -9,6 +9,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['"HarmonyOS Sans SC"', '"Microsoft YaHei"', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', '"Cascadia Code"', 'Consolas', '"Courier New"', 'monospace'],
       },
       backdropBlur: {
         glass: '16px',
@@ -35,6 +36,23 @@ export default {
       borderRadius: {
         card: 'var(--radius-card)',
         btn: 'var(--radius-button)',
+      },
+      fontSize: {
+        caption: ['0.625rem', { lineHeight: '0.875rem' }],
+        'caption-md': ['0.6875rem', { lineHeight: '1rem' }],
+        'sm': ['0.8125rem', { lineHeight: '1.15rem' }],
+        'sm-md': ['0.875rem', { lineHeight: '1.25rem' }],
+        'base': ['0.9375rem', { lineHeight: '1.35rem' }],
+        'md': ['1rem', { lineHeight: '1.5rem' }],
+        'lg': ['1.125rem', { lineHeight: '1.65rem' }],
+        'xl': ['1.25rem', { lineHeight: '1.75rem' }],
+        '2xl': ['1.5rem', { lineHeight: '2rem' }],
+        '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
+        'display': ['2.25rem', { lineHeight: '2.5rem' }],
+      },
+      letterSpacing: {
+        tightest: '-0.04em',
+        tighter: '-0.03em',
       },
       boxShadow: {
         card: 'var(--shadow-card)',

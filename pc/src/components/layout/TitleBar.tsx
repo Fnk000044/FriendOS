@@ -52,7 +52,7 @@ export default function TitleBar() {
       } as React.CSSProperties}
     >
       <div className="flex items-center gap-2 px-3 text-sm text-text-muted" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-        <div className="w-4 h-4 rounded flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #14B8A6, #5EEAD4)' }}>
+        <div className="w-4 h-4 rounded flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
           <Sparkles className="w-2.5 h-2.5 text-white" />
         </div>
         <span className="font-medium text-xs">FriendOS</span>
@@ -81,11 +81,8 @@ export default function TitleBar() {
         </button>
         <button
           onClick={handleClose}
-          className="h-full px-4 transition-all duration-150 flex items-center justify-center group"
-          style={{ '--hover-bg': '#EF4444' } as React.CSSProperties}
+          className="h-full px-4 transition-all duration-150 flex items-center justify-center group hover:bg-red-500"
           title="关闭"
-          onMouseEnter={(e) => { e.currentTarget.style.background = '#EF4444'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
         >
           <X className="w-4 h-4 text-text-secondary group-hover:text-white transition-colors duration-150" />
         </button>

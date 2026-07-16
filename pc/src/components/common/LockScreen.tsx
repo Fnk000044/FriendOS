@@ -37,11 +37,8 @@ export default function LockScreen() {
     <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center">
       <div
         className={`glass-card glass-glow rounded-2xl p-8 w-full max-w-sm shadow-2xl ${
-          shake ? 'animate-[shake_0.5s_ease-in-out]' : ''
+          shake ? 'animate-shake' : ''
         }`}
-        style={{
-          animation: shake ? 'shake 0.5s ease-in-out' : undefined,
-        }}
       >
         <div className="text-center space-y-6">
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
@@ -62,7 +59,7 @@ export default function LockScreen() {
                 onChange={(e) => { setPassword(e.target.value); setError(''); }}
                 placeholder={t('lock.placeholder')}
                 className={`w-full px-4 py-3 pr-10 rounded-xl border text-center text-lg tracking-wider ${
-                  error ? 'border-red-300 bg-red-50' : ''
+                  error ? 'border-red-300 bg-red-50 dark:bg-red-900/30 dark:border-red-800' : ''
                 }`}
                 style={error ? undefined : { borderColor: 'var(--glass-border)' }}
                 autoFocus
@@ -84,14 +81,6 @@ export default function LockScreen() {
           </form>
         </div>
       </div>
-
-      <style>{`
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-          20%, 40%, 60%, 80% { transform: translateX(4px); }
-        }
-      `}</style>
     </div>
   );
 }

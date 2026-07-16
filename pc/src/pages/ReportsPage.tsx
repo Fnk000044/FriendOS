@@ -27,7 +27,6 @@ export default function ReportsPage() {
 
   const handleRangeChange = async (start: string, end: string) => {
     setLoading(true);
-    const startTime = Date.now();
 
     const [data, ai, emotions, healthProfile] = await Promise.all([
       generateReport(start, end),
@@ -35,11 +34,6 @@ export default function ReportsPage() {
       db.emotionRecords.where('date').between(start, end, true, true).toArray(),
       db.healthProfiles.orderBy('date').last(),
     ]);
-
-    const elapsed = Date.now() - startTime;
-    if (elapsed < 300) {
-      await new Promise((r) => setTimeout(r, 300 - elapsed));
-    }
 
     setReport(data);
     setAiReport(ai);

@@ -9,9 +9,24 @@ interface ChatMessageProps {
   isStreaming?: boolean;
 }
 
+/**
+ * 兜底剥离 Qwen3.5 thinking 模式的 <think>...</think> 区间
+ * 防止后端遗漏导致思考内容外泄给用户
+ */
+function stripThinkTags(text: string): string {
+  if (!text) return '';
+  // 流式过程中可能只有 <think> 开头标签（未闭合），也需剥离
+  let out = text.replace(/<think>[\s\S]*?<\/think>/g, '');
+  out = out.replace(/<think>[\s\S]*$/g, '');
+  out = out.replace(/<\/think>/g, '');
+  return out;
+}
+
 const ChatMessageComponent = memo(function ChatMessage({ message, isStreaming }: ChatMessageProps) {
   const isUser = message.role === 'user';
-  const content = message.content || '';
+  const rawContent = message.content || '';
+  // 兜底剥离 think 标签：防止后端遗漏导致思考内容外泄
+  const content = isUser ? rawContent : stripThinkTags(rawContent);
   const showStreamingPlaceholder = isStreaming && !content;
   const [isVisible, setIsVisible] = useState(false);
 
@@ -58,14 +73,18 @@ const ChatMessageComponent = memo(function ChatMessage({ message, isStreaming }:
           <p className="whitespace-pre-wrap">
             {content}
           </p>
+        ) : isStreaming && content ? (
+          // 流式过程中用纯文本渲染，避免不完整 Markdown 导致闪烁
+          <div className="whitespace-pre-wrap text-text-primary">
+            {content}
+            <span className="inline-block w-2 h-4 ml-0.5 bg-primary/60 animate-[blink_1s_infinite]" />
+          </div>
         ) : (
+          // 流式结束后用 Markdown 渲染
           <div className="chat-markdown prose-sm max-w-none">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {content}
             </ReactMarkdown>
-            {isStreaming && content && (
-              <span className="inline-block w-2 h-4 ml-0.5 bg-primary/60 animate-[blink_1s_infinite]" />
-            )}
           </div>
         )}
       </div>

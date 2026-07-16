@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { db } from '../db';
-import type { Task } from '../db/models';
+import type { Task, SubTask } from '../db/models';
 import { getToday, formatLocalDate } from '../utils/date';
 import { contextService } from '../services/ai/ContextService';
 
@@ -14,6 +14,10 @@ function buildTask(data: {
   estimatedMinutes?: number;
   repeatInterval?: number;
   repeatEnd?: string;
+  dueTime?: string;
+  reminderEnabled?: boolean;
+  subtasks?: SubTask[];
+  sortOrder?: number;
 }, date?: string): Task {
   const now = new Date().toISOString();
   return {
@@ -23,6 +27,10 @@ function buildTask(data: {
     priority: data.priority || 'medium',
     status: 'pending',
     scheduledDate: date || data.scheduledDate || getToday(),
+    dueTime: data.dueTime,
+    reminderEnabled: data.reminderEnabled ?? false,
+    subtasks: data.subtasks || [],
+    sortOrder: data.sortOrder ?? Date.now(),
     createdAt: now,
     updatedAt: now,
     isRollover: false,
@@ -44,6 +52,10 @@ export function useTasks() {
     estimatedMinutes?: number;
     repeatInterval?: number;
     repeatEnd?: string;
+    dueTime?: string;
+    reminderEnabled?: boolean;
+    subtasks?: SubTask[];
+    sortOrder?: number;
   }) => {
     try {
       const task = buildTask(data);
@@ -95,12 +107,71 @@ export function useTasks() {
     }
   }, []);
 
+  // 子任务操作
+  const addSubtask = useCallback(async (taskId: string, title: string) => {
+    try {
+      const task = await db.tasks.get(taskId);
+      if (!task) return;
+      const subtasks = task.subtasks || [];
+      const newSub: SubTask = { id: crypto.randomUUID(), title, done: false };
+      await db.tasks.update(taskId, {
+        subtasks: [...subtasks, newSub],
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error('[useTasks] addSubtask error:', err);
+      toast.error('添加子任务失败');
+    }
+  }, []);
+
+  const toggleSubtask = useCallback(async (taskId: string, subtaskId: string) => {
+    try {
+      const task = await db.tasks.get(taskId);
+      if (!task || !task.subtasks) return;
+      const subtasks = task.subtasks.map(s =>
+        s.id === subtaskId ? { ...s, done: !s.done } : s
+      );
+      await db.tasks.update(taskId, { subtasks, updatedAt: new Date().toISOString() });
+    } catch (err) {
+      console.error('[useTasks] toggleSubtask error:', err);
+    }
+  }, []);
+
+  const deleteSubtask = useCallback(async (taskId: string, subtaskId: string) => {
+    try {
+      const task = await db.tasks.get(taskId);
+      if (!task || !task.subtasks) return;
+      const subtasks = task.subtasks.filter(s => s.id !== subtaskId);
+      await db.tasks.update(taskId, { subtasks, updatedAt: new Date().toISOString() });
+    } catch (err) {
+      console.error('[useTasks] deleteSubtask error:', err);
+    }
+  }, []);
+
+  // 拖拽重排：批量更新 sortOrder
+  const reorderTasks = useCallback(async (orderedIds: string[]) => {
+    try {
+      const now = Date.now();
+      await db.transaction('rw', db.tasks, async () => {
+        for (let i = 0; i < orderedIds.length; i++) {
+          await db.tasks.update(orderedIds[i], { sortOrder: now + i });
+        }
+      });
+    } catch (err) {
+      console.error('[useTasks] reorderTasks error:', err);
+      toast.error('排序失败');
+    }
+  }, []);
+
   const createRecurringTasks = useCallback(async (data: {
     title: string;
     description?: string;
     priority?: Task['priority'];
     tags?: string[];
     estimatedMinutes?: number;
+    dueTime?: string;
+    reminderEnabled?: boolean;
+    subtasks?: SubTask[];
   }, interval: number, startDate: string, endDate: string) => {
     // Guard against invalid interval
     if (interval <= 0) {
@@ -134,5 +205,9 @@ export function useTasks() {
     }
   }, []);
 
-  return { createTask, updateTask, toggleTask, deleteTask, createRecurringTasks };
+  return {
+    createTask, updateTask, toggleTask, deleteTask,
+    addSubtask, toggleSubtask, deleteSubtask, reorderTasks,
+    createRecurringTasks,
+  };
 }

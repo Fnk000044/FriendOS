@@ -15,10 +15,10 @@ function StatItem({ label, value, color = 'text-text-primary', sectionId, onClic
   const Component = onClick ? 'button' : 'div';
   return (
     <Component
-      className={`flex flex-col items-center px-4 py-3 min-w-[80px] rounded-lg border border-transparent ${onClick ? 'cursor-pointer hover:shadow-lg transition-all' : ''}`}
-      style={onClick ? { '--tw-hover-bg': 'var(--bg-hover)', '--tw-hover-border-color': 'var(--glass-border)' } as React.CSSProperties : undefined}
+      className={`flex flex-col items-center px-4 py-3 min-w-[80px] rounded-lg border border-transparent ${onClick ? 'cursor-pointer hover:bg-surface-hover hover:border-[var(--glass-border)] hover:shadow-lg transition-all' : ''}`}
       onClick={onClick}
       type={onClick ? 'button' : undefined}
+      aria-label={`${label}: ${value}`}
     >
       <span className={`text-2xl font-semibold ${color}`}>{value}</span>
       <span className="text-xs text-text-muted mt-1">{label}</span>

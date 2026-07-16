@@ -68,7 +68,8 @@ export class AIService {
   private config: AIConfig | null = null;
 
   async initialize(config: AIConfig): Promise<void> {
-    this.config = config;
+    // 读取用户在 AISettingsModal 选择的语气，不再强制 counselor
+    this.config = { ...config };
 
     const localProvider = new LocalModelProvider();
     await localProvider.initialize({
@@ -121,8 +122,8 @@ ${context.implicitHints ? `\n## 含蓄表达提示\n${context.implicitHints}` : 
     // 复用 ContextService 已收集的对话摘要，避免重复查询
     const conversationHistory = context.conversationHistory || '- 暂无对话历史';
 
-    // Build system prompt with tone, context and conversation history
-    const systemPrompt = buildSystemPrompt(this.config.tone, contextText, conversationHistory);
+    // Build system prompt with tone, context and conversation history（读用户选择的语气）
+    const systemPrompt = buildSystemPrompt(this.config?.tone ?? 'counselor', contextText, conversationHistory);
 
     // Prepare messages: system prompt + history + sanitized user message
     const messages = [
@@ -176,7 +177,7 @@ ${context.implicitHints ? `\n## 含蓄表达提示\n${context.implicitHints}` : 
     // 复用 ContextService 已收集的对话摘要，避免重复查询
     const conversationHistory = context.conversationHistory || '';
 
-    const systemPrompt = buildSystemPrompt(this.config.tone, contextText, conversationHistory);
+    const systemPrompt = buildSystemPrompt('counselor', contextText, conversationHistory);
     const messages = [
       { role: 'system' as const, content: systemPrompt },
       ...history.filter(m => m.content).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content || '' })),

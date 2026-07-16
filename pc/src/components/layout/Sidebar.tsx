@@ -7,21 +7,45 @@ import {
 import { useLanguage } from '../../i18n/useLanguage';
 import { useUIStore } from '../../stores/uiStore';
 import DailyQuote from '../dashboard/DailyQuote';
+import type { TranslationKey } from '../../i18n/translations';
 
-const navItems = [
-  { to: '/', icon: LayoutDashboard, key: 'nav.dashboard' as const },
-  { to: '/risk', icon: Shield, key: 'nav.risk' as const },
-  { to: '/tasks', icon: CheckSquare, key: 'nav.tasks' as const },
-  { to: '/diary', icon: BookOpen, key: 'nav.diary' as const },
-  { to: '/habits', icon: Target, key: 'nav.habits' as const },
-  { to: '/memories', icon: Brain, key: 'nav.memories' as const },
-  { to: '/emotion', icon: Activity, key: 'nav.emotion' as const },
-  { to: '/therapy', icon: Heart, key: 'nav.therapy' as const },
-  { to: '/assistant', icon: MessageCircle, key: 'nav.assistant' as const },
-  { to: '/reports', icon: BarChart3, key: 'nav.reports' as const },
-  { to: '/assessment', icon: ClipboardList, key: 'nav.assessment' as const },
-  { to: '/sync', icon: Smartphone, key: 'nav.sync' as const },
-  { to: '/settings', icon: Settings, key: 'nav.settings' as const },
+type NavEntry = { to: string; icon: typeof LayoutDashboard; key: TranslationKey };
+type NavGroup = { groupKey: TranslationKey; items: NavEntry[] };
+
+const navGroups: NavGroup[] = [
+  {
+    groupKey: 'nav.group_daily',
+    items: [
+      { to: '/', icon: LayoutDashboard, key: 'nav.dashboard' },
+      { to: '/tasks', icon: CheckSquare, key: 'nav.tasks' },
+      { to: '/diary', icon: BookOpen, key: 'nav.diary' },
+      { to: '/habits', icon: Target, key: 'nav.habits' },
+    ],
+  },
+  {
+    groupKey: 'nav.group_analysis',
+    items: [
+      { to: '/emotion', icon: Activity, key: 'nav.emotion' },
+      { to: '/risk', icon: Shield, key: 'nav.risk' },
+      { to: '/reports', icon: BarChart3, key: 'nav.reports' },
+    ],
+  },
+  {
+    groupKey: 'nav.group_tools',
+    items: [
+      { to: '/therapy', icon: Heart, key: 'nav.therapy' },
+      { to: '/assistant', icon: MessageCircle, key: 'nav.assistant' },
+      { to: '/assessment', icon: ClipboardList, key: 'nav.assessment' },
+      { to: '/memories', icon: Brain, key: 'nav.memories' },
+    ],
+  },
+  {
+    groupKey: 'nav.group_system',
+    items: [
+      { to: '/sync', icon: Smartphone, key: 'nav.sync' },
+      { to: '/settings', icon: Settings, key: 'nav.settings' },
+    ],
+  },
 ];
 
 export default function Sidebar() {
@@ -53,7 +77,7 @@ export default function Sidebar() {
           gap: collapsed ? '0' : '10px',
         }}
       >
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #14B8A6, #5EEAD4)' }}>
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--gradient-primary)' }}>
           <Sparkles className="w-4.5 h-4.5 text-white" aria-hidden="true" />
         </div>
         {!collapsed && (
@@ -61,35 +85,44 @@ export default function Sidebar() {
         )}
       </div>
       <nav className="flex-1 py-3 overflow-y-auto" style={{ padding: collapsed ? '12px 8px' : '12px 10px' }} aria-label="页面导航">
-        {navItems.map(({ to, icon: Icon, key }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/'}
-            aria-label={t(key)}
-            className={({ isActive }) =>
-              `flex items-center rounded-[10px] text-sm font-medium transition-all duration-150 relative ${
-                collapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3.5 py-2.5'
-              } ${
-                isActive
-                  ? 'bg-[var(--bg-hover)] text-primary font-semibold'
-                  : 'text-text-secondary hover:bg-[var(--bg-hover)] hover:text-text-primary'
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                {isActive && !collapsed && (
-                  <div
-                    className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full"
-                    style={{ background: 'var(--primary)' }}
-                  />
-                )}
-                <Icon className="w-5 h-5 shrink-0" style={{ color: isActive ? 'var(--primary)' : undefined }} aria-hidden="true" />
-                {!collapsed && <span>{t(key)}</span>}
-              </>
+        {navGroups.map((group, gi) => (
+          <div key={group.groupKey} className={gi > 0 ? 'mt-4' : ''}>
+            {!collapsed && (
+              <p className="px-3.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+                {t(group.groupKey)}
+              </p>
             )}
-          </NavLink>
+            {group.items.map(({ to, icon: Icon, key }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === '/'}
+                aria-label={t(key)}
+                className={({ isActive }) =>
+                  `flex items-center rounded-[10px] text-sm font-medium transition-all duration-150 relative ${
+                    collapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3.5 py-2.5'
+                  } ${
+                    isActive
+                      ? 'bg-[var(--bg-hover)] text-primary font-semibold'
+                      : 'text-text-secondary hover:bg-[var(--bg-hover)] hover:text-text-primary'
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    {isActive && !collapsed && (
+                      <div
+                        className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full"
+                        style={{ background: 'var(--color-primary)' }}
+                      />
+                    )}
+                    <Icon className="w-5 h-5 shrink-0" style={{ color: isActive ? 'var(--color-primary)' : undefined }} aria-hidden="true" />
+                    {!collapsed && <span>{t(key)}</span>}
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </div>
         ))}
       </nav>
       {!collapsed && (

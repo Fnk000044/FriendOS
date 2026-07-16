@@ -1,20 +1,16 @@
 import { useLocation } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { format } from 'date-fns';
-import { useState, useEffect } from 'react';
 import { db } from '../../db';
 import { useLanguage } from '../../i18n/useLanguage';
+import { useClock } from '../../hooks/useClock';
 
 export default function StatusBar() {
   const location = useLocation();
   const { t } = useLanguage();
   const today = format(new Date(), 'yyyy-MM-dd');
-  const [currentTime, setCurrentTime] = useState(() => format(new Date(), 'HH:mm'));
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(format(new Date(), 'HH:mm')), 60000);
-    return () => clearInterval(timer);
-  }, []);
+  const now = useClock();
+  const currentTime = format(now, 'HH:mm:ss');
   const pathname = location.pathname;
 
   // 性能优化：按路由条件执行查询，减少不必要的数据库访问

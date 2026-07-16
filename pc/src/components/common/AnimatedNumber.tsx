@@ -26,6 +26,14 @@ export default function AnimatedNumber({
     // 如果值没有变化，不执行动画
     if (startValueRef.current === value) return;
 
+    // 尊重 prefers-reduced-motion：直接跳到终值
+    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      startValueRef.current = value;
+      setDisplayValue(value);
+      return;
+    }
+
     // 取消之前的动画
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);

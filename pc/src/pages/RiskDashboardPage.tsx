@@ -1,11 +1,13 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid, Area, AreaChart } from 'recharts';
+import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid, Area, AreaChart } from 'recharts';
 import { Shield, TrendingUp, TrendingDown, Minus, AlertTriangle, Activity, Brain, MessageSquare, BookOpen, ClipboardList, RefreshCw } from 'lucide-react';
 import { db } from '../db';
 import { getDaysAgo, getToday, formatLocalDate } from '../utils/date';
 import { useLanguage } from '../i18n/useLanguage';
 import AnimatedNumber from '../components/common/AnimatedNumber';
+import EmptyState from '../components/common/EmptyState';
+import RiskRadar from '../components/emotion/RiskRadar';
 import type { RiskLevel } from '../db/models';
 
 interface RiskBreakdown {
@@ -33,20 +35,23 @@ interface RiskResult {
 }
 
 const RISK_COLORS: Record<RiskLevel, { bg: string; text: string; border: string }> = {
-  low: { bg: 'bg-green-50', text: 'text-green-600', border: 'border-green-200' },
-  medium_low: { bg: 'bg-yellow-50', text: 'text-yellow-600', border: 'border-yellow-200' },
-  medium: { bg: 'bg-orange-50', text: 'text-orange-600', border: 'border-orange-200' },
-  high: { bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200' },
-  critical: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-300' },
+  low: { bg: 'bg-green-50 dark:bg-green-900/30', text: 'text-green-600 dark:text-green-400', border: 'border-green-200 dark:border-green-800' },
+  medium_low: { bg: 'bg-yellow-50 dark:bg-yellow-900/30', text: 'text-yellow-600 dark:text-yellow-400', border: 'border-yellow-200 dark:border-yellow-800' },
+  medium: { bg: 'bg-orange-50 dark:bg-orange-900/30', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-200 dark:border-orange-800' },
+  high: { bg: 'bg-red-50 dark:bg-red-900/30', text: 'text-red-600 dark:text-red-400', border: 'border-red-200 dark:border-red-800' },
+  critical: { bg: 'bg-red-100 dark:bg-red-900/50', text: 'text-red-700 dark:text-red-300', border: 'border-red-300 dark:border-red-700' },
 };
 
 export default function RiskDashboardPage() {
   const { t } = useLanguage();
   const [selectedDays, setSelectedDays] = useState(7);
   const [riskResult, setRiskResult] = useState<RiskResult | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [trendData, setTrendData] = useState<{ date: string; score: number }[]>([]);
+  // 重试计数器：递增以触发 risk 计算 effect 重新执行
+  const [retryCount, setRetryCount] = useState(0);
+  const [timedOut, setTimedOut] = useState(false);
 
   const THIRTY_DAYS_AGO = getDaysAgo(30);
 
@@ -99,6 +104,14 @@ export default function RiskDashboardPage() {
 
       setIsLoading(true);
       setError(null);
+      setTimedOut(false);
+
+      // 15 秒超时保护：超时后仍尝试渲染已有信号，而非整页 EmptyState
+      const timeoutId = setTimeout(() => {
+        setTimedOut(true);
+        setIsLoading(false);
+        // 超时不设 error，让页面显示部分数据 + "部分信号源加载中"提示
+      }, 15000);
 
       try {
         // 准备行为数据
@@ -130,21 +143,24 @@ export default function RiskDashboardPage() {
         setTrendData(trend);
       } catch (err) {
         console.error('Risk calculation failed:', err);
-        setError(t('error.title'));
+        // 不直接 setError 导致整页 EmptyState，改为提示部分加载
+        setTimedOut(true);
       } finally {
+        clearTimeout(timeoutId);
         setIsLoading(false);
       }
     };
 
     calculateRisk();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [emotionRecords, behaviorRecords, assessments, conversationSummaries, diaries, selectedDays]);
+  }, [emotionRecords, behaviorRecords, assessments, conversationSummaries, diaries, selectedDays, retryCount]);
 
-  // 计算连续无日记天数
+  // 计算连续无日记天数 - 扩大窗口至30天以检测更长周期的忽视
   function calculateConsecutiveNoDiary(diaries: any[]): number {
     const today = new Date();
     let count = 0;
-    for (let i = 0; i < 14; i++) {
+    const MAX_LOOKBACK = 30;
+    for (let i = 0; i < MAX_LOOKBACK; i++) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       const dateStr = formatLocalDate(date);
@@ -235,13 +251,13 @@ export default function RiskDashboardPage() {
   const radarData = useMemo(() => {
     if (!riskResult) return [];
     return [
-      { dimension: '情绪', value: 100 - riskResult.breakdown.emotion.score, fullMark: 100 },
-      { dimension: '行为', value: 100 - riskResult.breakdown.behavior.score, fullMark: 100 },
-      { dimension: '评估', value: 100 - riskResult.breakdown.assessment.score, fullMark: 100 },
-      { dimension: '聊天', value: 100 - riskResult.breakdown.chat.score, fullMark: 100 },
-      { dimension: '日记', value: 100 - riskResult.breakdown.diary.score, fullMark: 100 },
+      { dimension: t('risk.dim_emotion'), value: 100 - riskResult.breakdown.emotion.score, fullMark: 100 },
+      { dimension: t('risk.dim_behavior'), value: 100 - riskResult.breakdown.behavior.score, fullMark: 100 },
+      { dimension: t('risk.dim_assessment'), value: 100 - riskResult.breakdown.assessment.score, fullMark: 100 },
+      { dimension: t('risk.dim_chat'), value: 100 - riskResult.breakdown.chat.score, fullMark: 100 },
+      { dimension: t('risk.dim_diary'), value: 100 - riskResult.breakdown.diary.score, fullMark: 100 },
     ];
-  }, [riskResult]);
+  }, [riskResult, t]);
 
   // 信号源图标
   const signalIcons: Record<string, React.ReactNode> = {
@@ -253,11 +269,11 @@ export default function RiskDashboardPage() {
   };
 
   const signalLabels: Record<string, string> = {
-    emotion: '情绪分析',
-    behavior: '行为模式',
-    assessment: '评估量表',
-    chat: 'AI聊天',
-    diary: '日记情绪',
+    emotion: t('risk.signal_emotion'),
+    behavior: t('risk.signal_behavior'),
+    assessment: t('risk.signal_assessment'),
+    chat: t('risk.signal_chat'),
+    diary: t('risk.signal_diary'),
   };
 
   if (isLoading) {
@@ -286,31 +302,30 @@ export default function RiskDashboardPage() {
     );
   }
 
-  // 风险计算失败时显示 inline error（带重试按钮），而非静默半空页面
-  if (error && !riskResult) {
+  // 风险计算彻底失败（非超时）时显示 inline error（带重试按钮）
+  if (error && !riskResult && !timedOut) {
     return (
       <div className="max-w-4xl mx-auto py-12">
-        <div className="glass-card rounded-2xl p-8 text-center" role="alert">
-          <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-3">
-            <AlertTriangle className="w-6 h-6 text-red-500" aria-hidden="true" />
-          </div>
-          <p className="text-sm font-medium text-text-primary mb-1">{t('error.title')}</p>
-          <p className="text-xs text-text-muted mb-4">{error}</p>
-          <button
-            type="button"
-            onClick={() => {
-              setError(null);
-              setIsLoading(true);
-              // 触发 effect 重新计算：通过 state 变更
-              setSelectedDays(d => (d === 7 ? 8 : 7));
-              setTimeout(() => setSelectedDays(7), 0);
-            }}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/10 cursor-pointer transition-colors"
-          >
-            <RefreshCw className="w-4 h-4" aria-hidden="true" />
-            {t('error.retry')}
-          </button>
-        </div>
+        <EmptyState
+          icon={<AlertTriangle className="w-12 h-12" />}
+          title={t('error.title')}
+          description={error || t('error.title')}
+          action={
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
+                setTimedOut(false);
+                setIsLoading(true);
+                setRetryCount(c => c + 1);
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/10 cursor-pointer transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" aria-hidden="true" />
+              {t('error.retry')}
+            </button>
+          }
+        />
       </div>
     );
   }
@@ -331,9 +346,9 @@ export default function RiskDashboardPage() {
         <div>
           <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
             <Shield className="w-6 h-6 text-primary" aria-hidden="true" />
-            风险评估仪表盘
+            {t('risk.dashboard_title')}
           </h1>
-          <p className="text-sm text-text-muted mt-1">综合多维度数据分析，无感识别心理健康风险</p>
+          <p className="text-sm text-text-muted mt-1">{t('risk.dashboard_subtitle')}</p>
         </div>
         <div className="flex gap-2" role="group" aria-label="时间范围选择">
           {[7, 14, 30].map(days => {
@@ -357,12 +372,55 @@ export default function RiskDashboardPage() {
         </div>
       </div>
 
-      {/* 风险评分卡片 */}
+      {/* 超时但仍有部分数据时的提示条（非阻塞） */}
+      {timedOut && !riskResult && (
+        <div className="rounded-xl p-3 border flex items-center gap-2 text-sm" style={{ background: 'var(--bg-hover)', borderColor: 'var(--glass-border)', color: 'var(--text-muted)' }}>
+          <AlertTriangle className="w-4 h-4 text-amber-500" aria-hidden="true" />
+          <span>部分信号源加载中，以下为已可用数据。可点击下方重试获取完整分析。</span>
+          <button
+            type="button"
+            onClick={() => { setTimedOut(false); setIsLoading(true); setRetryCount(c => c + 1); }}
+            className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-primary border border-primary/30 rounded-md hover:bg-primary/10 cursor-pointer transition-colors"
+          >
+            <RefreshCw className="w-3 h-3" aria-hidden="true" />
+            {t('error.retry')}
+          </button>
+        </div>
+      )}
+
+      {/* 风险评分卡片 —— 强化视觉：大色块背景 + 5 格等级条 + 行动指引 */}
       {riskResult && (
-        <div className={`rounded-2xl p-6 border ${RISK_COLORS[riskResult.riskLevel].bg} ${RISK_COLORS[riskResult.riskLevel].border}`}>
+        <div
+          className={`rounded-2xl p-6 border relative overflow-hidden ${RISK_COLORS[riskResult.riskLevel].border}`}
+          style={{
+            background: `linear-gradient(135deg, ${RISK_COLORS[riskResult.riskLevel].bg.replace(/bg-/g, '').replace(/-50/g, '/15').replace(/-100/g, '/25')}, transparent)`,
+          }}
+        >
+          {/* 顶部 5 格风险等级条（critical 闪烁 pulseGlow） */}
+          <div className="flex gap-1 mb-4" role="img" aria-label={`风险等级：${riskResult.riskLevelInfo.label}`}>
+            {(['low', 'medium_low', 'medium', 'high', 'critical'] as RiskLevel[]).map((level, i) => {
+              const isActive = i <= (['low', 'medium_low', 'medium', 'high', 'critical'] as RiskLevel[]).indexOf(riskResult.riskLevel);
+              const isCritical = riskResult.riskLevel === 'critical' && level === 'critical';
+              return (
+                <div
+                  key={level}
+                  className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
+                    isActive
+                      ? level === 'low' ? 'bg-green-500'
+                        : level === 'medium_low' ? 'bg-yellow-500'
+                        : level === 'medium' ? 'bg-orange-500'
+                        : level === 'high' ? 'bg-red-500'
+                        : 'bg-red-600'
+                      : 'bg-surface-hover'
+                  } ${isCritical ? 'animate-pulse' : ''}`}
+                />
+              );
+            })}
+          </div>
+
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-text-muted mb-1">综合风险指数</p>
+              <p className="text-sm text-text-muted mb-1">{t('risk.composite_index')}</p>
               <div className="flex items-baseline gap-2">
                 <AnimatedNumber
                   value={riskResult.totalScore}
@@ -372,12 +430,12 @@ export default function RiskDashboardPage() {
                 <span className="text-lg text-text-muted">/100</span>
               </div>
               <p className={`text-sm font-medium mt-2 ${RISK_COLORS[riskResult.riskLevel].text}`}>
-                {riskResult.riskLevelInfo.label}风险
+                {riskResult.riskLevelInfo.label}{t('risk.level_suffix')}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-text-muted mb-2">风险等级</p>
-              <div className="flex gap-1" role="img" aria-label={`风险等级：${riskResult.riskLevelInfo.label}`}>
+              <p className="text-sm text-text-muted mb-2">{t('risk.risk_level')}</p>
+              <div className="flex gap-1 justify-end" role="img" aria-label={`风险等级：${riskResult.riskLevelInfo.label}`}>
                 {(['low', 'medium_low', 'medium', 'high', 'critical'] as RiskLevel[]).map(level => (
                   <div
                     key={level}
@@ -392,6 +450,16 @@ export default function RiskDashboardPage() {
           <p className="text-sm text-text-secondary mt-4 p-3 bg-white/50 dark:bg-white/5 rounded-lg">
             {riskResult.summary}
           </p>
+          {/* 行动指引：高风险时醒目提示热线 */}
+          {(riskResult.riskLevel === 'high' || riskResult.riskLevel === 'critical') && (
+            <div className="mt-3 p-3 rounded-lg border border-red-300 dark:border-red-700 bg-red-50/80 dark:bg-red-900/30 flex items-start gap-2 fade-in-up">
+              <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 shrink-0" aria-hidden="true" />
+              <div className="text-sm">
+                <p className="font-medium text-red-700 dark:text-red-300">建议立即寻求专业帮助</p>
+                <p className="text-red-600 dark:text-red-400 mt-0.5">24 小时心理援助热线：<span className="font-semibold">400-161-9995</span></p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -457,42 +525,9 @@ export default function RiskDashboardPage() {
       {/* 主要内容区域 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 雷达图 */}
-        <div className="glass-card rounded-2xl p-6" role="figure" aria-label="健康维度雷达图">
-          <h3 className="text-lg font-semibold text-text-primary mb-4">健康维度分析</h3>
-          {radarData.length > 0 ? (
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                  <PolarGrid stroke="var(--glass-border, #E2E8F0)" />
-                  <PolarAngleAxis
-                    dataKey="dimension"
-                    tick={{ fontSize: 12, fill: 'var(--text-muted, #64748B)' }}
-                  />
-                  <PolarRadiusAxis
-                    angle={30}
-                    domain={[0, 100]}
-                    tick={{ fontSize: 10, fill: 'var(--text-muted, #94A3B8)' }}
-                  />
-                  <Tooltip
-                    contentStyle={tooltipContentStyle}
-                    formatter={(value: number) => [`${value}`, '健康指数']}
-                  />
-                  <Radar
-                    name="健康指数"
-                    dataKey="value"
-                    stroke="#14B8A6"
-                    strokeWidth={2}
-                    fill="#14B8A6"
-                    fillOpacity={0.3}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="h-64 flex items-center justify-center text-text-muted">
-              <p>暂无数据</p>
-            </div>
-          )}
+        <div className="glass-card rounded-2xl p-6" role="figure" aria-label={t('risk.health_dim')}>
+          <h3 className="text-lg font-semibold text-text-primary mb-4">{t('risk.health_dim')}</h3>
+          <RiskRadar data={radarData} hasData={radarData.length > 0} />
         </div>
 
         {/* 趋势图 */}
@@ -541,74 +576,85 @@ export default function RiskDashboardPage() {
         </div>
       </div>
 
-      {/* 信号源状态 */}
+      {/* 信号源状态 —— 每信号加 4 态文字标签 */}
       {riskResult && (
-        <div className="glass-card rounded-2xl p-6" role="region" aria-label="信号源分析">
-          <h3 className="text-lg font-semibold text-text-primary mb-4">信号源分析</h3>
+        <div className="glass-card rounded-2xl p-6" role="region" aria-label={t('risk.signal_analysis')}>
+          <h3 className="text-lg font-semibold text-text-primary mb-4">{t('risk.signal_analysis')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4" role="list">
-            {Object.entries(riskResult.breakdown).map(([key, data]) => (
-              <div
-                key={key}
-                role="listitem"
-                className="p-4 rounded-xl bg-surface-hover/50"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-primary" aria-hidden="true">{signalIcons[key]}</span>
-                  <span className="text-sm font-medium text-text-secondary">{signalLabels[key]}</span>
+            {Object.entries(riskResult.breakdown).map(([key, data]) => {
+              const isHigh = data.score >= 60;
+              const isMedium = data.score >= 40;
+              const isLow = data.score >= 20;
+              const statusLabel = isHigh ? '高风险' : isMedium ? '需关注' : isLow ? '正常' : '良好';
+              const statusColor = isHigh ? 'text-red-500' : isMedium ? 'text-orange-500' : isLow ? 'text-yellow-500' : 'text-green-500';
+              return (
+                <div
+                  key={key}
+                  role="listitem"
+                  className="p-4 rounded-xl bg-surface-hover/50"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-primary" aria-hidden="true">{signalIcons[key]}</span>
+                    <span className="text-sm font-medium text-text-secondary">{signalLabels[key]}</span>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className={`text-2xl font-bold ${statusColor}`}>
+                      {data.score}
+                    </span>
+                    <span className="text-xs text-text-muted">/100</span>
+                  </div>
+                  {/* 4 态文字标签，让用户立马感知问题 */}
+                  <p className={`text-xs font-medium mt-1 ${statusColor}`}>{statusLabel}</p>
+                  <div className="mt-2 h-1.5 bg-surface-hover rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ease-out ${
+                        isHigh ? 'bg-red-500' :
+                        isMedium ? 'bg-orange-500' :
+                        isLow ? 'bg-yellow-500' :
+                        'bg-green-500'
+                      }`}
+                      style={{ width: `${data.score}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-text-muted mt-1">{t('risk.weight_suffix_pct', { weight: Math.round(data.weight * 100) })}</p>
                 </div>
-                <div className="flex items-baseline gap-1">
-                  <span className={`text-2xl font-bold ${
-                    data.score >= 60 ? 'text-red-500' :
-                    data.score >= 40 ? 'text-orange-500' :
-                    data.score >= 20 ? 'text-yellow-500' :
-                    'text-green-500'
-                  }`}>
-                    {data.score}
-                  </span>
-                  <span className="text-xs text-text-muted">/100</span>
-                </div>
-                <div className="mt-2 h-1.5 bg-surface-hover rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ease-out ${
-                      data.score >= 60 ? 'bg-red-500' :
-                      data.score >= 40 ? 'bg-orange-500' :
-                      data.score >= 20 ? 'bg-yellow-500' :
-                      'bg-green-500'
-                    }`}
-                    style={{ width: `${data.score}%` }}
-                  />
-                </div>
-                <p className="text-xs text-text-muted mt-1">权重 {Math.round(data.weight * 100)}%</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* 风险因素列表 */}
+      {/* 风险因素列表 —— 顶部最严重 1-2 条醒目卡片，其余折叠 */}
       {riskResult && riskResult.factors.length > 0 && (
-        <div className="glass-card rounded-2xl p-6" role="region" aria-label="风险因素列表">
+        <div className="glass-card rounded-2xl p-6" role="region" aria-label={t('risk.risk_factors')}>
           <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-warning" aria-hidden="true" />
-            风险因素
+            {t('risk.risk_factors')}
           </h3>
           <div className="space-y-3" role="list">
-            {riskResult.factors.map((factor, index) => (
-              <div
-                key={index}
-                role="listitem"
-                className="flex items-center gap-3 p-3 rounded-lg bg-surface-hover/50"
-              >
-                <div className={`w-2 h-2 rounded-full ${
-                  factor.weight >= 30 ? 'bg-red-500' :
-                  factor.weight >= 20 ? 'bg-orange-500' :
-                  factor.weight >= 10 ? 'bg-yellow-500' :
-                  'bg-green-500'
-                }`} />
-                <span className="text-sm text-text-secondary flex-1">{factor.description}</span>
-                <span className="text-xs text-text-muted">权重 {factor.weight}</span>
-              </div>
-            ))}
+            {riskResult.factors.map((factor, index) => {
+              const isSevere = factor.weight >= 20;
+              return (
+                <div
+                  key={index}
+                  role="listitem"
+                  className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+                    isSevere
+                      ? 'border border-red-200 dark:border-red-800 bg-red-50/60 dark:bg-red-900/20'
+                      : 'bg-surface-hover/50'
+                  }`}
+                >
+                  <div className={`w-2 h-2 rounded-full ${
+                    factor.weight >= 30 ? 'bg-red-500' :
+                    factor.weight >= 20 ? 'bg-orange-500' :
+                    factor.weight >= 10 ? 'bg-yellow-500' :
+                    'bg-green-500'
+                  }`} />
+                  <span className="text-sm text-text-secondary flex-1">{factor.description}</span>
+                  <span className="text-xs text-text-muted">{t('risk.weight_suffix', { weight: factor.weight })}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

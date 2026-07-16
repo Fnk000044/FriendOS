@@ -1,5 +1,11 @@
 import type { ChatMessage } from '../services/ai/types';
 
+export interface SubTask {
+  id: string;
+  title: string;
+  done: boolean;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -8,6 +14,10 @@ export interface Task {
   status: 'pending' | 'completed' | 'cancelled';
   categoryId?: string;
   scheduledDate: string;
+  dueTime?: string;           // HH:mm 截止时间
+  reminderEnabled?: boolean;  // 是否到期提醒
+  subtasks?: SubTask[];        // 子任务清单
+  sortOrder?: number;          // 拖拽排序序号（小在前，未设置时按 createdAt）
   completedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -166,6 +176,7 @@ export interface EmotionRecord {
   };
   riskLevel: RiskLevel;
   keywords: string[];
+  socialScore?: number;
   analysis?: string;
   createdAt: string;
 }

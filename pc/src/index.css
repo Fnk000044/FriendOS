@@ -4,21 +4,21 @@
 
 @font-face {
   font-family: 'HarmonyOS Sans SC';
-  src: url('/fonts/HarmonyOS_Sans_SC_Regular.ttf') format('truetype');
+  src: url('/fonts/HarmonyOS_Sans_SC_Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'HarmonyOS Sans SC';
-  src: url('/fonts/HarmonyOS_Sans_SC_Medium.ttf') format('truetype');
+  src: url('/fonts/HarmonyOS_Sans_SC_Medium.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'HarmonyOS Sans SC';
-  src: url('/fonts/HarmonyOS_Sans_SC_Bold.ttf') format('truetype');
+  src: url('/fonts/HarmonyOS_Sans_SC_Bold.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -65,6 +65,25 @@
   --color-danger: #DC2626;
   --color-info: #2563EB;
 
+  /* 健康画像维度语义色（淡色为主，用于 Radar、Chart 等组件） */
+  --color-mood: #F59E0B;       /* 情绪 - 暖黄 */
+  --color-mood-bg: #FFFBEB;    /* 情绪背景 */
+  --color-stress: #EC4899;     /* 压力 - 粉红（显示的"压力低"=好） */
+  --color-stress-bg: #FDF2F8;  /* 压力背景 */
+  --color-energy: #22C55E;     /* 活力 - 绿 */
+  --color-energy-bg: #F0FDF4;  /* 活力背景 */
+  --color-social: #3B82F6;     /* 社交 - 蓝 */
+  --color-social-bg: #EFF6FF;  /* 社交背景 */
+  --color-sleep: #8B5CF6;      /* 作息 - 紫 */
+  --color-sleep-bg: #F5F3FF;   /* 作息背景 */
+  --color-selfcare: #F43F5E;   /* 自我关怀 - 玫瑰 */
+  --color-selfcare-bg: #FFF1F2;/* 自我关怀背景 */
+
+  /* 雷达/图表通用色 */
+  --color-radar-fill: rgba(129, 140, 248, 0.3);
+  --color-radar-stroke: #818CF8;
+  --color-grid: #E2E8F0;
+
   --priority-urgent: #DC2626;
   --priority-high: #D97706;
   --priority-medium: #2563EB;
@@ -75,6 +94,9 @@
   --mood-3: #F59E0B;
   --mood-4: #22C55E;
   --mood-5: #14B8A6;
+
+  --gradient-primary: linear-gradient(135deg, #14B8A6, #5EEAD4);
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
 
   --sidebar-width: 240px;
   --sidebar-width-collapsed: 68px;
@@ -112,7 +134,7 @@
 
   --text-primary: #F1F5F9;
   --text-secondary: #94A3B8;
-  --text-muted: #64748B;
+  --text-muted: #83A0BD;
 
   --shadow-card: 0 4px 24px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.05) inset;
   --shadow-card-hover: 0 8px 40px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.08) inset;
@@ -123,11 +145,30 @@
   --color-primary: #2DD4BF;
   --color-primary-light: #5EEAD4;
   --color-primary-dark: #14B8A6;
+  --gradient-primary: linear-gradient(135deg, #2DD4BF, #5EEAD4);
 
   --color-success: #4ADE80;
   --color-warning: #FBBF24;
   --color-danger: #F87171;
   --color-info: #60A5FA;
+
+  /* 健康画像维度语义色 — dark 模式 */
+  --color-mood: #FBBF24;
+  --color-mood-bg: rgba(251, 191, 36, 0.12);
+  --color-stress: #F472B6;
+  --color-stress-bg: rgba(244, 114, 182, 0.12);
+  --color-energy: #4ADE80;
+  --color-energy-bg: rgba(74, 222, 128, 0.12);
+  --color-social: #60A5FA;
+  --color-social-bg: rgba(96, 165, 250, 0.12);
+  --color-sleep: #A78BFA;
+  --color-sleep-bg: rgba(167, 139, 250, 0.12);
+  --color-selfcare: #FB7185;
+  --color-selfcare-bg: rgba(251, 113, 133, 0.12);
+
+  --color-radar-fill: rgba(129, 140, 248, 0.25);
+  --color-radar-stroke: #A5B4FC;
+  --color-grid: #334155;
 
   --priority-urgent: #F87171;
   --priority-high: #FBBF24;
@@ -387,7 +428,7 @@ body {
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
+    background: linear-gradient(90deg, var(--accent-color, var(--color-primary)), var(--color-primary-light));
     border-radius: var(--radius-card) var(--radius-card) 0 0;
   }
   .glass-card-accent:hover {
@@ -440,24 +481,21 @@ body {
   50% { box-shadow: 0 0 0 8px transparent; }
 }
 @keyframes modalScaleIn {
-  from { opacity: 0; transform: scale(0.95) translateY(8px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes modalScaleOut {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.96); }
+}
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
-/* ══ 流式输出闪烁光标 ══ */
-@keyframes blink {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0; }
-}
+/* ══ 流式输出闪烁光标（定义见上方，此处不重复） ══ */
 
-/* ══ 省略号动画 ══ */
-@keyframes ellipsis {
-  0% { content: ''; }
-  25% { content: '.'; }
-  50% { content: '..'; }
-  75% { content: '...'; }
-  100% { content: ''; }
-}
+/* ══ 省略号动画（定义见上方，此处不重复） ══ */
 
 .stagger-in > * {
   opacity: 0;
@@ -629,6 +667,7 @@ select {
   padding: 0.15em 0.4em;
   border-radius: 4px;
   font-size: 0.875em;
+  font-family: var(--font-mono);
 }
 .chat-markdown pre {
   background: var(--bg-hover);
@@ -640,13 +679,14 @@ select {
 .chat-markdown pre code {
   background: none;
   padding: 0;
+  font-family: var(--font-mono);
 }
 .chat-markdown a {
-  color: var(--primary);
+  color: var(--color-primary);
   text-decoration: underline;
 }
 .chat-markdown blockquote {
-  border-left: 3px solid var(--primary);
+  border-left: 3px solid var(--color-primary);
   padding-left: 0.75em;
   margin: 0.5em 0;
   opacity: 0.8;
@@ -679,30 +719,25 @@ select {
 }
 
 /* Loading page animations */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 @keyframes scaleIn {
-  from { 
-    opacity: 0; 
-    transform: scale(0.8); 
+  from {
+    opacity: 0;
+    transform: scale(0.8);
   }
-  to { 
-    opacity: 1; 
-    transform: scale(1); 
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
-@keyframes slideUp {
-  from { 
-    opacity: 0; 
-    transform: translateX(-20px); 
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
   }
-  to { 
-    opacity: 1; 
-    transform: translateX(0); 
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
@@ -716,5 +751,5 @@ select {
 
 .animate-slide-up {
   opacity: 0;
-  animation: slideUp 0.5s ease-out forwards;
+  animation: slideInFromLeft 0.5s ease-out forwards;
 }

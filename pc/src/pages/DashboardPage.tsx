@@ -4,6 +4,8 @@ import { format } from 'date-fns';
 import { db } from '../db';
 import { useDailyRecords } from '../hooks/useDailyRecords';
 import { useLanguage } from '../i18n/useLanguage';
+import { useClock, getGreeting } from '../hooks/useClock';
+import { generateHealthProfile } from '../services/emotion/HealthProfileService';
 import QuickStats from '../components/dashboard/QuickStats';
 import TodayTodos from '../components/dashboard/TodayTodos';
 import TodayDiary from '../components/dashboard/TodayDiary';
@@ -11,6 +13,7 @@ import LearningCheckin from '../components/dashboard/LearningCheckin';
 import WeeklyReview from '../components/dashboard/WeeklyReview';
 import EmotionOverview from '../components/dashboard/EmotionOverview';
 import InterventionRecommendations from '../components/dashboard/InterventionRecommendations';
+import DailyQuote from '../components/dashboard/DailyQuote';
 import { useAI } from '../hooks/useAI';
 
 export default function DashboardPage() {
@@ -22,6 +25,13 @@ export default function DashboardPage() {
   useEffect(() => {
     initService();
   }, [initService]);
+
+  // 首次加载（无数据时）自动生成基线健康画像，避免仪表盘空态循环
+  useEffect(() => {
+    generateHealthProfile().catch((err) =>
+      console.warn('[DashboardPage] generateHealthProfile failed:', err)
+    );
+  }, []);
 
   const counts = useLiveQuery(async () => {
     const [t, h, l] = await Promise.all([
@@ -36,9 +46,9 @@ export default function DashboardPage() {
     computeDailyRecord(today);
   }, [today, computeDailyRecord, counts?.tasks, counts?.habits, counts?.logs]);
 
-  const now = new Date();
-  const hour = now.getHours();
-  const greeting = hour < 6 ? '夜深了，注意休息' : hour < 12 ? '早上好' : hour < 14 ? '中午好' : hour < 18 ? '下午好' : '晚上好';
+  // 实时时钟：问候语和日期随时间自动更新（跨时段不再需要刷新页面）
+  const now = useClock();
+  const greeting = getGreeting(now, lang);
 
   const dateDisplay = lang === 'zh-CN'
     ? `${now.getMonth() + 1}月${now.getDate()}日 ${['周日', '周一', '周二', '周三', '周四', '周五', '周六'][now.getDay()]}`
@@ -60,19 +70,19 @@ export default function DashboardPage() {
 
       <QuickStats />
 
-      <div className="grid gap-5 grid-cols-1 lg:grid-cols-2 items-start">
-        <div className="space-y-5">
-          <TodayTodos />
-          <LearningCheckin />
-          <InterventionRecommendations />
-        </div>
-        <div className="space-y-5">
-          <TodayDiary />
-          <EmotionOverview />
+      {/* 主内容区：严格两列网格，整齐对齐，所有卡片等高 */}
+      <div className="grid gap-5 grid-cols-1 md:grid-cols-2 items-stretch">
+        <TodayTodos />
+        <EmotionOverview />
+        <InterventionRecommendations />
+        <TodayDiary />
+        <LearningCheckin />
+        <WeeklyReview />
+        {/* 每日金句跨两列，置底 */}
+        <div className="md:col-span-2">
+          <DailyQuote />
         </div>
       </div>
-
-      <WeeklyReview />
     </div>
   );
 }

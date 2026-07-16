@@ -22,8 +22,8 @@ export default function Card({ children, className = '', hover = false, onClick 
       aria-label={onClick ? '可点击卡片' : undefined}
       className={`
         glass-card glass-glow p-5
-        ${hover ? 'glass-card-hover cursor-pointer' : ''}
-        ${onClick ? 'cursor-pointer' : ''}
+        ${hover ? 'glass-card-hover cursor-pointer card-float' : ''}
+        ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''}
         transition-all duration-200
         ${className}
       `}

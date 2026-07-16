@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
+import { Plus, Trash2, CheckCircle2, Circle } from 'lucide-react';
 import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Textarea from '../common/Textarea';
@@ -8,7 +9,7 @@ import TagInput from '../common/TagInput';
 import { useTasks } from '../../hooks/useTasks';
 import { useLanguage } from '../../i18n/useLanguage';
 import { PRIORITY_KEYS, PRIORITY_DEFAULT_COLORS, PRIORITY_ACTIVE_COLORS } from '../../utils/taskConstants';
-import type { Task } from '../../db/models';
+import type { Task, SubTask } from '../../db/models';
 
 interface TaskDetailModalProps {
   task: Task | null;
@@ -42,6 +43,12 @@ export default function TaskDetailModal({ task, open, onClose }: TaskDetailModal
   const [errors, setErrors] = useState<{ title?: boolean; interval?: boolean; endDate?: boolean }>({});
   const [shaking, setShaking] = useState(false);
 
+  // 新增字段：截止时间 + 提醒 + 子任务
+  const [dueTime, setDueTime] = useState('');
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [subtasks, setSubtasks] = useState<SubTask[]>([]);
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+
   const isNew = !task;
 
   useEffect(() => {
@@ -55,6 +62,9 @@ export default function TaskDetailModal({ task, open, onClose }: TaskDetailModal
         setRepeatEnabled(!!task.repeatInterval);
         setRepeatInterval(task.repeatInterval ? String(task.repeatInterval) : '');
         setRepeatEnd(task.repeatEnd || '');
+        setDueTime(task.dueTime || '');
+        setReminderEnabled(task.reminderEnabled ?? false);
+        setSubtasks(task.subtasks || []);
       } else {
         setTitle('');
         setDescription('');
@@ -64,7 +74,11 @@ export default function TaskDetailModal({ task, open, onClose }: TaskDetailModal
         setRepeatEnabled(false);
         setRepeatInterval('');
         setRepeatEnd('');
+        setDueTime('');
+        setReminderEnabled(false);
+        setSubtasks([]);
       }
+      setNewSubtaskTitle('');
       setErrors({});
       setShaking(false);
     }
@@ -129,13 +143,13 @@ export default function TaskDetailModal({ task, open, onClose }: TaskDetailModal
         const intervalNum = repeatEnabled && repeatInterval ? parseInt(repeatInterval) : undefined;
         if (repeatEnabled && repeatEnd && intervalNum) {
           await createRecurringTasks(
-            { title: title.trim(), description, priority, tags },
+            { title: title.trim(), description, priority, tags, dueTime: dueTime || undefined, reminderEnabled, subtasks },
             intervalNum,
             scheduledDate,
             repeatEnd,
           );
         } else {
-          await createTask({ title: title.trim(), description, priority, scheduledDate, tags });
+          await createTask({ title: title.trim(), description, priority, scheduledDate, tags, dueTime: dueTime || undefined, reminderEnabled, subtasks });
         }
       } else {
         await updateTask(task.id, {
@@ -144,13 +158,32 @@ export default function TaskDetailModal({ task, open, onClose }: TaskDetailModal
           priority,
           scheduledDate,
           tags,
+          dueTime: dueTime || undefined,
+          reminderEnabled,
+          subtasks,
         });
       }
       onClose();
     } finally {
       setSaving(false);
     }
-  }, [saving, title, isNew, repeatEnabled, repeatInterval, repeatEnd, scheduledDate, description, priority, tags, task, createRecurringTasks, createTask, updateTask, onClose]);
+  }, [saving, title, isNew, repeatEnabled, repeatInterval, repeatEnd, scheduledDate, description, priority, tags, task, dueTime, reminderEnabled, subtasks, createRecurringTasks, createTask, updateTask, onClose]);
+
+  // 子任务操作（编辑态本地管理，保存时统一写入）
+  const handleAddSubtask = useCallback(() => {
+    const trimmed = newSubtaskTitle.trim();
+    if (!trimmed) return;
+    setSubtasks(prev => [...prev, { id: crypto.randomUUID(), title: trimmed, done: false }]);
+    setNewSubtaskTitle('');
+  }, [newSubtaskTitle]);
+
+  const handleToggleSubtaskLocal = useCallback((id: string) => {
+    setSubtasks(prev => prev.map(s => s.id === id ? { ...s, done: !s.done } : s));
+  }, []);
+
+  const handleDeleteSubtaskLocal = useCallback((id: string) => {
+    setSubtasks(prev => prev.filter(s => s.id !== id));
+  }, []);
 
   const handleDelete = useCallback(async () => {
     if (!task) return;
@@ -195,6 +228,77 @@ export default function TaskDetailModal({ task, open, onClose }: TaskDetailModal
             value={scheduledDate}
             onChange={(e) => setScheduledDate(e.target.value)}
           />
+        </div>
+
+        {/* 截止时间 + 提醒开关 */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-text-primary">截止时间</label>
+            <input
+              type="time"
+              value={dueTime}
+              onChange={(e) => setDueTime(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-btn border text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              style={{ background: 'var(--bg-card-solid)', borderColor: 'var(--border-input)' }}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-text-primary">到期提醒</label>
+            <label className="flex items-center gap-2 h-[42px] text-sm text-text-secondary cursor-pointer">
+              <input
+                type="checkbox"
+                checked={reminderEnabled}
+                onChange={(e) => setReminderEnabled(e.target.checked)}
+                disabled={!dueTime}
+                className="rounded border-slate-300 text-primary focus:ring-primary/30 disabled:opacity-40"
+              />
+              {dueTime ? '到期前 5 分钟通知' : '需先设截止时间'}
+            </label>
+          </div>
+        </div>
+
+        {/* 子任务清单 */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-text-primary">子任务清单</label>
+          {subtasks.length > 0 && (
+            <div className="space-y-1">
+              {subtasks.map((s) => (
+                <div key={s.id} className="flex items-center gap-2 p-2 rounded-lg bg-surface-hover/50 group">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleSubtaskLocal(s.id)}
+                    className="shrink-0"
+                    aria-label={s.done ? '标记未完成' : '标记完成'}
+                  >
+                    {s.done ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Circle className="w-4 h-4 text-text-muted" />}
+                  </button>
+                  <span className={`text-sm flex-1 ${s.done ? 'line-through text-text-muted' : 'text-text-secondary'}`}>{s.title}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteSubtaskLocal(s.id)}
+                    className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-500 transition-all"
+                    aria-label="删除子任务"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newSubtaskTitle}
+              onChange={(e) => setNewSubtaskTitle(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSubtask(); } }}
+              placeholder="添加子任务后回车"
+              className="flex-1 px-3 py-1.5 text-sm border rounded-btn outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+              style={{ borderColor: 'var(--glass-border)' }}
+            />
+            <Button variant="secondary" onClick={handleAddSubtask} disabled={!newSubtaskTitle.trim()}>
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         {isNew && (

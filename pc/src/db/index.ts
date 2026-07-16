@@ -3,7 +3,8 @@ import type {
   Task, DiaryEntry, Habit, HabitLog, Memory, MemoryCandidate,
   DailyRecord, QuickCapture, Category, SyncLog, Quote,
   EmotionRecord, BehaviorRecord, HealthProfile, CrisisLog,
-  ConversationSummary, Conversation, Assessment, TherapyRecord, FeedbackLog
+  ConversationSummary, Conversation, Assessment, TherapyRecord, FeedbackLog,
+  SubTask
 } from './models';
 
 export class FriendOSDatabase extends Dexie {
@@ -82,6 +83,12 @@ export class FriendOSDatabase extends Dexie {
     // v8: 添加完整对话历史表
     this.version(8).stores({
       conversations: '&id, createdAt, updatedAt',
+    });
+
+    // v9: 任务表新增 sortOrder 索引（支持拖拽排序）
+    // 新增字段 dueTime/reminderEnabled/subtasks 为可选，Dexie 自动兼容旧数据
+    this.version(9).stores({
+      tasks: '&id, [status+scheduledDate], priority, scheduledDate, createdAt, *tags, isRollover, sortOrder',
     });
   }
 }

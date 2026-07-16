@@ -2,9 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
 import { ArrowLeft, Trash2, Sparkles } from 'lucide-react';
 import { db } from '../../db';
 import { useDiary } from '../../hooks/useDiary';
+import { contextService } from '../../services/ai/ContextService';
 import MoodSelector from './MoodSelector';
 import Button from '../common/Button';
 import TagInput from '../common/TagInput';
@@ -66,6 +68,8 @@ export default function DiaryEditor() {
     lastKeyTime: Date.now(),
     totalChars: 0,
   });
+  // 跟踪 existingEntry 是否已填充到本地 state，避免 LiveQuery 新引用覆盖用户编辑
+  const seededRef = useRef(false);
   const PAUSE_THRESHOLD = 2000; // 2秒无输入视为停顿
 
   // 追踪打字行为
@@ -109,21 +113,32 @@ export default function DiaryEditor() {
   }, []);
 
   useEffect(() => {
-    if (existingEntry) {
+    // 仅在切换日记条目（id 变化）时填充，避免 LiveQuery 每次 tick 返回新引用覆盖用户编辑
+    if (id !== undefined && !seededRef.current && existingEntry) {
       setDate(existingEntry.date);
       setTitle(existingEntry.title || '');
       setContent(existingEntry.content);
       setMood(existingEntry.mood);
       setWeather(existingEntry.weather || '');
       setTags(existingEntry.tags || []);
+      seededRef.current = true;
     }
-  }, [existingEntry]);
+    // id 变化时重置 seed 标记，允许新条目填充
+    return () => {
+      // 不在此重置 seededRef，由下方独立 effect 处理 id 切换
+    };
+  }, [existingEntry, id]);
 
   // 添加键盘事件监听
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
+
+  // id 切换（新建/编辑不同条目）时重置 seed 标记，允许 existingEntry 重新填充
+  useEffect(() => {
+    seededRef.current = false;
+  }, [id]);
 
   const handleTemplateSelect = (template: JournalTemplate) => {
     setSelectedTemplate(template.id);
@@ -214,6 +229,17 @@ export default function DiaryEditor() {
       // 保存情感记录到数据库（仅在保存日记时写入，避免每 1.5s 重复写入）
       if (sentimentResult) {
         try {
+          // 计算社交分数（从日记文本中提取社交关键词）
+          let socialScore = 0;
+          try {
+            const socialResult = await window.electronAPI?.emotionAnalyzeDiary?.({
+              content, date, mood,
+            });
+            socialScore = socialResult?.socialScore ?? 0;
+          } catch {
+            // 社交分数计算失败不影响保存
+          }
+
           await db.emotionRecords.put({
             id: `diary-${id || date}`,
             date: date,
@@ -228,12 +254,14 @@ export default function DiaryEditor() {
               surprise: 0,
               disgust: 0,
             },
+            socialScore,
             riskLevel: sentimentResult.level === 'high' ? 'high' : sentimentResult.level === 'medium' ? 'medium' : 'low',
             keywords: sentimentResult.keywords,
             createdAt: new Date().toISOString(),
           });
         } catch (err) {
           console.error('[DiaryEditor] Failed to save emotion record:', err);
+          toast.error(t('diary.save_emotion_fail'));
         }
       }
 
@@ -286,18 +314,20 @@ export default function DiaryEditor() {
         });
       });
 
-      // 保存后延迟30秒检查是否需要危机干预
+      // 高风险：立即触发危机干预（原 30s 延迟对真实危机有风险，改为立即）
+      // 文案柔和，避免打断保存流程后的情绪
       if (sentimentResult?.level === 'high') {
         const savedContent = content;
-        setTimeout(() => {
-          showCrisis('high', 'diary', savedContent);
-        }, 30000);
+        showCrisis('high', 'diary', savedContent);
       }
 
       // Navigate first, then update state (prevents state update on unmounted component)
+      // 保存日记后清除 AI 上下文缓存，使下次聊天能获取最新数据
+      contextService.clearCache();
       navigate('/diary');
     } catch (err) {
       console.error('[DiaryEditor] Save error:', err);
+      toast.error(t('diary.save') + '失败，请重试');
       setSaving(false);
     }
   };
@@ -305,31 +335,37 @@ export default function DiaryEditor() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <button
+        type="button"
         onClick={() => navigate('/diary')}
-        className="flex items-center gap-1 text-sm text-text-muted hover:text-text-primary transition-colors"
+        className="flex items-center gap-1 text-sm text-text-muted hover:text-text-primary transition-colors cursor-pointer"
       >
-        <ArrowLeft className="w-4 h-4" />
+        <ArrowLeft className="w-4 h-4" aria-hidden="true" />
         {t('diary.back')}
       </button>
 
       <div className="glass-card p-6 space-y-5">
         <div className="flex items-center justify-between">
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="text-sm px-3 py-1.5 rounded-btn border focus:outline-none focus:ring-2 focus:ring-primary/30"
-            style={{ borderColor: 'var(--glass-border)' }}
-          />
+          <label className="flex items-center gap-2 text-sm">
+            <span className="text-text-muted sr-only">{t('diary.date_label')}</span>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              aria-label={t('diary.date_label')}
+              className="text-sm px-3 py-1.5 rounded-btn border focus:outline-none focus:ring-2 focus:ring-primary/30"
+              style={{ borderColor: 'var(--glass-border)' }}
+            />
+          </label>
           <div className="flex items-center gap-2">
             <MoodSelector value={mood} onChange={setMood} />
             <button
               type="button"
               onClick={() => setShowEmotionPicker(!showEmotionPicker)}
-              className={`px-2 py-1 text-xs rounded-full border transition-colors ${
+              aria-label={Object.keys(emotions).length > 0 ? `${Object.keys(emotions).length} 种情绪` : '详细情绪'}
+              className={`px-2 py-1 text-xs rounded-full border transition-colors cursor-pointer ${
                 Object.keys(emotions).length > 0
                   ? 'bg-primary/10 text-primary border-primary/30'
-                  : 'text-text-muted hover:bg-slate-100'
+                  : 'text-text-muted hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
               style={Object.keys(emotions).length > 0 ? undefined : { background: 'var(--bg-hover)', borderColor: 'var(--glass-border)' }}
             >
@@ -356,30 +392,33 @@ export default function DiaryEditor() {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder={t('diary.title_placeholder')}
+          aria-label={t('diary.title_placeholder')}
           className="w-full text-lg font-semibold outline-none placeholder:text-text-muted bg-transparent"
         />
 
         {/* Template Toggle */}
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={() => setShowTemplates(!showTemplates)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full border transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full border transition-colors cursor-pointer ${
               showTemplates
-                ? 'bg-indigo-50 text-indigo-600 border-indigo-200'
-                : 'text-slate-500 hover:bg-slate-100'
+                ? 'bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-300 dark:border-indigo-700'
+                : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
             }`}
             style={showTemplates ? undefined : { background: 'var(--bg-hover)', borderColor: 'var(--glass-border)' }}
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
             {selectedTemplate === 'free' ? '选择模板' : JOURNAL_TEMPLATES.find(t => t.id === selectedTemplate)?.name || '模板'}
           </button>
           {selectedTemplate !== 'free' && (
             <button
+              type="button"
               onClick={() => {
                 setSelectedTemplate('free');
                 setContent('');
               }}
-              className="text-xs text-slate-400 hover:text-slate-600"
+              className="text-xs text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 cursor-pointer"
             >
               清除模板
             </button>
@@ -414,6 +453,7 @@ export default function DiaryEditor() {
             typingSessionRef.current.totalChars = newContent.length;
           }}
           placeholder={t('diary.content_placeholder')}
+          aria-label={t('diary.content_placeholder')}
           className="w-full min-h-[300px] text-sm leading-relaxed outline-none resize-none placeholder:text-text-muted bg-transparent border rounded-lg px-4 py-3"
           style={{ borderColor: 'var(--border-input)' }}
         />
@@ -457,6 +497,7 @@ export default function DiaryEditor() {
             value={weather}
             onChange={(e) => setWeather(e.target.value)}
             placeholder={t('diary.weather_placeholder')}
+            aria-label={t('diary.weather')}
             className="text-sm px-3 py-1.5 rounded-btn border focus:outline-none focus:ring-2 focus:ring-primary/30 w-32"
             style={{ borderColor: 'var(--glass-border)' }}
           />
