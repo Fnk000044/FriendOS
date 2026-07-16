@@ -2,18 +2,21 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import StatusBar from './StatusBar';
-import ChatPanel from '../assistant/ChatPanel';
 import { useUIStore } from '../../stores/uiStore';
 import { useThemeStore } from '../../stores/useThemeStore';
+import { useAppearanceStore } from '../../stores/useAppearanceStore';
 
 export default function AppLayout() {
   const sidebarOpen = useUIStore((s) => s.sidebarOpen);
   const collapsed = useUIStore((s) => s.sidebarCollapsed);
-  const aiAssistantOpen = useUIStore((s) => s.aiAssistantOpen);
   const location = useLocation();
-  const isAssistantPage = location.pathname === '/assistant';
   // 激活主题 store（初始化时自动 applyTheme + 监听系统变化）
   useThemeStore((s) => s.resolved);
+  // 激活外观 store（初始化时自动 applyAppearance + 订阅变化触发重渲染）
+  useAppearanceStore((s) => ({
+    accent: s.accent, fontScale: s.fontScale, radiusScale: s.radiusScale,
+    glassBlur: s.glassBlur, reduceMotion: s.reduceMotion,
+  }));
 
   const sidebarMargin = sidebarOpen
     ? (collapsed ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width)')
@@ -44,25 +47,11 @@ export default function AppLayout() {
       <div className="relative z-10 pt-8 transition-all duration-200 ease-out" style={{ marginLeft: sidebarMargin }}>
         <Header />
         <div className="flex" style={{ height: 'calc(100vh - 32px - var(--header-height) - 28px)' }}>
-          {/* AI 助理主页面让 ChatPanel 自己管理内部滚动，避免 main 嵌套滚动导致输入框漂移 */}
-          <main className={`flex-1 px-4 md:px-7 py-6 max-w-7xl mx-auto min-w-0 ${isAssistantPage ? 'overflow-hidden' : 'overflow-y-auto'}`} role="main" aria-label="主内容区">
+          <main className="flex-1 px-4 md:px-7 py-6 max-w-7xl mx-auto min-w-0 overflow-y-auto" role="main" aria-label="主内容区">
             <div key={location.pathname} className="page-transition-enter h-full">
               <Outlet />
             </div>
           </main>
-
-          {aiAssistantOpen && (
-            <div className="overflow-hidden shrink-0 transition-all duration-300 ease-out w-[360px] md:w-[380px] xl:w-[400px]">
-              <aside
-                className="w-full h-full border-l backdrop-blur-glass flex flex-col"
-                style={{ background: 'var(--bg-card)', borderColor: 'var(--glass-border)', boxShadow: '-4px 0 24px rgba(0,0,0,0.04)' }}
-                role="complementary"
-                aria-label="AI助手面板"
-              >
-                <ChatPanel variant="floating" />
-              </aside>
-            </div>
-          )}
         </div>
         <StatusBar />
       </div>

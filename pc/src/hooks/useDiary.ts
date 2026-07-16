@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { db } from '../db';
-import { contextService } from '../services/ai/ContextService';
 
 export function useDiary() {
   const createEntry = useCallback(async (data: {
@@ -27,7 +26,6 @@ export function useDiary() {
         updatedAt: now,
       });
       toast.success('日记已保存');
-      contextService.clearCache();
       return id;
     } catch (err) {
       console.error('[useDiary] createEntry error:', err);
@@ -50,7 +48,6 @@ export function useDiary() {
         return false;
       }
       toast.success('日记已更新');
-      contextService.clearCache();
       return true;
     } catch (err) {
       console.error('[useDiary] updateEntry error:', err);
@@ -63,7 +60,6 @@ export function useDiary() {
     try {
       await db.diaries.delete(id);
       toast.success('日记已删除');
-      contextService.clearCache();
       return true;
     } catch (err) {
       console.error('[useDiary] deleteEntry error:', err);

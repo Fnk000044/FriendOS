@@ -25,6 +25,9 @@
 }
 
 :root {
+  /* 外观设置默认值（被 useAppearanceStore.applyAppearance 动态覆盖） */
+  --font-scale: 1;
+  --accent-color: #14B8A6;
   --bg-base: #F0F9FF;
   --bg-gradient: linear-gradient(
     135deg,
@@ -203,6 +206,8 @@
 
 body {
   font-family: 'HarmonyOS Sans SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* 默认 16px，受 --font-scale 缩放（外观设置） */
+  font-size: calc(16px * var(--font-scale, 1));
   background: var(--bg-gradient);
   background-attachment: fixed;
   color: var(--text-primary);
@@ -210,6 +215,37 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
   height: 100vh;
+}
+
+/* 减少动效（外观设置开关启用时） */
+[data-reduce-motion="true"] *,
+[data-reduce-motion="true"] *::before,
+[data-reduce-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Slider 通用样式（覆盖原生 range thumb） */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  border: 2px solid var(--bg-card-solid);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  cursor: pointer;
+  border: 2px solid var(--bg-card-solid);
 }
 
 #root {
@@ -649,6 +685,20 @@ input,
 textarea,
 select {
   transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* 深色模式下原生 input/textarea/select 文字颜色兜底
+   原因：原生表单元素不继承 body color，浏览器 UA 默认黑字白底，
+   导致深色背景上输入文字不可见。此处强制文字色与背景色跟随主题变量。 */
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  color: var(--text-primary);
+  background-color: var(--bg-card-solid);
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-muted);
 }
 
 /* Custom selection color */

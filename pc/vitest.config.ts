@@ -13,10 +13,13 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}', 'electron/**/*.{test,spec}.{ts,cts,js,cjs}'],
+    environmentMatchGlobs: [
+      ['electron/**', 'node'],
+    ],
     coverage: {
       provider: 'v8',
-      include: ['src/utils/**', 'src/stores/**', 'src/hooks/**', 'src/services/**'],
+      include: ['src/utils/**', 'src/stores/**', 'src/hooks/**', 'src/services/**', 'electron/services/**'],
     },
   },
 });

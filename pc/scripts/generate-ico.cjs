@@ -2,14 +2,18 @@ const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
 
-const svgPath = path.join(__dirname, '..', 'build', 'icon.svg');
-const icoPath = path.join(__dirname, '..', 'build', 'icon.ico');
+// Source: the single SVG master used by both favicon and app icon
+const svgPath = path.join(__dirname, '..', 'public', 'favicon.svg');
+// Output: the .ico referenced by electron-builder.json, main.cjs and NSIS config
+const icoPath = path.join(__dirname, '..', 'build', 'custom-icon.ico');
+// Output: browser favicon (kept in sync with the ico source)
+const faviconPngPath = path.join(__dirname, '..', 'public', 'favicon.png');
+
+const sizes = [16, 32, 48, 64, 128, 256];
 
 async function generateIco() {
   const svgBuffer = fs.readFileSync(svgPath);
 
-  // Generate PNG buffers for different sizes
-  const sizes = [16, 32, 48, 64, 128, 256];
   const pngBuffers = [];
 
   for (const size of sizes) {
@@ -20,6 +24,10 @@ async function generateIco() {
     pngBuffers.push(pngBuffer);
     console.log(`Generated ${size}x${size}`);
   }
+
+  // Also write a 256px PNG as the browser favicon
+  fs.writeFileSync(faviconPngPath, pngBuffers[sizes.length - 1]);
+  console.log(`Favicon PNG saved to: ${faviconPngPath}`);
 
   // For Windows ICO, we need to create a proper ICO file
   // ICO format: header + entries + image data

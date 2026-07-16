@@ -4,7 +4,7 @@ import type {
   DailyRecord, QuickCapture, Category, SyncLog, Quote,
   EmotionRecord, BehaviorRecord, HealthProfile, CrisisLog,
   ConversationSummary, Conversation, Assessment, TherapyRecord, FeedbackLog,
-  SubTask
+  AIReportCache, SubTask
 } from './models';
 
 export class FriendOSDatabase extends Dexie {
@@ -28,6 +28,7 @@ export class FriendOSDatabase extends Dexie {
   assessments!: EntityTable<Assessment, 'id'>;
   therapyRecords!: EntityTable<TherapyRecord, 'id'>;
   feedbackLogs!: EntityTable<FeedbackLog, 'id'>;
+  aiReportCache!: EntityTable<AIReportCache, 'id'>;
 
   constructor() {
     super('FriendOS');
@@ -89,6 +90,11 @@ export class FriendOSDatabase extends Dexie {
     // 新增字段 dueTime/reminderEnabled/subtasks 为可选，Dexie 自动兼容旧数据
     this.version(9).stores({
       tasks: '&id, [status+scheduledDate], priority, scheduledDate, createdAt, *tags, isRollover, sortOrder',
+    });
+
+    // v10: 添加 AI 报告缓存表（按周期复用，避免重复推理）
+    this.version(10).stores({
+      aiReportCache: '&id, generatedAt',
     });
   }
 }

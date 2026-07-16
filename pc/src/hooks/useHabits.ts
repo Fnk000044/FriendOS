@@ -3,7 +3,6 @@ import toast from 'react-hot-toast';
 import { db } from '../db';
 import type { Habit } from '../db/models';
 import { getToday, getDaysAgo, formatLocalDate } from '../utils/date';
-import { contextService } from '../services/ai/ContextService';
 
 export function useHabits() {
   const createHabit = useCallback(async (data: {
@@ -30,7 +29,6 @@ export function useHabits() {
         createdAt: new Date().toISOString(),
       });
       toast.success('习惯已创建');
-      contextService.clearCache();
       return id;
     } catch (err) {
       console.error('[useHabits] createHabit error:', err);
@@ -42,7 +40,6 @@ export function useHabits() {
   const updateHabit = useCallback(async (id: string, data: Partial<Habit>) => {
     try {
       await db.habits.update(id, data);
-      contextService.clearCache();
     } catch (err) {
       console.error('[useHabits] updateHabit error:', err);
       toast.error('更新习惯失败');
@@ -57,7 +54,6 @@ export function useHabits() {
         await db.habitLogs.where('habitId').equals(id).delete();
       });
       toast.success('习惯已删除');
-      contextService.clearCache();
     } catch (err) {
       console.error('[useHabits] deleteHabit error:', err);
       toast.error('删除习惯失败');
@@ -86,7 +82,6 @@ export function useHabits() {
           result = true;
         }
       });
-      contextService.clearCache();
       return result;
     } catch (err) {
       console.error('[useHabits] toggleLog error:', err);

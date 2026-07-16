@@ -293,7 +293,7 @@ export default function TaskDetailModal({ task, open, onClose }: TaskDetailModal
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSubtask(); } }}
               placeholder="添加子任务后回车"
               className="flex-1 px-3 py-1.5 text-sm border rounded-btn outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
-              style={{ borderColor: 'var(--glass-border)' }}
+              style={{ borderColor: 'var(--glass-border)', background: 'var(--bg-card-solid)', color: 'var(--text-primary)' }}
             />
             <Button variant="secondary" onClick={handleAddSubtask} disabled={!newSubtaskTitle.trim()}>
               <Plus className="w-4 h-4" />
@@ -372,7 +372,7 @@ export default function TaskDetailModal({ task, open, onClose }: TaskDetailModal
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCustomTagAdd(); } }}
                 placeholder="输入自定义标签后回车"
                 className="flex-1 px-3 py-1.5 text-sm border rounded-btn outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
-                style={{ borderColor: 'var(--glass-border)' }}
+                style={{ borderColor: 'var(--glass-border)', background: 'var(--bg-card-solid)', color: 'var(--text-primary)' }}
               />
             </div>
           )}

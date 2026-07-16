@@ -1,7 +1,10 @@
 /**
  * Report AI Service
- * Generates AI-powered weekly/monthly reports with insights and suggestions.
- * Uses local Qwen3 model when available, falls back to rule-based engine.
+ * Generates weekly/monthly reports with insights and suggestions.
+ *
+ * 历史版本曾接入本地 Qwen3 模型做 AI 流式报告，因模型体积大、响应慢、
+ * 生成质量不稳定，已移除本地大模型。现仅保留基于数据驱动的规则引擎，
+ * 文案根据统计指标生成，保证稳定可解释。
  */
 
 import { db } from '../../db';
@@ -35,102 +38,7 @@ interface ReportData {
 }
 
 /**
- * 用本地 Qwen3 模型生成报告
- */
-async function generateWithAI(data: ReportData): Promise<AIReport | null> {
-  if (!window.electronAPI?.localModelComplete) return null;
-
-  const systemPrompt = `你是一位专业的心理健康顾问。根据用户数据生成简洁的心理健康报告。只返回纯JSON，不要markdown代码块、不要额外说明。
-
-JSON结构：
-{"summary":"一句话总结，30字以内","insights":["洞察1","洞察2","洞察3"],"suggestions":["建议1","建议2"]}
-
-要求：
-- summary 用一句话客观总结本周状态
-- insights 是 2-3 条基于数据的客观洞察（不重复 summary）
-- suggestions 是 2 条具体可执行的建议
-- 所有文字用中文，简洁专业，不使用表情符号
-
-示例1（状态良好）：
-{"summary":"本周状态平稳，情绪积极，保持了良好的生活节奏。","insights":["日记记录率71%，自我觉察习惯良好","任务完成率80%，执行力强","情绪趋势稳定"],"suggestions":["继续保持规律作息","尝试拓展社交活动"]}
-
-示例2（需关注）：
-{"summary":"本周情绪有所波动，建议多关注自我状态。","insights":["检测到2次高风险情绪","日记记录较少，记录率29%","任务完成率偏低40%"],"suggestions":["每天花2分钟记录心情","将大任务拆分为小步骤"]}`;
-
-  const userPrompt = `## 用户数据概览
-- 时间范围：${data.periodLabel}
-- 平均心情评分：${data.avgMood.toFixed(1)}/5
-- 高风险情绪次数：${data.highRiskCount}
-- 日记记录天数：${data.diaryDays}/${data.totalDays}（记录率${Math.round(data.diaryDays / data.totalDays * 100)}%）
-- 情绪趋势：${data.trend === 'improving' ? '改善中' : data.trend === 'declining' ? '下降中' : '稳定'}
-- 任务平均完成率：${(data.taskAvgRate * 100).toFixed(0)}%
-- 深夜活动天数：${data.lateNightCount}
-${data.bestDay ? `- 最佳状态日：${data.bestDay}` : ''}
-${data.worstDay ? `- 最低状态日：${data.worstDay}` : ''}
-
-## 输出要求
-返回如下JSON结构（不要markdown，不要\`\`\`json）：
-{"summary":"一句话总结，30字以内","insights":["洞察1","洞察2","洞察3"],"suggestions":["建议1","建议2"]}
-
-## 示例
-用户数据：平均心情3.2/5，高风险0次，日记5/7天，趋势稳定，任务完成率65%
-{"summary":"本周状态平稳，情绪偶有波动但整体可控。","insights":["日记记录率71%，保持了较好的自我觉察习惯","任务完成率65%，还有提升空间","情绪趋势稳定，无明显恶化迹象"],"suggestions":["继续保持每日日记记录的习惯","尝试将大任务拆分为小步骤提高完成率"]}
-
-现在请根据上述数据生成报告：`;
-
-  try {
-    const result = await window.electronAPI.localModelComplete(userPrompt, {
-      systemPrompt,
-      temperature: 0.6,
-      maxTokens: 1024,
-    });
-    if (result.error || !result.response) return null;
-
-    // 增强JSON解析：先剥离markdown fence，再贪婪匹配
-    let raw = result.response.trim();
-    // 剥离 ```json ... ``` 或 ``` ... ``` fence
-    raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
-
-    let parsed: any;
-    try {
-      parsed = JSON.parse(jsonMatch[0]);
-    } catch {
-      // 二次尝试：移除可能的尾部逗号
-      const cleaned = jsonMatch[0].replace(/,(\s*[}\]])/g, '$1');
-      try {
-        parsed = JSON.parse(cleaned);
-      } catch {
-        return null;
-      }
-    }
-
-    // 验证结构
-    if (!parsed.summary || !Array.isArray(parsed.insights) || !Array.isArray(parsed.suggestions)) {
-      return null;
-    }
-
-    return {
-      period: `${data.startDate} ~ ${data.endDate}`,
-      summary: String(parsed.summary).slice(0, 100),
-      insights: parsed.insights.filter((s: any) => typeof s === 'string').slice(0, 5),
-      suggestions: parsed.suggestions.filter((s: any) => typeof s === 'string').slice(0, 3),
-      highlights: {
-        bestDay: data.bestDay,
-        worstDay: data.worstDay,
-        trend: data.trend,
-      },
-      method: 'ai',
-    };
-  } catch (err) {
-    console.warn('[ReportAIService] AI 生成失败，回退到规则引擎:', err);
-    return null;
-  }
-}
-
-/**
- * 用规则引擎生成报告（回退方案）
+ * 用规则引擎生成报告
  */
 function generateWithRules(data: ReportData): AIReport {
   const { periodLabel, avgMood, highRiskCount, diaryDays, totalDays, trend, bestDay, worstDay, taskAvgRate } = data;
@@ -215,17 +123,24 @@ function generateWithRules(data: ReportData): AIReport {
 }
 
 /**
- * 主入口：优先使用 AI，失败时回退到规则引擎
+ * 从数据库收集统计特征（共享给 generateAIReport / generateAIReportStream）
+ *
+ * 注意：moodRatings 必须按 date 升序排列后再做趋势计算。
+ * 历史实现曾用 `.sort((a,b)=>a-b)` 按心情评分值排序，破坏了时间序列，
+ * 导致移动平均与 trend 标签失真。此处修复为按记录时间排序。
  */
-export async function generateAIReport(startDate: string, endDate: string): Promise<AIReport> {
-  // Gather data
+async function gatherReportData(startDate: string, endDate: string): Promise<ReportData> {
   const [emotions, behaviors] = await Promise.all([
     db.emotionRecords.where('date').between(startDate, endDate, true, true).toArray(),
     db.behaviorRecords.where('date').between(startDate, endDate, true, true).toArray(),
   ]);
 
-  // Calculate stats
-  const moodRatings = behaviors.filter(b => b.moodRating != null).map(b => b.moodRating!);
+  // 按 date 升序，保证时间序列正确（修复历史 bug）
+  const sortedBehaviors = [...behaviors].sort((a, b) => a.date.localeCompare(b.date));
+  const moodRatings = sortedBehaviors
+    .filter(b => b.moodRating != null)
+    .map(b => b.moodRating!);
+
   const avgMood = moodRatings.length > 0
     ? moodRatings.reduce((a, b) => a + b, 0) / moodRatings.length
     : 3;
@@ -234,15 +149,14 @@ export async function generateAIReport(startDate: string, endDate: string): Prom
   const diaryDays = behaviors.filter(b => b.diaryWritten).length;
   const totalDays = behaviors.length || 1;
 
-  // Determine trend - 使用7日移动平均，比前后半段均值更平滑可靠
+  // Determine trend - 使用 7 日移动平均，比前后半段均值更平滑可靠
+  // moodRatings 已按时间升序
   let trend: AIReport['highlights']['trend'] = 'stable';
   if (moodRatings.length >= 3) {
-    const sorted = [...moodRatings].sort((a, b) => a - b); // 按时间顺序假设已有序
-    // 7日移动平均（不足7日则用全部）
-    const windowSize = Math.min(7, Math.floor(sorted.length / 2));
-    if (windowSize >= 2 && sorted.length >= windowSize * 2) {
-      const firstWindow = sorted.slice(0, windowSize);
-      const lastWindow = sorted.slice(-windowSize);
+    const windowSize = Math.min(7, Math.floor(moodRatings.length / 2));
+    if (windowSize >= 2 && moodRatings.length >= windowSize * 2) {
+      const firstWindow = moodRatings.slice(0, windowSize);
+      const lastWindow = moodRatings.slice(-windowSize);
       const firstAvg = firstWindow.reduce((a, b) => a + b, 0) / firstWindow.length;
       const lastAvg = lastWindow.reduce((a, b) => a + b, 0) / lastWindow.length;
       if (lastAvg - firstAvg > 0.5) trend = 'improving';
@@ -283,204 +197,68 @@ export async function generateAIReport(startDate: string, endDate: string): Prom
   const periodDays = Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1);
   const periodLabel = periodDays <= 7 ? '本周' : periodDays <= 31 ? '本月' : `${periodDays}天`;
 
-  const reportData: ReportData = {
+  return {
     startDate, endDate, periodLabel, avgMood, highRiskCount,
     diaryDays, totalDays, trend, bestDay, worstDay,
     taskAvgRate, lateNightCount,
   };
+}
 
-  // 尝试 AI 生成
-  const aiReport = await generateWithAI(reportData);
-  if (aiReport) return aiReport;
-
-  // 回退到规则引擎
+/**
+ * 主入口：基于规则引擎生成报告
+ */
+export async function generateAIReport(startDate: string, endDate: string): Promise<AIReport> {
+  const reportData = await gatherReportData(startDate, endDate);
   return generateWithRules(reportData);
 }
 
 /**
- * 流式生成报告（summary 逐字输出）
+ * 流式生成报告（兼容旧调用方）
  *
- * - 优先用 Qwen 流式输出 summary 文本（通过 onSummaryChunk 回调）
- * - insights/suggestions 仍用非流式 JSON 解析（结构化字段不适合逐字流）
- * - Qwen 失败时回退到 generateWithRules（不暴露 method 给 UI）
+ * 历史版本接入本地大模型做流式 summary，现已移除大模型。
+ * 此函数保留签名兼容 WeeklyReportCard 等调用方：
+ * - 仍回调 onSummaryChunk，但改为一次性回放规则引擎 summary（逐字符）
+ * - 使 UI 仍能呈现"逐字显示"的过渡效果
  */
 export async function generateAIReportStream(
   startDate: string,
   endDate: string,
   onSummaryChunk?: (chunk: string) => void
 ): Promise<AIReport> {
-  // 收集数据（与 generateAIReport 一致）
-  const [emotions, behaviors] = await Promise.all([
-    db.emotionRecords.where('date').between(startDate, endDate, true, true).toArray(),
-    db.behaviorRecords.where('date').between(startDate, endDate, true, true).toArray(),
-  ]);
+  const reportData = await gatherReportData(startDate, endDate);
 
-  const moodRatings = behaviors.filter(b => b.moodRating != null).map(b => b.moodRating!);
-  const avgMood = moodRatings.length > 0
-    ? moodRatings.reduce((a, b) => a + b, 0) / moodRatings.length
-    : 3;
-
-  const highRiskCount = emotions.filter(e => e.riskLevel === 'high' || e.riskLevel === 'critical').length;
-  const diaryDays = behaviors.filter(b => b.diaryWritten).length;
-  const totalDays = behaviors.length || 1;
-
-  let trend: AIReport['highlights']['trend'] = 'stable';
-  if (moodRatings.length >= 3) {
-    const sorted = [...moodRatings].sort((a, b) => a - b);
-    const windowSize = Math.min(7, Math.floor(sorted.length / 2));
-    if (windowSize >= 2 && sorted.length >= windowSize * 2) {
-      const firstWindow = sorted.slice(0, windowSize);
-      const lastWindow = sorted.slice(-windowSize);
-      const firstAvg = firstWindow.reduce((a, b) => a + b, 0) / firstWindow.length;
-      const lastAvg = lastWindow.reduce((a, b) => a + b, 0) / lastWindow.length;
-      if (lastAvg - firstAvg > 0.5) trend = 'improving';
-      else if (firstAvg - lastAvg > 0.5) trend = 'declining';
-    } else {
-      const firstHalf = moodRatings.slice(0, Math.floor(moodRatings.length / 2));
-      const secondHalf = moodRatings.slice(Math.floor(moodRatings.length / 2));
-      const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
-      const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
-      if (secondAvg - firstAvg > 0.5) trend = 'improving';
-      else if (firstAvg - secondAvg > 0.5) trend = 'declining';
+  // 缓存命中：同周期报告直接复用
+  const cacheKey = `${startDate}_${endDate}`;
+  try {
+    const cached = await db.aiReportCache.get(cacheKey);
+    if (cached?.report) {
+      if (onSummaryChunk && cached.report.summary) {
+        for (const ch of cached.report.summary) onSummaryChunk(ch);
+      }
+      return cached.report as AIReport;
     }
+  } catch (err) {
+    console.warn('[ReportAIService] Cache read failed, will regenerate:', err);
   }
 
-  let bestDay: string | null = null;
-  let worstDay: string | null = null;
-  let bestMood = 0;
-  let worstMood = 6;
-  for (const b of behaviors) {
-    if (b.moodRating != null) {
-      if (b.moodRating > bestMood) { bestMood = b.moodRating; bestDay = b.date; }
-      if (b.moodRating < worstMood) { worstMood = b.moodRating; worstDay = b.date; }
-    }
+  const report = generateWithRules(reportData);
+
+  // 逐字符回放 summary，保持 UI 流式过渡效果
+  if (onSummaryChunk && report.summary) {
+    for (const ch of report.summary) onSummaryChunk(ch);
   }
 
-  const taskBehaviors = behaviors.filter(b => b.tasksTotal > 0);
-  const taskAvgRate = taskBehaviors.length > 0
-    ? taskBehaviors.reduce((sum, b) => sum + b.tasksCompleted / b.tasksTotal, 0) / taskBehaviors.length
-    : 0;
-  const lateNightCount = behaviors.filter(b => b.activeHours?.some(h => h >= 0 && h < 6)).length;
-
-  const periodDays = Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1);
-  const periodLabel = periodDays <= 7 ? '本周' : periodDays <= 31 ? '本月' : `${periodDays}天`;
-
-  const reportData: ReportData = {
-    startDate, endDate, periodLabel, avgMood, highRiskCount,
-    diaryDays, totalDays, trend, bestDay, worstDay,
-    taskAvgRate, lateNightCount,
-  };
-
-  // 流式生成 summary + 结构化 JSON（一次调用同时拿到 summary 文本和 insights/suggestions）
-  if (window.electronAPI?.localModelCompleteStream) {
-    const systemPrompt = `你是一位专业的心理健康顾问。根据用户数据生成心理健康报告。
-只返回纯JSON，不要markdown代码块、不要额外说明。JSON结构：
-{"summary":"一段总结，50字以内","insights":["洞察1","洞察2","洞察3"],"suggestions":["建议1","建议2"]}`;
-
-    const userPrompt = `## 用户数据概览
-- 时间范围：${periodLabel}
-- 平均心情评分：${avgMood.toFixed(1)}/5
-- 高风险情绪次数：${highRiskCount}
-- 日记记录天数：${diaryDays}/${totalDays}
-- 情绪趋势：${trend === 'improving' ? '改善中' : trend === 'declining' ? '下降中' : '稳定'}
-- 任务平均完成率：${(taskAvgRate * 100).toFixed(0)}%
-- 深夜活动天数：${lateNightCount}
-${bestDay ? `- 最佳状态日：${bestDay}` : ''}
-${worstDay ? `- 最低状态日：${worstDay}` : ''}
-
-## 示例
-{"summary":"本周状态平稳，情绪偶有波动但整体可控。","insights":["日记记录率71%，保持了较好的自我觉察习惯","任务完成率65%，还有提升空间"],"suggestions":["继续保持每日日记记录","尝试将大任务拆分为小步骤"]}
-
-现在请根据上述数据生成报告：`;
-
-    return new Promise<AIReport>((resolve) => {
-      let fullText = '';
-      let settled = false;
-      const timeout = setTimeout(() => {
-        if (!settled) {
-          settled = true;
-          resolve(generateWithRules(reportData));
-        }
-      }, 60000);
-
-      // 简易 summary 流式：从 JSON 文本中提取 "summary" 字段值的前缀逐字推送
-      // 因 JSON 结构化输出难以精确逐字定位 summary，这里改为：
-      // 流式累积完整文本，同时若检测到 "summary":" 开头则把后续字符（直到下一个未转义引号）逐字推送给 onSummaryChunk
-      let inSummary = false;
-      let summaryDone = false;
-
-      const cleanup = window.electronAPI!.localModelCompleteStream(
-        userPrompt,
-        (data: any) => {
-          if (settled) return;
-          if (data.error) {
-            settled = true;
-            clearTimeout(timeout);
-            resolve(generateWithRules(reportData));
-            return;
-          }
-          if (data.done) {
-            settled = true;
-            clearTimeout(timeout);
-            // 解析完整 JSON
-            let raw = fullText.trim();
-            raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
-            const jsonMatch = raw.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) { resolve(generateWithRules(reportData)); return; }
-            let parsed: any;
-            try { parsed = JSON.parse(jsonMatch[0]); }
-            catch {
-              const cleaned = jsonMatch[0].replace(/,(\s*[}\]])/g, '$1');
-              try { parsed = JSON.parse(cleaned); }
-              catch { resolve(generateWithRules(reportData)); return; }
-            }
-            if (!parsed.summary || !Array.isArray(parsed.insights) || !Array.isArray(parsed.suggestions)) {
-              resolve(generateWithRules(reportData));
-              return;
-            }
-            resolve({
-              period: `${startDate} ~ ${endDate}`,
-              summary: String(parsed.summary).slice(0, 100),
-              insights: parsed.insights.filter((s: any) => typeof s === 'string').slice(0, 5),
-              suggestions: parsed.suggestions.filter((s: any) => typeof s === 'string').slice(0, 3),
-              highlights: { bestDay, worstDay, trend },
-              method: 'ai',
-            });
-            return;
-          }
-          // 流式 token 累积 + summary 逐字推送
-          const token = data.token || '';
-          fullText += token;
-          if (!summaryDone && onSummaryChunk) {
-            for (const ch of token) {
-              if (!inSummary) {
-                // 检测是否进入 summary 字段（简单状态机）
-                if (fullText.endsWith('"summary":"')) {
-                  inSummary = true;
-                }
-              } else {
-                if (ch === '"' && !fullText.endsWith('\\"')) {
-                  inSummary = false;
-                  summaryDone = true;
-                } else {
-                  onSummaryChunk(ch);
-                }
-              }
-            }
-          }
-        },
-        { systemPrompt, temperature: 0.6, maxTokens: 1024 }
-      );
-      void cleanup;
+  // 写缓存
+  try {
+    await db.aiReportCache.put({
+      id: cacheKey,
+      period: report.period,
+      report,
+      generatedAt: new Date().toISOString(),
     });
+  } catch (err) {
+    console.warn('[ReportAIService] Cache write failed:', err);
   }
 
-  // 无流式 IPC 时回退到非流式
-  const aiReport = await generateWithAI(reportData);
-  if (aiReport) {
-    // 非流式也把 summary 一次性推送，保持 UI 一致
-    if (onSummaryChunk) onSummaryChunk(aiReport.summary);
-    return aiReport;
-  }
-  return generateWithRules(reportData);
+  return report;
 }

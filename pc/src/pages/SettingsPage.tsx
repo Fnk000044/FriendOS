@@ -10,9 +10,9 @@ import { useShortcutStore, type ShortcutAction } from '../stores/useShortcutStor
 import { useNotificationStore } from '../stores/notificationStore';
 import { checkConflict } from '../utils/shortcutConflict';
 import type { Lang } from '../i18n/translations';
-import ModelStatus from '../components/ai/ModelStatus';
 import NotificationSettings from '../components/common/NotificationSettings';
 import AppLockSettings from '../components/common/AppLockSettings';
+import AppearanceSettings from '../components/settings/AppearanceSettings';
 import { getToday } from '../utils/date';
 import { seedDemoData } from '../utils/seedDemoData';
 
@@ -250,7 +250,7 @@ export default function SettingsPage() {
     // 设置重置标记（不以 friendos_ 开头，不会被下面的过滤器清除）
     localStorage.setItem('system_reset_flag', '1');
     await db.delete();
-    // 只清除FriendOS相关的localStorage key，避免影响其他应用
+    // 清除所有 FriendOS 相关的 localStorage key（含 theme/appearance/lang 等偏好）
     const friendosKeys = Object.keys(localStorage).filter(key =>
       key.startsWith('friendos_') || key.startsWith('lifeos_') || key.startsWith('use_')
     );
@@ -262,9 +262,16 @@ export default function SettingsPage() {
     try {
       await window.electronAPI?.sentimentResetOnnx();
     } catch (e) { /* non-critical */ }
-    // 重启应用以走完整 LoadingPage 并重新懒加载模型
+    // 真正重启 Electron 应用：主进程退出并重新拉起，确保 ONNX session、
+    // nativeImage 句柄等主进程状态全部清空，恢复纯净初始态
     toast.success('已恢复初始化，正在重启…');
-    setTimeout(() => window.location.reload(), 600);
+    setTimeout(async () => {
+      if (window.electronAPI?.relaunch) {
+        await window.electronAPI.relaunch();
+      } else {
+        window.location.reload();
+      }
+    }, 600);
   }, [t]);
 
   const handleSeedDemo = useCallback(async () => {
@@ -410,6 +417,9 @@ export default function SettingsPage() {
         </div>
       </Card>
 
+      {/* 外观个性化 */}
+      <AppearanceSettings />
+
       <Card>
         <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
           <Keyboard className="w-4 h-4" />
@@ -454,19 +464,6 @@ export default function SettingsPage() {
             {t('settings.open_folder')}
           </Button>
         )}
-      </Card>
-
-      <Card>
-        <h3 className="text-sm font-semibold text-text-primary mb-1 flex items-center gap-2">
-          <Brain className="w-4 h-4" />
-          {t('settings.model_status')}
-        </h3>
-        <div className="mt-3">
-          <ModelStatus />
-        </div>
-        <p className="text-xs text-text-muted mt-3">
-          {t('settings.model_status_desc')}
-        </p>
       </Card>
 
       <Card>

@@ -10,6 +10,7 @@ import HealthRadar from '../components/emotion/HealthRadar';
 import EmotionPrediction from '../components/emotion/EmotionPrediction';
 import { generateHealthProfile } from '../services/emotion/HealthProfileService';
 import EmptyState from '../components/common/EmptyState';
+import { Skeleton, StatCardSkeleton, CardSkeleton } from '../components/common/Skeleton';
 import type { HealthProfile } from '../db/models';
 
 export default function EmotionPage() {
@@ -90,6 +91,33 @@ export default function EmotionPage() {
       activeDays: allDates.size,
     };
   }, [emotionRecords, behaviorRecords]);
+
+  // 数据加载中（首次未返回结果）时显示骨架屏，避免渲染空数据闪动
+  const isLoading = emotionRecords === undefined || behaviorRecords === undefined;
+
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-40 rounded" />
+            <Skeleton className="h-4 w-56 rounded" />
+          </div>
+          <Skeleton className="h-5 w-28 rounded" />
+        </div>
+        {/* Stats cards skeleton */}
+        <div className="grid grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)}
+        </div>
+        {/* Main content skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <CardSkeleton lines={6} />
+          <CardSkeleton lines={6} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">

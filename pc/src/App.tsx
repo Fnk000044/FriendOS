@@ -4,7 +4,6 @@ import { Toaster } from 'react-hot-toast';
 import AppLayout from './components/layout/AppLayout';
 import QuickCaptureModal from './components/quick-capture/QuickCaptureModal';
 import CrisisInterventionModal from './components/crisis/CrisisInterventionModal';
-import ProactiveGreeting from './components/ai/ProactiveGreeting';
 import WelcomePage from './pages/WelcomePage';
 import LoadingPage from './components/common/LoadingPage';
 import LoadingSpinner from './components/common/LoadingSpinner';
@@ -19,7 +18,6 @@ import TitleBar from './components/layout/TitleBar';
 import LockScreen from './components/common/LockScreen';
 import OnboardingTour from './components/common/OnboardingTour';
 import { useAppLockStore } from './stores/appLockStore';
-import { useAIStore } from './stores/aiStore';
 // 首屏 Dashboard 保持 eager 加载，其余路由懒加载以减小首屏体积
 import DashboardPage from './pages/DashboardPage';
 const TasksPage = lazy(() => import('./pages/TasksPage'));
@@ -32,7 +30,6 @@ const TherapyPage = lazy(() => import('./pages/TherapyPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const SyncPage = lazy(() => import('./pages/SyncPage'));
-const AssistantPage = lazy(() => import('./pages/AssistantPage'));
 const AssessmentPage = lazy(() => import('./pages/AssessmentPage'));
 const RiskDashboardPage = lazy(() => import('./pages/RiskDashboardPage'));
 
@@ -88,7 +85,6 @@ export default function App() {
   const [showWelcome, setShowWelcome] = useState(!initialized);
   const [showLoading, setShowLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const toggleAiAssistant = useUIStore((s) => s.toggleAiAssistant);
   const initAppLock = useAppLockStore((s) => s.initFromStorage);
 
   useIpcEvents();
@@ -98,11 +94,6 @@ export default function App() {
   useEffect(() => {
     initAppLock();
   }, [initAppLock]);
-
-  // 启动时自动进入新对话（而非恢复上次消息）
-  useEffect(() => {
-    useAIStore.getState().startNewConversation();
-  }, []);
 
   // Sync showWelcome with initialized state (handles reset)
   useEffect(() => {
@@ -152,7 +143,6 @@ export default function App() {
         <GlobalShortcuts />
         <QuickCaptureModal />
         <CrisisInterventionModal />
-        <ProactiveGreeting onStartChat={toggleAiAssistant} />
         {showOnboarding && (
           <OnboardingTour onComplete={() => {
             localStorage.setItem('friendos_onboarding_done', 'true');
@@ -174,7 +164,6 @@ export default function App() {
             <Route path="reports" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><ReportsPage /></Suspense></PageErrorBoundary>} />
             <Route path="settings" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><SettingsPage /></Suspense></PageErrorBoundary>} />
             <Route path="sync" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><SyncPage /></Suspense></PageErrorBoundary>} />
-            <Route path="assistant" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><AssistantPage /></Suspense></PageErrorBoundary>} />
             <Route path="assessment" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><AssessmentPage /></Suspense></PageErrorBoundary>} />
             <Route path="risk" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><RiskDashboardPage /></Suspense></PageErrorBoundary>} />
           </Route>

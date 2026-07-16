@@ -20,6 +20,8 @@
   ; Create data directory for user data
   CreateDirectory "$APPDATA\FriendOS"
   CreateDirectory "$APPDATA\FriendOS\data"
+  ; Notify Shell to refresh icon cache so the new exe icon is visible immediately
+  System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, i 0, i 0)'
 !macroend
 
 !macro customUnInit
@@ -47,6 +49,8 @@
   
   keepData:
     ; Keep the data directory
-  
+
   done:
+  ; Notify Shell to refresh icon cache after uninstall
+  System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, i 0, i 0)'
 !macroend

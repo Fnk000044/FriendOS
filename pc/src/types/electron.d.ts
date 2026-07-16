@@ -119,13 +119,11 @@ interface ElectronAPI {
   isMaximized: () => Promise<boolean>;
   onMaximizeChange: (callback: (isMaximized: boolean) => void) => void;
 
-  // Local model
-  localModelList: () => Promise<LocalModelInfo[]>;
-  localModelInit: (modelPath: string) => Promise<{ success: boolean; error?: string }>;
-  localModelComplete: (prompt: string, options?: { systemPrompt?: string; temperature?: number; maxTokens?: number }) => Promise<{ response?: string; error?: string }>;
-  localModelCompleteStream: (prompt: string, onChunk?: (data: any) => void, options?: { systemPrompt?: string; temperature?: number; maxTokens?: number }) => () => void;
-  localModelDispose: () => Promise<{ success: boolean }>;
-  getCudaStatus: () => Promise<CudaStatus>;
+  // Local model (removed — kept for type compat of legacy callers)
+  // localModel* APIs have been removed along with the Qwen model.
+
+  // Relaunch app (used by SettingsPage reset flow)
+  relaunch: () => Promise<void>;
 
   // Sentiment analysis
   sentimentAnalyze: (text: string) => Promise<SentimentResult>;

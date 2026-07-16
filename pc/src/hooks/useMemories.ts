@@ -2,7 +2,6 @@ import { useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { db } from '../db';
 import type { Memory } from '../db/models';
-import { contextService } from '../services/ai/ContextService';
 
 export function useMemories() {
   const createMemory = useCallback(async (data: {
@@ -31,7 +30,6 @@ export function useMemories() {
         updatedAt: now,
       });
       toast.success('已保存到记忆库');
-      contextService.clearCache();
       return id;
     } catch (err) {
       console.error('[useMemories] createMemory error:', err);
@@ -48,7 +46,6 @@ export function useMemories() {
         return;
       }
       toast.success('记忆已更新');
-      contextService.clearCache();
     } catch (err) {
       console.error('[useMemories] updateMemory error:', err);
       toast.error('更新记忆失败');
@@ -59,7 +56,6 @@ export function useMemories() {
     try {
       await db.memories.delete(id);
       toast.success('记忆已删除');
-      contextService.clearCache();
     } catch (err) {
       console.error('[useMemories] deleteMemory error:', err);
       toast.error('删除记忆失败');
@@ -70,7 +66,6 @@ export function useMemories() {
     try {
       await db.memories.update(id, { pinned: !pinned, updatedAt: new Date().toISOString() });
       toast.success(pinned ? '已取消置顶' : '已置顶');
-      contextService.clearCache();
     } catch (err) {
       console.error('[useMemories] togglePin error:', err);
       toast.error('操作失败');

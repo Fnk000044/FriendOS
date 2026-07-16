@@ -10,17 +10,8 @@
     "build/**/*",
     "models/**/*"
   ],
-  "extraResources": [
-    {
-      "from": "../models",
-      "to": "models",
-      "filter": ["**/*"]
-    }
-  ],
   "asar": true,
   "asarUnpack": [
-    "node_modules/node-llama-cpp/**/*",
-    "node_modules/@node-llama-cpp/**/*",
     "node_modules/onnxruntime-node/**/*",
     "node_modules/onnxruntime-common/**/*",
     "models/**/*",
@@ -32,9 +23,13 @@
       {
         "target": "dir",
         "arch": ["x64"]
+      },
+      {
+        "target": "nsis",
+        "arch": ["x64"]
       }
     ],
-    "signAndEditExecutable": false
+    "signAndEditExecutable": true
   },
   "nsis": {
     "oneClick": false,

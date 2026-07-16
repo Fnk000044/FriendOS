@@ -3,13 +3,19 @@
  * Analyzes user behavior patterns for unobtrusive mental health detection
  * Runs in Electron main process, provides IPC methods for renderer
  *
- * 参考：数字表型研究 + StudentLife (2014)
+ * 参考：数字表型研究 + StudentLife (2014), Wang et al.
  * 建立个人基线（至少7天数据后才分析），对比个人行为模式而非硬编码阈值
  *
- * 新增：打字行为分析（参考：Typing patterns as markers of mood）
- * - 打字速度：抑郁时打字速度通常变慢
+ * 打字行为分析（参考：Campbell et al. Typing patterns as markers of mood）
+ * - 打字速度：抑郁时打字速度通常变慢（文献效应量 d≈0.3-0.5）
  * - 删除频率：焦虑时删除重写频率增加
  * - 停顿时间：思考时间延长可能表示认知负荷增加
+ * - 基线建立：至少 3 次会话后才与个人基线对比，避免首次使用误判
+ *
+ * 睡眠模式推断：
+ * - 基于日记写作时间窗口间接推断就寝时间（activeHours 命中 0-5 点）
+ * - 文献参考：StudentLife 睡眠推断准确度 r≈0.43
+ * - 局限：仅记录写作时间，非真实睡眠时长，需可穿戴设备才能精确量化
  */
 
 // ── Personal Baseline Calculation ──────────────────────────────

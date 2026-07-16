@@ -69,7 +69,7 @@ export default function QuickCaptureModal() {
           className="w-full h-32 px-4 py-3 rounded-btn border text-sm resize-none
             placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
             transition-all"
-          style={{ borderColor: 'var(--glass-border)' }}
+          style={{ borderColor: 'var(--glass-border)', background: 'var(--bg-card-solid)', color: 'var(--text-primary)' }}
           autoFocus
         />
 

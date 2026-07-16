@@ -6,7 +6,6 @@ import toast from 'react-hot-toast';
 import { ArrowLeft, Trash2, Sparkles } from 'lucide-react';
 import { db } from '../../db';
 import { useDiary } from '../../hooks/useDiary';
-import { contextService } from '../../services/ai/ContextService';
 import MoodSelector from './MoodSelector';
 import Button from '../common/Button';
 import TagInput from '../common/TagInput';
@@ -322,8 +321,6 @@ export default function DiaryEditor() {
       }
 
       // Navigate first, then update state (prevents state update on unmounted component)
-      // 保存日记后清除 AI 上下文缓存，使下次聊天能获取最新数据
-      contextService.clearCache();
       navigate('/diary');
     } catch (err) {
       console.error('[DiaryEditor] Save error:', err);
@@ -394,6 +391,7 @@ export default function DiaryEditor() {
           placeholder={t('diary.title_placeholder')}
           aria-label={t('diary.title_placeholder')}
           className="w-full text-lg font-semibold outline-none placeholder:text-text-muted bg-transparent"
+          style={{ color: 'var(--text-primary)' }}
         />
 
         {/* Template Toggle */}
@@ -455,7 +453,7 @@ export default function DiaryEditor() {
           placeholder={t('diary.content_placeholder')}
           aria-label={t('diary.content_placeholder')}
           className="w-full min-h-[300px] text-sm leading-relaxed outline-none resize-none placeholder:text-text-muted bg-transparent border rounded-lg px-4 py-3"
-          style={{ borderColor: 'var(--border-input)' }}
+          style={{ borderColor: 'var(--border-input)', color: 'var(--text-primary)' }}
         />
 
         {/* Sentiment Analysis Results - always visible */}

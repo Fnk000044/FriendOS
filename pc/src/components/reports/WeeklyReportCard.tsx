@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Calendar, TrendingUp, TrendingDown, Minus, AlertTriangle, CheckCircle2, Lightbulb, Sparkles } from 'lucide-react';
 import { generateAIReportStream, type AIReport } from '../../services/ai/ReportAIService';
 import { getDaysAgo, getToday } from '../../utils/date';
@@ -8,25 +8,68 @@ interface WeeklyReportCardProps {
   onSummaryStream?: (chunk: string) => void;
 }
 
+// 流式 chunk batch flush 间隔（与 useAI 一致，约一帧 16ms）
+const FLUSH_INTERVAL = 16;
+
 export default function WeeklyReportCard({ onSummaryStream }: WeeklyReportCardProps) {
   const [report, setReport] = useState<AIReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [streamingSummary, setStreamingSummary] = useState('');
+  // batch flush：用 ref 累加 chunk，定时 flush 到 state，避免每 token 一次 setState
+  const pendingChunkRef = useRef('');
+  const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 流式结束淡入到最终 report，避免内容闪烁
+  const [transitioning, setTransitioning] = useState(false);
+
+  const flushBuffer = () => {
+    flushTimerRef.current = null;
+    if (!pendingChunkRef.current) return;
+    const chunk = pendingChunkRef.current;
+    pendingChunkRef.current = '';
+    setStreamingSummary((prev) => prev + chunk);
+  };
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
+    };
+  }, []);
 
   const handleGenerate = async () => {
     setLoading(true);
+    setReport(null);
     setStreamingSummary('');
+    pendingChunkRef.current = '';
+    setTransitioning(false);
     const start = getDaysAgo(7);
     const end = getToday();
 
-    // 流式接收 summary 文本，逐字显现
+    // 流式接收 summary 文本：batch flush 避免高频 setState 卡顿
     const aiReport = await generateAIReportStream(start, end, (chunk: string) => {
-      setStreamingSummary((prev) => prev + chunk);
+      pendingChunkRef.current += chunk;
       onSummaryStream?.(chunk);
+      if (!flushTimerRef.current) {
+        flushTimerRef.current = setTimeout(flushBuffer, FLUSH_INTERVAL);
+      }
     });
+
+    // 最后一次 flush 确保所有 chunk 已写入 state
+    if (flushTimerRef.current) {
+      clearTimeout(flushTimerRef.current);
+      flushTimerRef.current = null;
+    }
+    flushBuffer();
+
+    // 淡入过渡：保留 streamingSummary 显示，同时设置 report，CSS 用 opacity 过渡
+    setTransitioning(true);
     setReport(aiReport);
-    setStreamingSummary('');
     setLoading(false);
+    // 过渡完成后清空 streamingSummary（让最终 report 接管显示）
+    setTimeout(() => {
+      setStreamingSummary('');
+      setTransitioning(false);
+    }, 300);
   };
 
   const trendConfig = {
@@ -37,6 +80,8 @@ export default function WeeklyReportCard({ onSummaryStream }: WeeklyReportCardPr
 
   // 顶部状态条：流式生成时显示"AI 正在分析..."（非模态、不阻塞、无 spinner 旋转圈）
   const isStreaming = loading && !report;
+  // 过渡期：report 已就绪但 streamingSummary 尚未清空，叠加显示淡入
+  const showStreaming = isStreaming || transitioning;
 
   return (
     <div className="glass-card rounded-xl p-5 shadow-sm">
@@ -65,20 +110,23 @@ export default function WeeklyReportCard({ onSummaryStream }: WeeklyReportCardPr
         </p>
       )}
 
-      {isStreaming && streamingSummary && (
-        <div className="space-y-3">
+      {showStreaming && streamingSummary && (
+        <div className="space-y-3 transition-opacity duration-300" style={{ opacity: transitioning ? 0.4 : 1 }}>
           {/* 流式 summary 逐字显现 + 闪烁光标 */}
           <p className="text-sm text-text-secondary leading-relaxed">
             {streamingSummary}
-            <span className="inline-block w-2 h-4 ml-0.5 bg-primary/60 animate-[blink_1s_infinite] align-middle" />
+            {!transitioning && (
+              <span className="inline-block w-2 h-4 ml-0.5 bg-primary/60 animate-[blink_1s_infinite] align-middle" />
+            )}
           </p>
-          {!streamingSummary && (
-            <p className="text-sm text-text-muted flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-              AI 正在分析你的数据...
-            </p>
-          )}
         </div>
+      )}
+
+      {showStreaming && !streamingSummary && (
+        <p className="text-sm text-text-muted flex items-center gap-1.5">
+          <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+          AI 正在分析你的数据...
+        </p>
       )}
 
       {report && (

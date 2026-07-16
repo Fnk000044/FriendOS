@@ -371,173 +371,8 @@ ipcMain.handle('open-external', async (_event, filePath) => {
   }
 });
 
-// Local model state (disabled - no local models)
-let localModelContext = null;
-let currentLocalModelPath = null;
-
-// Local model state
-// List available local models from registry
-ipcMain.handle('local-model-list', async () => {
-  try {
-    const { listAvailableModels } = require('./services/ModelRegistry.cjs');
-    const models = listAvailableModels();
-    return models.map(m => ({
-      id: m.id,
-      name: m.name,
-      size: m.size,
-      path: m.available ? require('./services/ModelRegistry.cjs').getModelPath(m.id) : '',
-      available: m.available,
-      description: m.description,
-    }));
-  } catch (err) {
-    console.error('[local-model-list] Error:', err);
-    return [];
-  }
-});
-
-// Initialize local model
-ipcMain.handle('local-model-init', async (_event, modelPath) => {
-  try {
-    const { getModelPath } = require('./services/ModelRegistry.cjs');
-    const FS = require('fs');
-
-    // Always prefer the registry path over the frontend path
-    const registryPath = getModelPath('qwen3.5:0.8b');
-
-    if (registryPath && FS.existsSync(registryPath)) {
-      console.log('[local-model-init] Using registry path:', registryPath);
-      return { success: true };
-    }
-
-    // Fallback to the path from frontend
-    if (modelPath && FS.existsSync(modelPath)) {
-      console.log('[local-model-init] Using frontend path:', modelPath);
-      return { success: true };
-    }
-
-    return { success: false, error: '模型文件不存在: ' + (registryPath || modelPath) };
-  } catch (err) {
-    console.error('[local-model-init] Error:', err);
-    return { success: false, error: err.message };
-  }
-});
-
-// Chat completion with local model
-// prompt: 纯文本用户消息（不含 ChatML 标记）
-// options: { temperature, maxTokens, systemPrompt }
-ipcMain.handle('local-model-complete', async (_event, prompt, options = {}) => {
-  try {
-    const { complete } = require('./services/LocalModelService.cjs');
-    const response = await complete(prompt, {
-      temperature: options.temperature || 0.7,
-      maxTokens: options.maxTokens || 256,
-      topP: options.topP || 0.8,
-      topK: options.topK || 20,
-      systemPrompt: options.systemPrompt,
-    });
-    return { response };
-  } catch (err) {
-    console.error('[local-model-complete] Error:', err);
-    return { error: err.message };
-  }
-});
-
-// Streaming chat completion with local model (event-based)
-// prompt: 纯文本用户消息（不含 ChatML 标记）
-// options: { temperature, maxTokens, systemPrompt }
-ipcMain.on('local-model-complete-stream', async (event, prompt, options = {}) => {
-  // 防御：检查 sender 是否已销毁，避免向已关闭窗口发送消息
-  const sender = event.sender;
-  const isDestroyed = () => !sender || sender.isDestroyed();
-
-  try {
-    const { completeStream } = require('./services/LocalModelService.cjs');
-
-    // 后端超时保护（120秒，比前端180秒短，让后端先超时发 error）
-    const STREAM_TIMEOUT_MS = 120000;
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('模型推理超时（120秒），请检查模型状态或重新初始化')), STREAM_TIMEOUT_MS)
-    );
-
-    await Promise.race([
-      completeStream(prompt, {
-        temperature: options.temperature || 0.7,
-        maxTokens: options.maxTokens || 2048,
-        topP: options.topP || 0.8,
-        topK: options.topK || 20,
-        systemPrompt: options.systemPrompt,
-      }, (token) => {
-        if (!isDestroyed()) {
-          sender.send('local-model-chunk', { token });
-        }
-      }),
-      timeoutPromise,
-    ]);
-
-    if (!isDestroyed()) {
-      sender.send('local-model-chunk', { done: true });
-    }
-  } catch (err) {
-    console.error('[local-model-complete-stream] Error:', err);
-    // Eval has failed / KV slot 错误：后台自动 dispose+重新加载模型，让前端下次调用可恢复
-    const errMsg = (err && err.message) || '';
-    if (errMsg.includes('Eval has failed') || errMsg.includes('KV slot') || errMsg.includes('could not find a KV slot') || errMsg.includes('模型推理失败')) {
-      console.log('[local-model-complete-stream] Auto-disposing model for recovery after eval failure');
-      try {
-        const { dispose } = require('./services/LocalModelService.cjs');
-        await dispose();
-      } catch (disposeErr) {
-        console.error('[local-model-complete-stream] Dispose during recovery failed:', disposeErr);
-      }
-    }
-    if (!isDestroyed()) {
-      sender.send('local-model-chunk', { error: errMsg || '模型推理失败', done: true });
-    }
-  }
-});
-
-// CUDA status handler
-ipcMain.handle('get-cuda-status', async () => {
-  try {
-    let llamaPath;
-    if (app.isPackaged) {
-      // Must point to specific file, not directory (ESM requirement)
-      const indexPath = path.join(getUnpackedModulePath('node-llama-cpp'), 'dist', 'index.js');
-      llamaPath = require('url').pathToFileURL(indexPath).href;
-    } else {
-      llamaPath = 'node-llama-cpp';
-    }
-    const { getLlama } = await import(llamaPath);
-    const llama = await getLlama();
-    const gpuDevices = await llama.getGpuDeviceNames();
-    return {
-      available: gpuDevices.length > 0,
-      gpuDevices,
-      supportsGpuOffloading: llama.supportsGpuOffloading,
-    };
-  } catch (err) {
-    return {
-      available: false,
-      gpuDevices: [],
-      supportsGpuOffloading: false,
-      error: err.message,
-    };
-  }
-});
-
-// Dispose local model
-ipcMain.handle('local-model-dispose', async () => {
-  try {
-    const { dispose } = require('./services/LocalModelService.cjs');
-    await dispose();
-    localModelContext = null;
-    currentLocalModelPath = null;
-    return { success: true };
-  } catch (err) {
-    console.error('[local-model-dispose] Error:', err);
-    return { success: false, error: err.message };
-  }
-});
+// 本地大模型（Qwen3）已移除：对话/报告 AI 流式/危机语义判定均不再依赖。
+// 情感分析仍由 ONNX + 关键词两层独立工作，不受影响。
 
 // ── Sentiment Analysis IPC Handlers ──────────────────────────────
 
@@ -574,21 +409,8 @@ function ensureOnnxLoaded() {
   return onnxLoadPromise;
 }
 
-// 注入 Qwen3 模型调用函数到 SentimentService
-// systemPrompt 和 userMessage 分离，由 LlamaChatSession 自动包装为 ChatML
-SentimentService.setLocalModelComplete(async (prompt, options = {}) => {
-  try {
-    const { complete } = require('./services/LocalModelService.cjs');
-    const response = await complete(prompt, {
-      temperature: options.temperature || 0.3,
-      maxTokens: options.maxTokens || 256,
-      systemPrompt: options.systemPrompt,
-    });
-    return { response };
-  } catch (err) {
-    return { error: err.message };
-  }
-});
+// 本地大模型（Qwen3）已移除：SentimentService 第 3 层语义判定不再注入 localModelComplete，
+// qwenAnalyze 将返回 null，analyzeEnhanced 自动降级为 L1 关键词 + L2 ONNX 两层判定。
 
 ipcMain.handle('sentiment-analyze', async (_event, text) => {
   try {
@@ -804,11 +626,12 @@ app.on('before-quit', async () => {
     const { stopReminderCheck } = require('./services/NotificationService.cjs');
     stopReminderCheck();
   } catch (_) { /* ignore */ }
+});
 
-  try {
-    const { dispose } = require('./services/LocalModelService.cjs');
-    await dispose();
-  } catch (_) { /* ignore */ }
+// 重启应用：渲染进程恢复初始化后调用，主进程退出并重新拉起
+ipcMain.handle('app-relaunch', () => {
+  app.relaunch();
+  app.exit(0);
 });
 
 app.on('activate', () => {

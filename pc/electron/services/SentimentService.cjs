@@ -371,8 +371,9 @@ async function analyze(text) {
   }
 }
 
-// ── 云端分析（改用 Qwen3）───────────────────────────────────────
-async function cloudAnalyze(text, context = {}) {
+// ── LLM 语义确认（原 cloudAnalyze，实际调用本地 Qwen3，非云端）──
+// 重命名：semanticAnalyze 更准确，cloudAnalyze 保留为向后兼容别名
+async function semanticAnalyze(text, context = {}) {
   const qwenResult = await qwenAnalyze(text, { negativeProb: 0.5 });
 
   if (qwenResult) {
@@ -394,6 +395,9 @@ async function cloudAnalyze(text, context = {}) {
     timestamp: Date.now(),
   };
 }
+
+// 向后兼容别名（旧代码可能仍引用 cloudAnalyze）
+const cloudAnalyze = semanticAnalyze;
 
 // ── 工具函数 ────────────────────────────────────────────────────
 function softmax(arr) {
@@ -596,6 +600,7 @@ module.exports = {
   analyzeWithONNX,
   analyzeEnhanced,
   cloudAnalyze,
+  semanticAnalyze,
   setApiKey,
   tryLoadOnnxModel,
   isOnnxLoaded,

@@ -2,14 +2,29 @@
  * Risk Scoring Engine
  * 综合风险评分引擎 - 融合多信号源计算0-100风险指数
  *
- * 信号源权重:
+ * 信号源权重（依据 PHQ-9/GAD-7 自评量表的临床筛查地位 + 行为学文献综合设定）:
  * - 情绪分析 (30%): emotionRecords
+ *   情绪记录由 ONNX + 关键词分析得出，是高频被动信号，权重最高。
  * - 行为异常 (25%): BehaviorAnalyzer输出
+ *   连续无日记/低心情/任务下降/习惯中断/深夜活跃，参考 StudentLife 研究。
  * - 评估量表 (25%): assessments (PHQ-9/GAD-7/PSS-10)
+ *   PHQ-9/GAD-7 为临床金标准自评量表，准确度最高，但需用户主动填写，
+ *   数据稀疏，故与情绪信号等权（25%）而非更高，避免数据缺失时失分。
  * - 聊天情感 (10%): conversationSummaries
+ *   AI 对话已移除，此通道当前无新数据，保留 10% 权重兼容历史数据。
  * - 日记情绪 (10%): diaries.mood
+ *   日记心情评分为主观 1-5 分，参考价值次于量表，权重低。
  *
- * 风险等级: 0-25低 / 26-50中低 / 51-75中 / 76-90高 / 91-100危急
+ * 风险等级（参考 PHQ-9 严重度分级映射）:
+ *   0-25 低 / 26-50 中低 / 51-75 中 / 76-90 高 / 91-100 危急
+ *
+ * PHQ-9 cutoff（DSM-5 临床常用）:
+ *   ≥5 轻度 / ≥10 中度 / ≥15 中重度 / ≥20 重度
+ * GAD-7 cutoff:
+ *   ≥5 轻度 / ≥10 中度 / ≥15 重度
+ * PSS-10 cutoff（Cohen 1983）:
+ *   ≥14 中等 / ≥27 高压力
+ * SAD PERSONS（参考量表，用于自杀风险分层，未直接实现，仅作文档参考）
  */
 
 const SentimentService = require('./SentimentService.cjs');
@@ -17,11 +32,11 @@ const SentimentService = require('./SentimentService.cjs');
 // ── 权重配置 ──────────────────────────────────────────────────
 
 const WEIGHTS = {
-  emotion: 0.30,      // 情绪分析
-  behavior: 0.25,     // 行为异常
-  assessment: 0.25,   // 评估量表
-  chat: 0.10,         // 聊天情感
-  diary: 0.10,        // 日记情绪
+  emotion: 0.30,      // 情绪分析（高频被动信号，权重最高）
+  behavior: 0.25,     // 行为异常（无感识别核心通道）
+  assessment: 0.25,   // 评估量表（PHQ-9/GAD-7 临床金标准，但数据稀疏）
+  chat: 0.10,         // 聊天情感（对话已移除，兼容历史数据）
+  diary: 0.10,        // 日记情绪（主观评分，参考价值次于量表）
 };
 
 // ── 风险等级映射 ──────────────────────────────────────────────
@@ -162,8 +177,10 @@ function calculateAssessmentScore(assessments) {
   const latestPHQ9 = assessments.find(a => a.type === 'PHQ9');
   const latestGAD7 = assessments.find(a => a.type === 'GAD7');
   const latestPSS10 = assessments.find(a => a.type === 'PSS10');
+  const latestCSSRS = assessments.find(a => a.type === 'CSSRS');
 
   // PHQ-9 评分 (0-27, 越高越危险)
+  // Cutoff 依据 DSM-5 临床常用分级：≥5 轻度 / ≥10 中度 / ≥15 中重度 / ≥20 重度
   if (latestPHQ9) {
     const phq9Score = latestPHQ9.totalScore;
     if (phq9Score >= 20) {
@@ -182,6 +199,7 @@ function calculateAssessmentScore(assessments) {
   }
 
   // GAD-7 评分 (0-21, 越高越危险)
+  // Cutoff：≥5 轻度 / ≥10 中度 / ≥15 重度（Spitzer 2006）
   if (latestGAD7) {
     const gad7Score = latestGAD7.totalScore;
     if (gad7Score >= 15) {
@@ -197,6 +215,7 @@ function calculateAssessmentScore(assessments) {
   }
 
   // PSS-10 评分 (0-40, 越高越危险)
+  // Cutoff：≥14 中等 / ≥27 高压力（Cohen 1983）
   if (latestPSS10) {
     const pss10Score = latestPSS10.totalScore;
     if (pss10Score >= 27) {
@@ -205,6 +224,23 @@ function calculateAssessmentScore(assessments) {
     } else if (pss10Score >= 14) {
       totalScore += 15;
       factors.push({ type: 'pss10_moderate', weight: 15, description: 'PSS-10中等压力' });
+    }
+  }
+
+  // C-SSRS 评分（Columbia 自杀严重程度评定量表，临床自杀风险筛查金标准）
+  // scores[0-4] = Q1-Q5（自杀意念/行为，0/1）；scores[5] = Q6（频率 0-4）
+  // 等级判定：Q3/Q4/Q5 任一阳性 → critical；Q1/Q2 阳性 → high
+  if (latestCSSRS) {
+    const cssrsScores = latestCSSRS.scores || [];
+    // 伴意图/计划/行为 → 最高权重，直接推到危急
+    const hasHighRisk = cssrsScores.slice(2, 5).some(s => s >= 1);
+    const hasIdeation = cssrsScores.slice(0, 2).some(s => s >= 1);
+    if (hasHighRisk) {
+      totalScore += 40;
+      factors.push({ type: 'cssrs_high_risk', weight: 40, description: 'C-SSRS提示伴意图/计划/行为的自杀意念或自杀行为' });
+    } else if (hasIdeation) {
+      totalScore += 20;
+      factors.push({ type: 'cssrs_ideation', weight: 20, description: 'C-SSRS提示存在自杀意念' });
     }
   }
 

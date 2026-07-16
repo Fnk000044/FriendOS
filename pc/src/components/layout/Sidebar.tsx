@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, CheckSquare, BookOpen, Target,
-  Brain, BarChart3, Settings, Sparkles, Smartphone, MessageCircle,
+  Brain, BarChart3, Settings, Sparkles, Smartphone,
   Activity, Heart, ClipboardList, Shield
 } from 'lucide-react';
 import { useLanguage } from '../../i18n/useLanguage';
@@ -34,7 +34,6 @@ const navGroups: NavGroup[] = [
     groupKey: 'nav.group_tools',
     items: [
       { to: '/therapy', icon: Heart, key: 'nav.therapy' },
-      { to: '/assistant', icon: MessageCircle, key: 'nav.assistant' },
       { to: '/assessment', icon: ClipboardList, key: 'nav.assessment' },
       { to: '/memories', icon: Brain, key: 'nav.memories' },
     ],

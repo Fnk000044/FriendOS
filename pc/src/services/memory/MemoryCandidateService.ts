@@ -156,64 +156,10 @@ export class MemoryCandidateService {
   }
 
   async scanWithAI(_options: { model?: string } = {}): Promise<number> {
-    let count = 0;
-    const sevenDaysAgo = getDaysAgo(7);
-    const today = getToday();
-    const allDiaries = await db.diaries.toArray();
-    const diaries = allDiaries.filter(d => d.date >= sevenDaysAgo && d.date <= today && d.content?.length >= 20);
-
-    const allMemoryCandidates = await db.memoryCandidates.toArray();
-
-    for (const diary of diaries) {
-      const existing = allMemoryCandidates.find(
-        c => c.sourceType === 'diary' && c.sourceId === diary.id
-      );
-      if (existing) continue;
-
-      // 使用 ONNX 模型检测危机内容，跳过有风险的日记
-      if (await isCrisisContent(diary.content)) continue;
-
-      const systemPrompt = '你是一位知识提取助手。判断用户日记是否包含值得记录的知识、感悟或经验。只返回JSON格式。';
-      const userPrompt = `判断以下日记是否包含值得记录的知识、感悟或经验。
-标题：${diary.title || ''}
-内容：${diary.content.slice(0, 500)}
-输出JSON：{"extract":true/false,"title":"标题","category":"分类"}`;
-
-      try {
-        const result = await window.electronAPI?.localModelComplete(userPrompt, {
-          systemPrompt,
-          temperature: 0.3,
-          maxTokens: 128,
-        });
-
-        if (result?.error) {
-          console.error('AI extraction failed for diary', diary.id, result.error);
-          continue;
-        }
-
-        const parsedResult = JSON.parse(result?.response || '{}');
-        if (!parsedResult.extract) continue;
-
-        count++;
-        await db.memoryCandidates.add({
-          id: crypto.randomUUID(),
-          sourceType: 'diary',
-          sourceId: diary.id,
-          sourceDate: diary.date,
-          extractedTitle: parsedResult.title || diary.title || diary.content.slice(0, 40),
-          extractedContent: diary.content.slice(0, 200) + (diary.content.length > 200 ? '...' : ''),
-          suggestedCategory: parsedResult.category || suggestCategory(diary.content, diary.title),
-          suggestedTags: suggestTags(diary.content),
-          status: 'pending',
-          extractedAt: new Date().toISOString(),
-        });
-      } catch (e) {
-        console.error('AI extraction failed for diary', diary.id, e);
-        continue;
-      }
-    }
-
-    return count;
+    // 历史版本接入本地大模型（Qwen3）判断日记是否值得提取为记忆候选。
+    // 本地大模型已移除，这里直接复用基于关键词的 scanForCandidates 逻辑，
+    // 不再走 AI 判断，避免依赖已删除的 localModelComplete。
+    return this.scanForCandidates();
   }
 }
 

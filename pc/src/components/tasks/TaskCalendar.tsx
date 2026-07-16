@@ -76,9 +76,9 @@ export default function TaskCalendar({ onSelectDate, selectedDate }: TaskCalenda
   };
 
   return (
-    <div className="glass-card rounded-2xl p-6">
+    <div className="glass-card rounded-2xl p-5 max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-text-primary">{monthLabel}</h3>
+        <h3 className="text-base font-semibold text-text-primary">{monthLabel}</h3>
         <div className="flex gap-1">
           <button
             type="button"
@@ -102,14 +102,14 @@ export default function TaskCalendar({ onSelectDate, selectedDate }: TaskCalenda
       {/* 星期表头 */}
       <div className="grid grid-cols-7 gap-1 mb-2">
         {weekLabels.map(w => (
-          <div key={w} className="text-center text-xs font-medium text-text-muted py-1">{w}</div>
+          <div key={w} className="text-center text-[11px] font-medium text-text-muted py-1">{w}</div>
         ))}
       </div>
 
       {/* 日期网格 */}
       <div className="grid grid-cols-7 gap-1">
         {days.map((date, i) => {
-          if (!date) return <div key={i} className="aspect-square" />;
+          if (!date) return <div key={i} className="min-h-[48px]" />;
           const dayNum = parseInt(date.slice(-2), 10);
           const isToday = date === today;
           const isSelected = date === sel;
@@ -121,7 +121,7 @@ export default function TaskCalendar({ onSelectDate, selectedDate }: TaskCalenda
               key={i}
               type="button"
               onClick={() => handleSelect(date)}
-              className={`aspect-square rounded-lg flex flex-col items-center justify-center transition-all relative ${
+              className={`min-h-[48px] rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all relative ${
                 isSelected
                   ? 'bg-primary text-white'
                   : isToday
@@ -129,9 +129,9 @@ export default function TaskCalendar({ onSelectDate, selectedDate }: TaskCalenda
                     : 'hover:bg-surface-hover text-text-secondary'
               }`}
             >
-              <span className={`text-sm ${isSelected ? 'font-semibold' : ''}`}>{dayNum}</span>
+              <span className={`text-[13px] leading-none ${isSelected ? 'font-semibold' : ''}`}>{dayNum}</span>
               {dayTasks.length > 0 && (
-                <div className="flex gap-0.5 mt-0.5">
+                <div className="flex gap-0.5 items-center">
                   {/* 最多显示 3 个优先级色点 */}
                   {dayTasks.slice(0, 3).map((t, idx) => (
                     <span
@@ -141,7 +141,7 @@ export default function TaskCalendar({ onSelectDate, selectedDate }: TaskCalenda
                     />
                   ))}
                   {dayTasks.length > 3 && (
-                    <span className={`text-[8px] leading-none ${isSelected ? 'text-white/80' : 'text-text-muted'}`}>+</span>
+                    <span className={`text-[10px] leading-none ${isSelected ? 'text-white/80' : 'text-text-muted'}`}>+</span>
                   )}
                 </div>
               )}
@@ -158,7 +158,7 @@ export default function TaskCalendar({ onSelectDate, selectedDate }: TaskCalenda
         <p className="text-sm font-medium text-text-primary mb-2">
           {sel} 的任务（{(tasksByDate[sel] || []).length}）
         </p>
-        <div className="space-y-1 max-h-48 overflow-y-auto">
+        <div className="space-y-1 max-h-40 overflow-y-auto">
           {(tasksByDate[sel] || []).length === 0 ? (
             <p className="text-xs text-text-muted py-4 text-center">当日无任务</p>
           ) : (

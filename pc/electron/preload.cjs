@@ -109,33 +109,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   apiKeyGet: (name) => ipcRenderer.invoke('api-key-get', name),
   apiKeySet: (name, value) => ipcRenderer.invoke('api-key-set', name, value),
 
-  // Local model
-  localModelList: () => ipcRenderer.invoke('local-model-list'),
-  localModelInit: (modelPath) => ipcRenderer.invoke('local-model-init', modelPath),
-  localModelComplete: (prompt, options) => ipcRenderer.invoke('local-model-complete', prompt, options),
-  localModelCompleteStream: (prompt, onChunk, options) => {
-    // 移除旧监听器避免残留，但确保新 listener 在 send 之前注册
-    ipcRenderer.removeAllListeners('local-model-chunk');
-    let listenerActive = true;
-    const listener = (_event, data) => {
-      if (!listenerActive) return;
-      onChunk(data);
-      if (data.done) {
-        listenerActive = false;
-        ipcRenderer.removeListener('local-model-chunk', listener);
-      }
-    };
-    // 先注册 listener，再 send，避免事件竞争
-    ipcRenderer.on('local-model-chunk', listener);
-    ipcRenderer.send('local-model-complete-stream', prompt, options);
-    // 返回 cleanup 函数，用于取消监听
-    return () => {
-      listenerActive = false;
-      ipcRenderer.removeListener('local-model-chunk', listener);
-    };
-  },
-  localModelDispose: () => ipcRenderer.invoke('local-model-dispose'),
-  getCudaStatus: () => ipcRenderer.invoke('get-cuda-status'),
+  // Relaunch app (used by SettingsPage reset flow)
+  relaunch: () => ipcRenderer.invoke('app-relaunch'),
 
   // Sentiment analysis
   sentimentAnalyze: (text) => ipcRenderer.invoke('sentiment-analyze', text),

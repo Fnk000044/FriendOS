@@ -3,7 +3,6 @@ import toast from 'react-hot-toast';
 import { db } from '../db';
 import type { Task, SubTask } from '../db/models';
 import { getToday, formatLocalDate } from '../utils/date';
-import { contextService } from '../services/ai/ContextService';
 
 function buildTask(data: {
   title: string;
@@ -60,7 +59,6 @@ export function useTasks() {
     try {
       const task = buildTask(data);
       await db.tasks.add(task);
-      contextService.clearCache();
       return task.id;
     } catch (err) {
       console.error('[useTasks] createTask error:', err);
@@ -72,7 +70,6 @@ export function useTasks() {
   const updateTask = useCallback(async (id: string, data: Partial<Task>) => {
     try {
       await db.tasks.update(id, { ...data, updatedAt: new Date().toISOString() });
-      contextService.clearCache();
     } catch (err) {
       console.error('[useTasks] updateTask error:', err);
       toast.error('更新任务失败');
@@ -90,7 +87,6 @@ export function useTasks() {
         completedAt: newStatus === 'completed' ? new Date().toISOString() : undefined,
         updatedAt: new Date().toISOString(),
       });
-      contextService.clearCache();
     } catch (err) {
       console.error('[useTasks] toggleTask error:', err);
       toast.error('更新任务状态失败');
@@ -100,7 +96,6 @@ export function useTasks() {
   const deleteTask = useCallback(async (id: string) => {
     try {
       await db.tasks.delete(id);
-      contextService.clearCache();
     } catch (err) {
       console.error('[useTasks] deleteTask error:', err);
       toast.error('删除任务失败');

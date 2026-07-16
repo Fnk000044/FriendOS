@@ -8,6 +8,7 @@ import { useLanguage } from '../i18n/useLanguage';
 import AnimatedNumber from '../components/common/AnimatedNumber';
 import EmptyState from '../components/common/EmptyState';
 import RiskRadar from '../components/emotion/RiskRadar';
+import EarlyWarningCard from '../components/emotion/EarlyWarningCard';
 import type { RiskLevel } from '../db/models';
 
 interface RiskBreakdown {
@@ -114,14 +115,34 @@ export default function RiskDashboardPage() {
       }, 15000);
 
       try {
-        // 准备行为数据
-        const behaviorData = {
-          consecutiveNoDiary: calculateConsecutiveNoDiary(diaries),
-          consecutiveLowMood: calculateConsecutiveLowMood(diaries),
-          taskCompletionDrop: calculateTaskCompletionDrop(behaviorRecords),
-          habitBreakDays: calculateHabitBreakDays(behaviorRecords),
-          lateNightRatio: calculateLateNightRatio(behaviorRecords),
-        };
+        // 准备行为数据：通过后端 BehaviorAnalyzer.analyzeBehaviorTrends 计算，
+        // 避免前端重复实现（与 04-情绪与风险引擎.md 已知问题#2 对齐）
+        // 仅在 IPC 不可用时回退到本地实现
+        const sortedBehaviorRecords = [...behaviorRecords].sort((a, b) => a.date.localeCompare(b.date));
+        let behaviorData;
+        try {
+          const trends = await window.electronAPI?.behaviorAnalyzeTrends?.(sortedBehaviorRecords);
+          if (trends && typeof trends.consecutiveNoDiary === 'number') {
+            behaviorData = {
+              consecutiveNoDiary: trends.consecutiveNoDiary,
+              consecutiveLowMood: trends.consecutiveLowMood,
+              taskCompletionDrop: trends.taskCompletionDrop,
+              habitBreakDays: trends.habitBreakDays,
+              lateNightRatio: trends.lateNightRatio,
+            };
+          }
+        } catch (e) {
+          console.warn('behaviorAnalyzeTrends IPC failed, fallback to local', e);
+        }
+        if (!behaviorData) {
+          behaviorData = {
+            consecutiveNoDiary: calculateConsecutiveNoDiary(diaries),
+            consecutiveLowMood: calculateConsecutiveLowMood(diaries),
+            taskCompletionDrop: calculateTaskCompletionDrop(behaviorRecords),
+            habitBreakDays: calculateHabitBreakDays(behaviorRecords),
+            lateNightRatio: calculateLateNightRatio(behaviorRecords),
+          };
+        }
 
         // 调用风险评分引擎
         const result = await window.electronAPI?.riskCalculate?.({
@@ -387,6 +408,9 @@ export default function RiskDashboardPage() {
           </button>
         </div>
       )}
+
+      {/* 早期预警卡片 —— 基于近 15 天滑动窗口的趋势预测 */}
+      <EarlyWarningCard />
 
       {/* 风险评分卡片 —— 强化视觉：大色块背景 + 5 格等级条 + 行动指引 */}
       {riskResult && (

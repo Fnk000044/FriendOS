@@ -14,17 +14,11 @@ import WeeklyReview from '../components/dashboard/WeeklyReview';
 import EmotionOverview from '../components/dashboard/EmotionOverview';
 import InterventionRecommendations from '../components/dashboard/InterventionRecommendations';
 import DailyQuote from '../components/dashboard/DailyQuote';
-import { useAI } from '../hooks/useAI';
 
 export default function DashboardPage() {
   const { t, lang } = useLanguage();
-  const { initService } = useAI();
   const today = format(new Date(), 'yyyy-MM-dd');
   const { computeDailyRecord } = useDailyRecords();
-
-  useEffect(() => {
-    initService();
-  }, [initService]);
 
   // 首次加载（无数据时）自动生成基线健康画像，避免仪表盘空态循环
   useEffect(() => {

@@ -1,4 +1,10 @@
-import type { ChatMessage } from '../services/ai/types';
+// ChatMessage 历史上由 services/ai/types.ts 定义，AI 对话已移除。
+// 此处内联定义以保持 Conversation 表的结构兼容（历史数据可能存在）。
+export interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp?: number;
+}
 
 export interface SubTask {
   id: string;
@@ -253,7 +259,7 @@ export interface Conversation {
 
 export interface Assessment {
   id: string;
-  type: 'PHQ9' | 'GAD7' | 'PSS10';
+  type: 'PHQ9' | 'GAD7' | 'PSS10' | 'CSSRS';
   date: string;
   scores: number[];
   totalScore: number;
@@ -280,4 +286,15 @@ export interface FeedbackLog {
   predicted: string;
   feedback: 'accurate' | 'inaccurate';
   createdAt: string;
+}
+
+/**
+ * AI 报告缓存
+ * 按 startDate+endDate 复用同一周期报告，避免重复推理
+ */
+export interface AIReportCache {
+  id: string;            // `${startDate}_${endDate}`
+  period: string;       // `${startDate} ~ ${endDate}`
+  report: any;          // AIReport（避免与 ReportAIService 循环引用）
+  generatedAt: string;  // ISO timestamp
 }

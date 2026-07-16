@@ -71,7 +71,7 @@
 ### 基础设施
 
 - **LAN 同步** — 局域网设备间同步，QR 码连接，Token 认证
-- **数据导出/导入** — 全量 JSON 备份（21 张表）
+- **数据导出/导入** — 全量 JSON 备份（20 张表）
 - **应用锁** — PBKDF2（10 万次迭代）密码保护，锁屏界面
 - **双语界面** — 中文 / English
 - **主题系统** — 跟随系统 / 浅色 / 深色，毛玻璃效果
@@ -212,7 +212,7 @@ FriendOS/
 
 ## 数据库
 
-基于 Dexie（IndexedDB 封装），当前 schema 版本 **v9**，共 **21 张表**：
+基于 Dexie（IndexedDB 封装），当前 schema 版本 **v9**，共 **20 张表**：
 
 | 分类 | 表 | 说明 |
 |---|---|---|
@@ -235,7 +235,6 @@ FriendOS/
 | AI | conversationSummaries | 对话摘要 |
 | 系统 | syncLogs | 同步日志 |
 | 系统 | feedbackLogs | 用户反馈 |
-| 系统 | quotes | 每日语录 |
 | 系统 | quotes | 每日语录 |
 
 ## 安全设计
