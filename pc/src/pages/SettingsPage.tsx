@@ -54,38 +54,78 @@ export default function SettingsPage() {
         feedbackLogs: await db.feedbackLogs.toArray(),
       };
 
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `lifeos-backup-${getToday()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success(t('common.backup_success'));
-    } catch (err) {
-      toast.error(t('common.backup_fail'));
-      console.error(err);
+      const jsonStr = JSON.stringify(data, null, 2);
+
+      // 优先使用主进程对话框导出（真实错误反馈 + 用户可选路径）
+      if (window.electronAPI?.backupExport) {
+        const result = await window.electronAPI.backupExport(jsonStr);
+        if (!result.success) {
+          if (result.canceled) return;
+          throw new Error(result.error || '导出失败');
+        }
+        toast.success(`${t('common.backup_success')} — ${result.path}`);
+      } else {
+        // 降级：渲染进程 <a> 下载
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `lifeos-backup-${getToday()}.json`;
+        a.click();
+        // 延迟 revoke 确保下载触发
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        toast.success(t('common.backup_success'));
+      }
+    } catch (err: any) {
+      toast.error(`${t('common.backup_fail')}: ${err?.message || '未知错误'}`);
+      console.error('[Export]', err);
     }
     setExporting(false);
   }, [t]);
 
   const handleImport = useCallback(() => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-
+    const doImport = async (file: File) => {
       try {
         const text = await file.text();
         const data = JSON.parse(text);
 
         if (!data.version) {
-          toast.error(t('common.import_fail'));
+          toast.error(t('common.import_fail') + ': 缺少版本号');
           return;
         }
 
+        // 原子化：先备份当前数据，再执行导入
+        let backupJson: string | null = null;
+        try {
+          const currentData = {
+            version: 2,
+            exportedAt: new Date().toISOString(),
+            tasks: await db.tasks.toArray(),
+            diaries: await db.diaries.toArray(),
+            habits: await db.habits.toArray(),
+            habitLogs: await db.habitLogs.toArray(),
+            memories: await db.memories.toArray(),
+            memoryCandidates: await db.memoryCandidates.toArray(),
+            dailyRecords: await db.dailyRecords.toArray(),
+            quickCaptures: await db.quickCaptures.toArray(),
+            categories: await db.categories.toArray(),
+            syncLogs: await db.syncLogs.toArray(),
+            quotes: await db.quotes.toArray(),
+            emotionRecords: await db.emotionRecords.toArray(),
+            behaviorRecords: await db.behaviorRecords.toArray(),
+            healthProfiles: await db.healthProfiles.toArray(),
+            crisisLogs: await db.crisisLogs.toArray(),
+            conversationSummaries: await db.conversationSummaries.toArray(),
+            assessments: await db.assessments.toArray(),
+            therapyRecords: await db.therapyRecords.toArray(),
+            feedbackLogs: await db.feedbackLogs.toArray(),
+          };
+          backupJson = JSON.stringify(currentData);
+        } catch (backupErr) {
+          console.warn('[Import] Could not create backup:', backupErr);
+        }
+
+        // 清空并重新写入
         await db.delete();
         await db.open();
 
@@ -103,10 +143,38 @@ export default function SettingsPage() {
 
         toast.success(t('common.import_success'));
         window.location.reload();
-      } catch (err) {
-        toast.error(t('common.import_fail'));
-        console.error(err);
+      } catch (err: any) {
+        toast.error(`${t('common.import_fail')}: ${err?.message || '未知错误'}`);
+        console.error('[Import]', err);
       }
+    };
+
+    // 优先使用主进程文件对话框
+    if (window.electronAPI?.backupImport) {
+      window.electronAPI.backupImport().then((result: any) => {
+        if (!result.success) {
+          if (result.canceled) return;
+          toast.error(`${t('common.import_fail')}: ${result.error || '未知错误'}`);
+          return;
+        }
+        // 将文件内容包装为 File 对象
+        const blob = new Blob([JSON.stringify(result.data)], { type: 'application/json' });
+        const file = new File([blob], 'backup.json', { type: 'application/json' });
+        doImport(file);
+      }).catch((err: any) => {
+        toast.error(`${t('common.import_fail')}: ${err?.message || '未知错误'}`);
+      });
+      return;
+    }
+
+    // 降级：渲染进程 <input>
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      doImport(file);
     };
     input.click();
   }, [t]);
@@ -190,6 +258,13 @@ export default function SettingsPage() {
     // 重置 stores 状态
     useNotificationStore.getState().reset();
     useLanguage.getState().reset();
+    // 重置主进程 ONNX 状态（清除缓存的加载结果）
+    try {
+      await window.electronAPI?.sentimentResetOnnx();
+    } catch (e) { /* non-critical */ }
+    // 重启应用以走完整 LoadingPage 并重新懒加载模型
+    toast.success('已恢复初始化，正在重启…');
+    setTimeout(() => window.location.reload(), 600);
   }, [t]);
 
   const handleSeedDemo = useCallback(async () => {
@@ -417,10 +492,10 @@ export default function SettingsPage() {
       <Card>
         <h3 className="text-sm font-semibold text-text-primary mb-1 flex items-center gap-2">
           <Download className="w-4 h-4" />
-          自动备份提醒
+          {t('settings.auto_backup')}
         </h3>
         <p className="text-xs text-text-muted mb-3">
-          定期提醒备份数据，防止意外丢失
+          {t('settings.auto_backup_desc')}
         </p>
         <div className="flex flex-col space-y-3">
           <label className="flex items-center gap-2 cursor-pointer">
@@ -431,19 +506,19 @@ export default function SettingsPage() {
               className="w-4 h-4 rounded accent-teal-500"
             />
             <span className="text-xs font-medium text-text-primary">
-              启用备份提醒
+              {t('settings.auto_backup_enable')}
             </span>
           </label>
           <div className="flex items-center gap-3">
             <label htmlFor="backup-interval" className="text-xs text-text-secondary cursor-pointer">
-              {lang === 'zh-CN' ? '提醒间隔' : 'Interval'}
+              {t('settings.backup_interval')}
             </label>
             <select
               id="backup-interval"
               value={backupInterval}
               onChange={handleIntervalChange}
               disabled={!autoBackupEnabled}
-              aria-label={lang === 'zh-CN' ? '备份提醒间隔' : 'Backup reminder interval'}
+              aria-label={t('settings.backup_interval')}
               className="text-xs px-2 py-1 rounded-btn border bg-transparent disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               style={{ borderColor: 'var(--glass-border)', color: 'var(--text-primary)' }}
             >
@@ -454,11 +529,11 @@ export default function SettingsPage() {
           </div>
           <div className="flex items-center justify-between text-xs text-text-muted">
             <span>
-              {lang === 'zh-CN' ? '上次备份：' : 'Last backup: '}{lastBackupDate || (lang === 'zh-CN' ? '从未' : 'never')}
+              {t('settings.last_backup')}{lastBackupDate || t('settings.never')}
             </span>
             <Button variant="secondary" size="sm" onClick={handleBackupNow} disabled={exporting}>
               <Download className="w-3.5 h-3.5" />
-              {exporting ? (lang === 'zh-CN' ? '备份中...' : 'Backing up...') : (lang === 'zh-CN' ? '立即备份' : 'Back up now')}
+              {exporting ? t('settings.backing_up') : t('settings.backup_now')}
             </Button>
           </div>
         </div>

@@ -123,7 +123,7 @@ interface ElectronAPI {
   localModelList: () => Promise<LocalModelInfo[]>;
   localModelInit: (modelPath: string) => Promise<{ success: boolean; error?: string }>;
   localModelComplete: (prompt: string, options?: { systemPrompt?: string; temperature?: number; maxTokens?: number }) => Promise<{ response?: string; error?: string }>;
-  localModelCompleteStream: (prompt: string, onChunk?: (data: any) => void, options?: { systemPrompt?: string; temperature?: number; maxTokens?: number }) => void;
+  localModelCompleteStream: (prompt: string, onChunk?: (data: any) => void, options?: { systemPrompt?: string; temperature?: number; maxTokens?: number }) => () => void;
   localModelDispose: () => Promise<{ success: boolean }>;
   getCudaStatus: () => Promise<CudaStatus>;
 
@@ -132,6 +132,7 @@ interface ElectronAPI {
   sentimentCloudAnalyze: (text: string, context?: { mood?: string | number; date?: string; tags?: string[] }) => Promise<CloudAnalysisResult>;
   sentimentSetApiKey: (apiKey: string) => Promise<{ success: boolean }>;
   sentimentGetModelStatus: () => Promise<{ onnxLoaded: boolean; onnxAvailable: boolean; method: string }>;
+  sentimentResetOnnx: () => Promise<{ success: boolean; error?: string }>;
 
   // Emotion analysis engine
   emotionAnalyzeDiary: (diary: { id?: string; date: string; content: string; mood: number; createdAt?: string }) => Promise<EmotionAnalysisResult | null>;
@@ -145,6 +146,10 @@ interface ElectronAPI {
   behaviorAnalyzeDaily: (record: any, context?: any, baseline?: any) => Promise<{ anomalies: any[]; riskFactors: any[] }>;
   behaviorAnalyzeTrends: (records: any[]) => Promise<any>;
   behaviorGenerateSummary: (trends: any) => Promise<string>;
+
+  // Backup / restore
+  backupExport: (json: string) => Promise<{ success: boolean; path?: string; canceled?: boolean; error?: string }>;
+  backupImport: () => Promise<{ success: boolean; data?: any; canceled?: boolean; error?: string }>;
 
   // External apps
   openExternal: (path: string) => Promise<{ success: boolean; error?: string }>;

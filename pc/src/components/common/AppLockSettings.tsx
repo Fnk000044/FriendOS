@@ -108,10 +108,10 @@ export default function AppLockSettings() {
 
       {/* Status info */}
       {enabled && passwordHash && !showSetPassword && (
-        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+        <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/30 rounded-lg">
           <div className="flex items-center gap-2">
-            <Unlock className="w-4 h-4 text-green-600" />
-            <span className="text-sm text-green-700">应用锁已启用</span>
+            <Unlock className="w-4 h-4 text-green-600 dark:text-green-400" />
+            <span className="text-sm text-green-700 dark:text-green-300">应用锁已启用</span>
           </div>
           <Button variant="ghost" size="sm" onClick={handleResetPassword}>
             修改密码

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Brain, Wind, BookOpen, ArrowLeft, Clock, ChevronRight } from 'lucide-react';
 import ThoughtRecord from '../components/therapy/ThoughtRecord';
@@ -12,6 +13,18 @@ type TherapyMode = 'menu' | 'thought_record' | 'breathing' | 'mindfulness' | 'hi
 export default function TherapyPage() {
   const [mode, setMode] = useState<TherapyMode>('menu');
   const [selectedRecord, setSelectedRecord] = useState<TherapyRecord | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // 消费 URL 参数 ?exercise=breathing|mindfulness|thought_record，支持从推荐卡片直达练习
+  useEffect(() => {
+    const exercise = searchParams.get('exercise');
+    if (exercise && ['breathing', 'mindfulness', 'thought_record'].includes(exercise)) {
+      setMode(exercise as TherapyMode);
+      // 消费后清除参数，避免刷新时重复触发
+      searchParams.delete('exercise');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Get therapy records
   const therapyRecords = useLiveQuery(async () => {
@@ -73,8 +86,8 @@ export default function TherapyPage() {
               <p className="text-sm text-text-primary bg-surface-hover p-3 rounded-lg">{data.alternativeThought}</p>
             </div>
             {data.newEmotionIntensity < data.emotionIntensity && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                <p className="text-sm text-green-700">
+              <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                <p className="text-sm text-green-700 dark:text-green-300">
                   情绪强度从 {data.emotionIntensity}% 降低到 {data.newEmotionIntensity}%，
                   降低了 {data.emotionIntensity - data.newEmotionIntensity}%！
                 </p>
@@ -148,8 +161,8 @@ export default function TherapyPage() {
           onClick={() => setMode('breathing')}
           className="glass-card p-6 text-left glass-card-hover transition-shadow group"
         >
-          <div className="w-12 h-12 rounded-xl bg-info/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <Wind className="w-6 h-6 text-info" />
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <Wind className="w-6 h-6 text-primary" />
           </div>
           <h3 className="text-lg font-bold text-text-primary mb-2">呼吸练习</h3>
           <p className="text-sm text-text-secondary mb-4">
@@ -157,7 +170,7 @@ export default function TherapyPage() {
           </p>
           <div className="flex flex-wrap gap-2">
             {['4-7-8 呼吸', '方块呼吸', '腹式呼吸'].map(tag => (
-              <span key={tag} className="px-2 py-1 text-xs bg-info/10 text-info rounded-full">
+              <span key={tag} className="px-2 py-1 text-xs bg-primary/10 text-primary rounded-full">
                 {tag}
               </span>
             ))}
@@ -169,8 +182,8 @@ export default function TherapyPage() {
           onClick={() => setMode('mindfulness')}
           className="glass-card p-6 text-left glass-card-hover transition-shadow group"
         >
-          <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <BookOpen className="w-6 h-6 text-success" />
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <BookOpen className="w-6 h-6 text-primary" />
           </div>
           <h3 className="text-lg font-bold text-text-primary mb-2">正念冥想</h3>
           <p className="text-sm text-text-secondary mb-4">
@@ -178,7 +191,7 @@ export default function TherapyPage() {
           </p>
           <div className="flex flex-wrap gap-2">
             {['身体扫描', '觉察呼吸', '慈悲冥想'].map(tag => (
-              <span key={tag} className="px-2 py-1 text-xs bg-success/10 text-success rounded-full">
+              <span key={tag} className="px-2 py-1 text-xs bg-primary/10 text-primary rounded-full">
                 {tag}
               </span>
             ))}
@@ -231,15 +244,13 @@ export default function TherapyPage() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      isThoughtRecord ? 'bg-primary/10' : isMindfulness ? 'bg-success/10' : 'bg-info/10'
-                    }`}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center bg-primary/10">
                       {isThoughtRecord ? (
                         <Brain className="w-4 h-4 text-primary" />
                       ) : isMindfulness ? (
-                        <BookOpen className="w-4 h-4 text-success" />
+                        <BookOpen className="w-4 h-4 text-primary" />
                       ) : (
-                        <Wind className="w-4 h-4 text-info" />
+                        <Wind className="w-4 h-4 text-primary" />
                       )}
                     </div>
                     <div>

@@ -65,6 +65,7 @@ export default function QuickCaptureModal() {
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={t('quick_capture.placeholder')}
+          aria-label={t('quick_capture.placeholder')}
           className="w-full h-32 px-4 py-3 rounded-btn border text-sm resize-none
             placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
             transition-all"

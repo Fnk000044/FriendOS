@@ -86,11 +86,12 @@ export function useAI() {
         onChunkCallback(chunk);
       };
 
-      let fullResponse = await aiService.sendMessageStream(text.trim(), currentMessages, wrappedOnChunk);
+      let fullResponse: string = '';
+      fullResponse = await aiService.sendMessageStream(text.trim(), currentMessages, wrappedOnChunk);
       clearTimeout(firstTokenTimer);
 
       // 兜底：如果 onChunk 从未被调用（如 StubProvider），用返回值填充
-      if (fullResponse != null && fullResponse.length > 0) {
+      if (fullResponse.length > 0) {
         flushBuffer();
         const msg = useAIStore.getState().messages.find(m => m.id === assistantMsgId);
         if (msg && msg.content.trim().length === 0) {
@@ -117,7 +118,7 @@ export function useAI() {
         hasFirstToken = false;
         fullResponse = await aiService.sendMessageStream(text.trim(), currentMessages, wrappedOnChunk);
 
-        if (fullResponse != null && fullResponse.length > 0) {
+        if (fullResponse.length > 0) {
           flushBuffer();
           const msg = useAIStore.getState().messages.find(m => m.id === assistantMsgId);
           if (msg && msg.content.trim().length === 0) {
@@ -132,6 +133,7 @@ export function useAI() {
     } catch (err: any) {
       if (err instanceof Error && err.name === 'AbortError') return;
       let errorMsg = err?.message || t('assistant.error');
+      const currentConfig = useAIStore.getState().config;
       // 友好化本地模型初始化失败的错误提示
       if (errorMsg.includes('Failed to initialize local model') || errorMsg.includes('模型文件不存在')) {
         errorMsg = '本地模型未就绪，请检查 Qwen3.5 模型文件是否已安装';

@@ -71,16 +71,18 @@ const HabitCard = React.memo(function HabitCard({ habit, isLogged, streak, onTog
       }`}
       onMouseEnter={() => setShowDelete(true)}
       onMouseLeave={() => setShowDelete(false)}
+      onFocus={() => setShowDelete(true)}
     >
-      {showDelete && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onDelete(habit.id); }}
-          className="absolute top-2 right-2 p-1.5 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
-          title={t('common.delete')}
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      )}
+      <button
+        onClick={(e) => { e.stopPropagation(); onDelete(habit.id); }}
+        className={`absolute top-2 right-2 p-1.5 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+          showDelete ? 'opacity-100' : 'opacity-0 group-focus-within:opacity-100'
+        }`}
+        aria-label={t('common.delete')}
+        tabIndex={0}
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <div
@@ -109,12 +111,13 @@ const HabitCard = React.memo(function HabitCard({ habit, isLogged, streak, onTog
 
         <button
           onClick={(e) => { e.stopPropagation(); handleToggle(); }}
+          aria-pressed={isLogged}
           className={`px-3 py-1.5 text-xs rounded-full font-medium transition-all duration-200 cursor-pointer ${
             isLogged
               ? 'bg-primary/10 text-primary'
               : isAnimating
-                ? 'bg-green-100 text-green-600'
-                : 'text-text-muted hover:bg-slate-200'
+                ? 'bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-400'
+                : 'text-text-muted hover:bg-slate-200 dark:hover:bg-slate-700'
           }`}
           style={isLogged || isAnimating ? undefined : { background: 'var(--bg-hover)' }}
         >

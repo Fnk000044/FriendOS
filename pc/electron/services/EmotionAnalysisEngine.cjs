@@ -392,13 +392,14 @@ function extractPANAS(text) {
     negativeAffect: Math.round((negativeAffect / maxNA) * 100) / 100,
     dimensions,
     // 向后兼容：映射到旧的6维度
+    // 参考 PANAS 中文版文献：surprise 由 excited+enthusiastic 推导，disgust 由 hostile+irritable 推导
     legacy: {
       joy: dimensions.excited || dimensions.enthusiastic || 0,
       sadness: dimensions.distressed || dimensions.upset || 0,
       anger: dimensions.hostile || dimensions.irritable || 0,
       fear: dimensions.scared || dimensions.afraid || 0,
-      surprise: 0, // PANAS没有惊讶维度
-      disgust: 0,  // PANAS没有厌恶维度
+      surprise: Math.round((dimensions.interested || 0) * 0.5 + (dimensions.excited || 0) * 0.5),
+      disgust: Math.round((dimensions.hostile || 0) * 0.5 + (dimensions.irritable || 0) * 0.3 + (dimensions.guilty || 0) * 0.2),
     },
   };
 }
@@ -526,13 +527,14 @@ function calculateHealthIndex({
   // Normalize mood rating to 0-1 (1-5 scale)
   const normalizedMood = (moodRating - 1) / 4;
 
-  // Weighted average
+  // Weighted average — 更新权重，参考 Loneliness_Depression_Passive_Sensing_2023.pdf
+  // social 上调到 0.15（社交孤立是心理健康的重要指标）
   const index = (
-    sentimentScore * 0.25 +
+    sentimentScore * 0.20 +
     normalizedMood * 0.20 +
     taskCompletionRate * 0.15 +
     habitConsistency * 0.15 +
-    (socialScore / 100) * 0.10 +
+    (socialScore / 100) * 0.15 +
     (sleepScore / 100) * 0.15
   ) * 100;
 

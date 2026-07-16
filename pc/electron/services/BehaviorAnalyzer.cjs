@@ -304,13 +304,25 @@ function analyzeDailyBehavior(record, context = {}, baseline = null) {
     anomalies.push({ type: 'short_diary', severity: 'low', value: record.diaryWordCount });
   }
 
-  // Calculate risk factors from trends
-  if (context.consecutiveNoDiary >= 3) {
-    riskFactors.push({ type: 'consecutive_no_diary', days: context.consecutiveNoDiary, weight: 15 });
+  // Calculate risk factors from trends - 阶梯式递增，与 RiskScoringEngine 权重统一
+  const noDiaryDays = context.consecutiveNoDiary || 0;
+  if (noDiaryDays >= 14) {
+    riskFactors.push({ type: 'consecutive_no_diary', days: noDiaryDays, weight: 60 });
+  } else if (noDiaryDays >= 7) {
+    riskFactors.push({ type: 'consecutive_no_diary', days: noDiaryDays, weight: 40 });
+  } else if (noDiaryDays >= 3) {
+    riskFactors.push({ type: 'consecutive_no_diary', days: noDiaryDays, weight: 25 });
+  } else if (noDiaryDays >= 2) {
+    riskFactors.push({ type: 'consecutive_no_diary', days: noDiaryDays, weight: 10 });
   }
 
-  if (context.consecutiveLowMood >= 2) {
-    riskFactors.push({ type: 'consecutive_low_mood', days: context.consecutiveLowMood, weight: 20 });
+  const lowMoodDays = context.consecutiveLowMood || 0;
+  if (lowMoodDays >= 7) {
+    riskFactors.push({ type: 'consecutive_low_mood', days: lowMoodDays, weight: 45 });
+  } else if (lowMoodDays >= 3) {
+    riskFactors.push({ type: 'consecutive_low_mood', days: lowMoodDays, weight: 30 });
+  } else if (lowMoodDays >= 2) {
+    riskFactors.push({ type: 'consecutive_low_mood', days: lowMoodDays, weight: 15 });
   }
 
   if (context.taskCompletionDrop) {

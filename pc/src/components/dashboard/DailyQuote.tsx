@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { format } from 'date-fns';
 import { Plus, Pencil, Trash2, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { db } from '../../db';
 import { useLanguage } from '../../i18n/useLanguage';
 
@@ -23,19 +24,25 @@ export default function DailyQuote() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [quoteContent, setQuoteContent] = useState('');
   const [quoteAuthor, setQuoteAuthor] = useState('');
+  const seededRef = useRef(false);
 
   const allQuotes = useLiveQuery(() => db.quotes.toArray());
 
-  // Seed default quotes if empty
+  // Seed default quotes if empty — 用 ref 守卫避免重复插入
   useEffect(() => {
-    if (allQuotes !== undefined && allQuotes.length === 0) {
-      DEFAULT_QUOTES.forEach((content) => {
-        db.quotes.add({
-          id: generateId(),
-          content,
-          createdAt: new Date().toISOString(),
-        });
-      });
+    if (allQuotes !== undefined && allQuotes.length === 0 && !seededRef.current) {
+      seededRef.current = true;
+      Promise.all(
+        DEFAULT_QUOTES.map((content) =>
+          db.quotes.add({
+            id: generateId(),
+            content,
+            createdAt: new Date().toISOString(),
+          })
+        )
+      ).catch((err) =>
+        console.warn('[DailyQuote] Seed default quotes failed:', err)
+      );
     }
   }, [allQuotes]);
 
@@ -70,6 +77,7 @@ export default function DailyQuote() {
       setEditingId(null);
     } catch (err) {
       console.error('[DailyQuote] Failed to save quote:', err);
+      toast.error(t('common.save_fail'));
     }
   }
 
@@ -78,6 +86,7 @@ export default function DailyQuote() {
       await db.quotes.delete(id);
     } catch (err) {
       console.error('[DailyQuote] Failed to delete quote:', err);
+      toast.error(t('common.delete_fail'));
     }
   }
 

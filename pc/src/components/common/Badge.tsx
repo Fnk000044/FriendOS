@@ -6,11 +6,11 @@ interface BadgeProps {
 }
 
 const colors = {
-  default: 'text-slate-600',
-  success: 'bg-green-500 text-white',
-  warning: 'bg-amber-500 text-white',
-  danger: 'bg-red-500 text-white',
-  info: 'bg-blue-500 text-white',
+  default: 'text-slate-600 dark:text-slate-300',
+  success: 'text-white',
+  warning: 'text-white',
+  danger: 'text-white',
+  info: 'text-white',
 };
 
 const sizes = {
@@ -18,11 +18,19 @@ const sizes = {
   md: 'px-2 py-0.5 text-xs',
 };
 
+const variantStyles: Record<NonNullable<BadgeProps['variant']>, React.CSSProperties> = {
+  default: {},
+  success: { backgroundColor: 'var(--color-success)' },
+  warning: { backgroundColor: 'var(--color-warning)' },
+  danger: { backgroundColor: 'var(--color-danger)' },
+  info: { backgroundColor: 'var(--color-info)' },
+};
+
 export default function Badge({ children, variant = 'default', size = 'sm', className = '' }: BadgeProps) {
   return (
     <span
       className={`inline-flex items-center font-medium rounded-full ${colors[variant]} ${sizes[size]} ${className}`}
-      style={variant === 'default' ? { background: 'var(--bg-hover)', color: 'var(--text-secondary)' } : undefined}
+      style={variant === 'default' ? { background: 'var(--bg-hover)', color: 'var(--text-secondary)' } : variantStyles[variant]}
     >
       {children}
     </span>

@@ -24,7 +24,7 @@ interface AIStore {
 
 const defaultConfig: AIConfig = {
   provider: 'local',
-  tone: 'friendly',
+  tone: 'counselor',
   model: 'qwen3.5:0.8b',
   localModel: null,
   localModelPath: '',
@@ -147,9 +147,13 @@ export const useAIStore = create<AIStore>()(
     {
       name: 'lifeos_ai_config',
       partialize: (state) => ({
-        config: state.config,
+        config: { ...state.config, tone: 'counselor' }, // 强制固定语气
         activeConversationId: state.activeConversationId,
-        // 不再持久化 messages body：启动时由 App.tsx 调 startNewConversation 进入新会话
+      }),
+      merge: (persisted, current) => ({
+        ...current,
+        ...(persisted as any),
+        config: { ...current.config, ...(persisted as any)?.config, tone: 'counselor' }, // 强制覆盖语气
       }),
     }
   )

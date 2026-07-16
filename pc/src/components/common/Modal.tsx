@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -9,13 +9,37 @@ interface ModalProps {
   maxWidth?: string;
 }
 
+const ANIM_DURATION = 250; // ms, 与 CSS 匹配
+
 export default function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
+  // 退出动画：实际渲染保持到动画结束
+  const [visible, setVisible] = useState(false);
+  const [exiting, setExiting] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setVisible(true);
+      setExiting(false);
+    } else if (visible) {
+      // 触发退出动画
+      setExiting(true);
+      const timer = setTimeout(() => {
+        setVisible(false);
+        setExiting(false);
+      }, ANIM_DURATION);
+      return () => clearTimeout(timer);
+    }
+  }, [open, visible]);
+
+  const handleClose = useCallback(() => {
+    onClose();
+  }, [onClose]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
-      onClose();
+      handleClose();
       return;
     }
 
@@ -40,10 +64,10 @@ export default function Modal({ open, onClose, title, children, maxWidth = 'max-
         }
       }
     }
-  }, [onClose]);
+  }, [handleClose]);
 
   useEffect(() => {
-    if (open) {
+    if (visible && !exiting) {
       document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
       setTimeout(() => dialogRef.current?.focus(), 0);
@@ -52,15 +76,19 @@ export default function Modal({ open, onClose, title, children, maxWidth = 'max-
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
     };
-  }, [open, handleKeyDown]);
+  }, [visible, exiting, handleKeyDown]);
 
-  if (!open) return null;
+  if (!visible) return null;
 
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{
+        background: 'rgba(0,0,0,0.4)',
+        animation: exiting ? 'fadeOut 0.2s ease' : 'fadeIn 0.2s ease',
+      }}
+      onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
     >
       <div
         ref={dialogRef}
@@ -68,9 +96,11 @@ export default function Modal({ open, onClose, title, children, maxWidth = 'max-
         aria-modal="true"
         aria-label={title || '对话框'}
         tabIndex={-1}
-        className={`rounded-2xl shadow-xl w-full ${maxWidth} mx-4 max-h-[85vh] flex flex-col outline-none border`}
+        className={`rounded-2xl shadow-xl w-full ${maxWidth} mx-4 my-auto max-h-[85vh] flex flex-col outline-none border`}
         style={{
-          animation: 'modalScaleIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          animation: exiting
+            ? 'modalScaleOut 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
+            : 'modalScaleIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
           background: 'var(--bg-card-solid, var(--bg-card))',
           borderColor: 'var(--glass-border)',
         }}
@@ -79,7 +109,7 @@ export default function Modal({ open, onClose, title, children, maxWidth = 'max-
           <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--glass-border)' }}>
             <h2 className="text-base font-semibold text-text-primary">{title}</h2>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               aria-label="关闭对话框"
               className="p-1 rounded-lg text-text-muted hover:bg-surface-hover transition-colors"
             >

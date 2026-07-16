@@ -5,6 +5,7 @@ export type TranslationKey =
   | 'nav.dashboard' | 'nav.risk' | 'nav.tasks' | 'nav.diary' | 'nav.habits' | 'nav.memories' | 'nav.emotion' | 'nav.therapy' | 'nav.reports' | 'nav.settings' | 'nav.sync'
   | 'nav.assistant' | 'nav.knowledge' | 'nav.resources' | 'nav.assessment'
   | 'nav.data_local'
+  | 'nav.group_daily' | 'nav.group_analysis' | 'nav.group_tools' | 'nav.group_system'
   | 'sync.title' | 'sync.description' | 'sync.scan_to_connect'
   | 'sync.server_status_running' | 'sync.server_status_stopped'
   | 'sync.start_server' | 'sync.stop_server'
@@ -30,7 +31,7 @@ export type TranslationKey =
   | 'task.rolled_to_tomorrow' | 'task.pending_rollover' | 'task.title_required'
   | 'diary.title' | 'diary.write' | 'diary.no_entries' | 'diary.no_entries_desc' | 'diary.write_first'
   | 'diary.title_placeholder' | 'diary.content_placeholder' | 'diary.weather' | 'diary.save' | 'diary.update' | 'diary.cancel'
-  | 'diary.back'
+  | 'diary.back' | 'diary.save_emotion_fail'
   | 'habit.title' | 'habit.create' | 'habit.no_habits' | 'habit.no_habits_desc'
   | 'habit.name' | 'habit.name_placeholder' | 'habit.desc' | 'habit.color' | 'habit.create_btn' | 'habit.cancel'
   | 'habit.log' | 'habit.logged' | 'habit.streak_days'
@@ -81,7 +82,8 @@ export type TranslationKey =
   | 'dashboard.quote_author' | 'dashboard.quote_placeholder'
   | 'common.confirm' | 'common.cancel' | 'common.delete' | 'common.save' | 'common.edit' | 'common.search' | 'common.loading'
   | 'common.backup_success' | 'common.backup_fail' | 'common.import_success' | 'common.import_fail' | 'common.delete_confirm'
-  | 'common.load_more'
+  | 'common.save_fail' | 'common.delete_fail' | 'common.copy_fail'
+  | 'common.empty_title' | 'common.empty_desc' | 'common.load_more'
   | 'task.title_label' | 'task.description_label' | 'task.priority_label' | 'task.scheduled_date_label' | 'task.tags_label'
   | 'task.status_filter' | 'task.priority_filter'
   | 'task.rollover_notice' | 'task.more' | 'task.rollover_banner'
@@ -132,6 +134,18 @@ export type TranslationKey =
   | 'therapy.tr_dist_selective_abstraction' | 'therapy.tr_dist_labeling' | 'therapy.tr_dist_disqualifying_positive'
   | 'therapy.tr_dist_magnification' | 'therapy.tr_dist_personalization' | 'therapy.tr_dist_blaming'
   | 'therapy.tr_dist_unfair_comparison' | 'therapy.tr_dist_regret' | 'therapy.tr_dist_pessimistic_prediction'
+  | 'emotion.health_title' | 'emotion.health_index' | 'emotion.view_detail' | 'emotion.no_data' | 'emotion.no_data_hint'
+  | 'emotion.recent_7d_count' | 'emotion.risk_low' | 'emotion.risk_medium_low' | 'emotion.risk_medium' | 'emotion.risk_high' | 'emotion.risk_critical'
+  | 'risk.dashboard_title' | 'risk.dashboard_subtitle' | 'risk.composite_index' | 'risk.risk_level' | 'risk.level_suffix' | 'risk.days_suffix'
+  | 'risk.baseline_compare' | 'risk.mood_score' | 'risk.task_rate' | 'risk.habit_rate' | 'risk.diary_freq' | 'risk.baseline_prefix'
+  | 'risk.health_dim' | 'risk.health_index_label' | 'risk.risk_trend' | 'risk.risk_index_label' | 'risk.no_data' | 'risk.no_trend_data'
+  | 'risk.signal_analysis' | 'risk.weight_suffix' | 'risk.weight_suffix_pct' | 'risk.risk_factors'
+  | 'risk.signal_emotion' | 'risk.signal_behavior' | 'risk.signal_assessment' | 'risk.signal_chat' | 'risk.signal_diary'
+  | 'risk.dim_emotion' | 'risk.dim_behavior' | 'risk.dim_assessment' | 'risk.dim_chat' | 'risk.dim_diary'
+  | 'settings.auto_backup' | 'settings.auto_backup_desc' | 'settings.auto_backup_enable' | 'settings.backup_interval' | 'settings.last_backup' | 'settings.never' | 'settings.backup_now' | 'settings.backing_up'
+  | 'chat.history' | 'chat.no_history' | 'chat.no_title' | 'chat.input_hint' | 'chat.new_conversation'
+  | 'header.ai_settings' | 'header.ai_assistant' | 'header.sidebar_show' | 'header.sidebar_expand' | 'header.sidebar_collapse'
+  | 'diary.date_label'
   | 'lock.title' | 'lock.subtitle' | 'lock.placeholder' | 'lock.error' | 'lock.unlock'
   | 'error.title' | 'error.retry' | 'error.retry_failed';
 
@@ -152,6 +166,10 @@ export const translations: Translations = {
     'nav.reports': '复盘总结',
     'nav.settings': '设置',
     'nav.data_local': '所有数据本地存储',
+    'nav.group_daily': '日常',
+    'nav.group_analysis': '分析',
+    'nav.group_tools': '工具',
+    'nav.group_system': '系统',
     'nav.assistant': 'AI助理',
     'nav.assessment': '心理评估',
 
@@ -262,6 +280,7 @@ export const translations: Translations = {
     'diary.weather': '天气',
     'diary.save': '保存',
     'diary.update': '更新',
+    'diary.save_emotion_fail': '情感记录保存失败，但日记已保存',
     'diary.cancel': '取消',
     'diary.back': '返回日记列表',
     'diary.weather_placeholder': '天气 ☀️',
@@ -484,6 +503,11 @@ export const translations: Translations = {
     'common.backup_fail': '导出失败',
     'common.import_success': '数据导入成功',
     'common.import_fail': '导入失败，请检查文件格式',
+    'common.save_fail': '保存失败',
+    'common.delete_fail': '删除失败',
+    'common.copy_fail': '复制失败',
+    'common.empty_title': '暂无数据',
+    'common.empty_desc': '还没有内容，快去创建一条吧',
     'quick_capture.type_label': '分类:',
     'mood.1': '很差',
     'mood.2': '不好',
@@ -604,6 +628,80 @@ export const translations: Translations = {
     'therapy.tr_dist_regret': '后悔倾向：要是...就好了',
     'therapy.tr_dist_pessimistic_prediction': '悲观预测：未来一定会更糟',
 
+    // Emotion overview
+    'emotion.health_title': '情绪健康',
+    'emotion.health_index': '情绪指数',
+    'emotion.view_detail': '查看详情',
+    'emotion.no_data': '暂无数据',
+    'emotion.no_data_hint': '写日记后自动分析',
+    'emotion.recent_7d_count': '近7天分析 {count} 条',
+    'emotion.risk_low': '良好',
+    'emotion.risk_medium_low': '偏低',
+    'emotion.risk_medium': '中等',
+    'emotion.risk_high': '偏高',
+    'emotion.risk_critical': '危险',
+
+    // Risk dashboard
+    'risk.dashboard_title': '心理守护概览',
+    'risk.dashboard_subtitle': '综合多维度数据分析，温柔守护心理健康',
+    'risk.composite_index': '综合风险指数',
+    'risk.risk_level': '风险等级',
+    'risk.level_suffix': '风险',
+    'risk.days_suffix': '天',
+    'risk.baseline_compare': '与个人基线对比',
+    'risk.mood_score': '心情评分',
+    'risk.task_rate': '任务完成率',
+    'risk.habit_rate': '习惯完成率',
+    'risk.diary_freq': '日记频率',
+    'risk.baseline_prefix': '基线',
+    'risk.health_dim': '健康维度分析',
+    'risk.health_index_label': '健康指数',
+    'risk.risk_trend': '风险趋势',
+    'risk.risk_index_label': '风险指数',
+    'risk.no_data': '暂无数据',
+    'risk.no_trend_data': '暂无趋势数据',
+    'risk.signal_analysis': '信号源分析',
+    'risk.weight_suffix': '权重 {weight}',
+    'risk.weight_suffix_pct': '权重 {weight}%',
+    'risk.risk_factors': '风险因素',
+    'risk.signal_emotion': '情绪分析',
+    'risk.signal_behavior': '行为模式',
+    'risk.signal_assessment': '评估量表',
+    'risk.signal_chat': 'AI聊天',
+    'risk.signal_diary': '日记情绪',
+    'risk.dim_emotion': '情绪',
+    'risk.dim_behavior': '行为',
+    'risk.dim_assessment': '评估',
+    'risk.dim_chat': '聊天',
+    'risk.dim_diary': '日记',
+
+    // Settings auto-backup
+    'settings.auto_backup': '自动备份提醒',
+    'settings.auto_backup_desc': '定期提醒备份数据，防止意外丢失',
+    'settings.auto_backup_enable': '启用备份提醒',
+    'settings.backup_interval': '提醒间隔',
+    'settings.last_backup': '上次备份：',
+    'settings.never': '从未',
+    'settings.backup_now': '立即备份',
+    'settings.backing_up': '备份中...',
+
+    // Chat
+    'chat.history': '历史对话',
+    'chat.no_history': '暂无历史对话',
+    'chat.no_title': '(无标题)',
+    'chat.input_hint': 'Enter 发送 · Shift+Enter 换行',
+    'chat.new_conversation': '新对话',
+
+    // Header
+    'header.ai_settings': 'AI 设置',
+    'header.ai_assistant': 'AI 助理',
+    'header.sidebar_show': '显示侧边栏',
+    'header.sidebar_expand': '展开侧边栏',
+    'header.sidebar_collapse': '折叠侧边栏',
+
+    // Diary
+    'diary.date_label': '日期',
+
     // Lock screen
     'lock.title': '应用已锁定',
     'lock.subtitle': '请输入密码解锁',
@@ -631,6 +729,10 @@ export const translations: Translations = {
     'nav.reports': 'Review',
     'nav.settings': 'Settings',
     'nav.data_local': 'All data stored locally',
+    'nav.group_daily': 'Daily',
+    'nav.group_analysis': 'Insights',
+    'nav.group_tools': 'Tools',
+    'nav.group_system': 'System',
     'nav.assistant': 'AI Assistant',
     'nav.assessment': 'Assessment',
 
@@ -742,6 +844,7 @@ export const translations: Translations = {
     'diary.weather': 'Weather',
     'diary.save': 'Save',
     'diary.update': 'Update',
+    'diary.save_emotion_fail': 'Emotion record failed to save, but diary was saved',
     'diary.cancel': 'Cancel',
     'diary.back': 'Back to Diary',
     'diary.weather_placeholder': 'Weather ☀️',
@@ -964,6 +1067,11 @@ export const translations: Translations = {
     'common.backup_fail': 'Export failed',
     'common.import_success': 'Data imported successfully',
     'common.import_fail': 'Import failed. Please check the file format.',
+    'common.save_fail': 'Save failed',
+    'common.delete_fail': 'Delete failed',
+    'common.copy_fail': 'Copy failed',
+    'common.empty_title': 'No data yet',
+    'common.empty_desc': 'No content yet, create your first entry',
     'quick_capture.type_label': 'Type:',
     'mood.1': 'Awful',
     'mood.2': 'Bad',
@@ -1083,6 +1191,80 @@ export const translations: Translations = {
     'therapy.tr_dist_unfair_comparison': 'Unfair Comparison: comparing weaknesses to others\' strengths',
     'therapy.tr_dist_regret': 'Regret: if only...',
     'therapy.tr_dist_pessimistic_prediction': 'Pessimistic Prediction: the future will be worse',
+
+    // Emotion overview
+    'emotion.health_title': 'Emotional Health',
+    'emotion.health_index': 'Emotion Index',
+    'emotion.view_detail': 'View details',
+    'emotion.no_data': 'No data yet',
+    'emotion.no_data_hint': 'Auto-analyzed after you write diary entries',
+    'emotion.recent_7d_count': 'Last 7 days: {count} entries',
+    'emotion.risk_low': 'Good',
+    'emotion.risk_medium_low': 'Low',
+    'emotion.risk_medium': 'Medium',
+    'emotion.risk_high': 'High',
+    'emotion.risk_critical': 'Critical',
+
+    // Risk dashboard
+    'risk.dashboard_title': 'Mental Wellbeing Overview',
+    'risk.dashboard_subtitle': 'Multi-dimensional analysis that gently supports your mental health',
+    'risk.composite_index': 'Composite Risk Index',
+    'risk.risk_level': 'Risk Level',
+    'risk.level_suffix': 'risk',
+    'risk.days_suffix': 'd',
+    'risk.baseline_compare': 'Compare to Personal Baseline',
+    'risk.mood_score': 'Mood Score',
+    'risk.task_rate': 'Task Completion Rate',
+    'risk.habit_rate': 'Habit Completion Rate',
+    'risk.diary_freq': 'Diary Frequency',
+    'risk.baseline_prefix': 'Baseline',
+    'risk.health_dim': 'Health Dimensions',
+    'risk.health_index_label': 'Health Index',
+    'risk.risk_trend': 'Risk Trend',
+    'risk.risk_index_label': 'Risk Index',
+    'risk.no_data': 'No data',
+    'risk.no_trend_data': 'No trend data',
+    'risk.signal_analysis': 'Signal Source Analysis',
+    'risk.weight_suffix': 'Weight {weight}',
+    'risk.weight_suffix_pct': 'Weight {weight}%',
+    'risk.risk_factors': 'Risk Factors',
+    'risk.signal_emotion': 'Emotion Analysis',
+    'risk.signal_behavior': 'Behavior Pattern',
+    'risk.signal_assessment': 'Assessment Scale',
+    'risk.signal_chat': 'AI Chat',
+    'risk.signal_diary': 'Diary Emotion',
+    'risk.dim_emotion': 'Emotion',
+    'risk.dim_behavior': 'Behavior',
+    'risk.dim_assessment': 'Assessment',
+    'risk.dim_chat': 'Chat',
+    'risk.dim_diary': 'Diary',
+
+    // Settings auto-backup
+    'settings.auto_backup': 'Auto Backup Reminder',
+    'settings.auto_backup_desc': 'Remind you to back up data periodically to prevent loss',
+    'settings.auto_backup_enable': 'Enable backup reminder',
+    'settings.backup_interval': 'Interval',
+    'settings.last_backup': 'Last backup: ',
+    'settings.never': 'never',
+    'settings.backup_now': 'Back up now',
+    'settings.backing_up': 'Backing up...',
+
+    // Chat
+    'chat.history': 'History',
+    'chat.no_history': 'No conversation history',
+    'chat.no_title': '(untitled)',
+    'chat.input_hint': 'Enter to send · Shift+Enter for newline',
+    'chat.new_conversation': 'New conversation',
+
+    // Header
+    'header.ai_settings': 'AI Settings',
+    'header.ai_assistant': 'AI Assistant',
+    'header.sidebar_show': 'Show sidebar',
+    'header.sidebar_expand': 'Expand sidebar',
+    'header.sidebar_collapse': 'Collapse sidebar',
+
+    // Diary
+    'diary.date_label': 'Date',
 
     // Lock screen
     'lock.title': 'App Locked',

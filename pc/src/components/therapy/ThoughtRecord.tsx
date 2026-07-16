@@ -5,6 +5,7 @@ import {
   UserX, CloudRain, Zap, HelpCircle, Lightbulb,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { db } from '../../db';
 import { getToday } from '../../utils/date';
 import { useLanguage } from '../../i18n/useLanguage';
@@ -201,6 +202,7 @@ export default function ThoughtRecord({ onComplete }: ThoughtRecordProps) {
       setSaved(true);
     } catch (err) {
       console.error('Failed to save thought record:', err);
+      toast.error(t('common.save_fail'));
     } finally {
       setSaving(false);
     }
@@ -509,7 +511,7 @@ export default function ThoughtRecord({ onComplete }: ThoughtRecordProps) {
     return (
       <div className="max-w-lg mx-auto">
         <div className="glass-card glass-glow rounded-2xl shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-500 px-6 py-4">
+          <div className="bg-gradient-to-r from-primary to-primary-dark px-6 py-4">
             <h2 className="text-white font-bold text-lg">{t('therapy.tr_title')}</h2>
             <p className="text-white/80 text-sm mt-1">{t('therapy.tr_saved_subtitle')}</p>
           </div>
@@ -554,7 +556,7 @@ export default function ThoughtRecord({ onComplete }: ThoughtRecordProps) {
               <button
                 type="button"
                 onClick={onComplete}
-                className="px-4 py-2 text-sm bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 cursor-pointer transition-colors"
+                className="px-4 py-2 text-sm bg-primary text-white rounded-btn hover:opacity-90 cursor-pointer transition-opacity"
               >
                 {t('therapy.tr_back')}
               </button>
@@ -569,26 +571,26 @@ export default function ThoughtRecord({ onComplete }: ThoughtRecordProps) {
     <div className="max-w-lg mx-auto">
       <div className="glass-card glass-glow rounded-2xl shadow-lg overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-500 to-purple-500 px-6 py-4">
-          <h2 className="text-white font-bold text-lg">{t('therapy.tr_title')}</h2>
-          <p className="text-white/80 text-sm mt-1">{t('therapy.tr_subtitle')}</p>
-        </div>
+          <div className="bg-gradient-to-r from-primary to-primary-dark px-6 py-4">
+            <h2 className="text-white font-bold text-lg">{t('therapy.tr_title')}</h2>
+            <p className="text-white/80 text-sm mt-1">{t('therapy.tr_subtitle')}</p>
+          </div>
 
-        {/* Progress */}
+          {/* Progress */}
         <div className="px-6 pt-4">
           <div className="flex items-center justify-between mb-2">
             {STEPS.map((step, i) => (
               <div key={i} className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  i < currentStep ? 'bg-indigo-500 text-white' :
-                  i === currentStep ? 'bg-indigo-100 text-indigo-600 ring-2 ring-indigo-500 dark:bg-indigo-900/40 dark:text-indigo-300' :
+                  i < currentStep ? 'bg-primary text-white' :
+                  i === currentStep ? 'bg-primary/10 text-primary ring-2 ring-primary dark:bg-primary/20 dark:text-primary' :
                   'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
                 }`}>
                   {i < currentStep ? <Check className="w-4 h-4" aria-hidden="true" /> : i + 1}
                 </div>
                 {i < STEPS.length - 1 && (
                   <div className={`w-8 h-0.5 mx-1 ${
-                    i < currentStep ? 'bg-indigo-500' : 'bg-slate-200 dark:bg-slate-700'
+                    i < currentStep ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'
                   }`} />
                 )}
               </div>
@@ -632,9 +634,9 @@ export default function ThoughtRecord({ onComplete }: ThoughtRecordProps) {
               type="button"
               onClick={() => goToStep(currentStep + 1)}
               disabled={!canProceed()}
-              className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1 px-4 py-2 rounded-btn text-sm font-medium transition-colors ${
                 canProceed()
-                  ? 'bg-indigo-500 text-white hover:bg-indigo-600 cursor-pointer'
+                  ? 'bg-primary text-white hover:opacity-90 cursor-pointer'
                   : 'bg-slate-200 text-slate-500 font-semibold cursor-not-allowed dark:bg-slate-800 dark:text-slate-500'
               }`}
             >
@@ -646,9 +648,9 @@ export default function ThoughtRecord({ onComplete }: ThoughtRecordProps) {
               type="button"
               onClick={handleSave}
               disabled={!canProceed() || saving}
-              className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1 px-4 py-2 rounded-btn text-sm font-medium transition-colors ${
                 canProceed() && !saving
-                  ? 'bg-green-500 text-white hover:bg-green-600 cursor-pointer'
+                  ? 'bg-primary text-white hover:opacity-90 cursor-pointer'
                   : 'bg-slate-200 text-slate-500 font-semibold cursor-not-allowed dark:bg-slate-800 dark:text-slate-500'
               }`}
             >

@@ -47,6 +47,7 @@ export default function TaskInput({ onCreated }: TaskInputProps) {
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={t('task.input_placeholder')}
+          aria-label={t('task.input_placeholder')}
           className="flex-1 outline-none text-sm bg-transparent placeholder:text-text-muted"
         />
         {saving && <Loader2 className="w-4 h-4 animate-spin text-text-muted" />}
@@ -57,6 +58,8 @@ export default function TaskInput({ onCreated }: TaskInputProps) {
             key={p}
             type="button"
             onClick={() => setPriority(p)}
+            aria-pressed={priority === p}
+            aria-label={t(PRIORITY_KEYS[p])}
             className={`px-2.5 py-1 text-xs rounded-full border transition-all ${
               priority === p ? PRIORITY_ACTIVE_COLORS[p] : PRIORITY_DEFAULT_COLORS[p]
             }`}

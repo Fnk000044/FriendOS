@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { BookOpen, Heart, Star, Moon, Lightbulb, ArrowRight, ArrowLeft, Check } from 'lucide-react';
 
 export interface JournalTemplate {
@@ -29,7 +29,7 @@ export const JOURNAL_TEMPLATES: JournalTemplate[] = [
       '为什么这些事让我感到感恩？',
       '此刻想对生活说的一句话？',
     ],
-    color: 'bg-pink-50 text-pink-600 border-pink-200',
+    color: 'bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 border-pink-200 dark:border-pink-800',
   },
   {
     id: 'achievement',
@@ -41,7 +41,7 @@ export const JOURNAL_TEMPLATES: JournalTemplate[] = [
       '为自己感到骄傲的原因是什么？',
       '这些成就反映了你怎样的优点？',
     ],
-    color: 'bg-yellow-50 text-yellow-600 border-yellow-200',
+    color: 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
   },
   {
     id: 'emotion_trigger',
@@ -55,7 +55,7 @@ export const JOURNAL_TEMPLATES: JournalTemplate[] = [
       '我做了什么行为反应？',
       '下次遇到类似情况，我可以怎么做？',
     ],
-    color: 'bg-purple-50 text-purple-600 border-purple-200',
+    color: 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800',
   },
   {
     id: 'goodnight',
@@ -68,7 +68,7 @@ export const JOURNAL_TEMPLATES: JournalTemplate[] = [
       '明天想做的一件事是什么？',
       '晚安，想对自己说的一句话？',
     ],
-    color: 'bg-indigo-50 text-indigo-600 border-indigo-200',
+    color: 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800',
   },
 ];
 
@@ -117,6 +117,12 @@ export function GuidedJournalWizard({ template, onComplete, onCancel }: GuidedJo
   const questions = template.prompts.filter(p => p.trim().length > 0);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<string[]>(() => questions.map(() => ''));
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // 步骤切换后重新聚焦 textarea
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, [step]);
 
   const total = questions.length;
   const isLast = step === total - 1;
@@ -150,7 +156,7 @@ export function GuidedJournalWizard({ template, onComplete, onCancel }: GuidedJo
   return (
     <div className="space-y-4">
       {/* 进度 */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between" role="progressbar" aria-valuenow={step + 1} aria-valuemin={1} aria-valuemax={total}>
         <div className="flex gap-1.5">
           {questions.map((_, i) => (
             <div
@@ -166,15 +172,17 @@ export function GuidedJournalWizard({ template, onComplete, onCancel }: GuidedJo
       </div>
 
       {/* 问题 */}
-      <div>
+      <div aria-live="polite">
         <h3 className="text-base font-semibold text-slate-800 dark:text-slate-100 mb-3">
           {questions[step]}
         </h3>
         <textarea
+          ref={textareaRef}
           autoFocus
           value={answers[step]}
           onChange={(e) => setAnswers(prev => prev.map((a, i) => i === step ? e.target.value : a))}
           placeholder="在这里写下你的回答..."
+          aria-label={questions[step]}
           className="w-full h-40 p-3 text-sm border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
           style={{ borderColor: 'var(--glass-border)' }}
         />
@@ -185,6 +193,7 @@ export function GuidedJournalWizard({ template, onComplete, onCancel }: GuidedJo
         <button
           type="button"
           onClick={step === 0 ? onCancel : () => setStep(s => s - 1)}
+          aria-label={step === 0 ? '取消' : '上一步'}
           className="flex items-center gap-1 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors"
         >
           <ArrowLeft className="w-4 h-4" aria-hidden="true" />
@@ -194,6 +203,7 @@ export function GuidedJournalWizard({ template, onComplete, onCancel }: GuidedJo
           type="button"
           onClick={handleNext}
           disabled={!canProceed}
+          aria-label={isLast ? '生成日记' : '下一步'}
           className={`flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
             canProceed
               ? 'bg-primary text-white hover:bg-primary-dark cursor-pointer'

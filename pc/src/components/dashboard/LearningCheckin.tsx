@@ -6,6 +6,7 @@ import { db } from '../../db';
 import { useLanguage } from '../../i18n/useLanguage';
 import { useHabits } from '../../hooks/useHabits';
 import { CardSkeleton } from '../common/Skeleton';
+import EmptyState from '../common/EmptyState';
 
 export default function LearningCheckin() {
   const navigate = useNavigate();
@@ -59,9 +60,7 @@ export default function LearningCheckin() {
       </div>
 
       {total === 0 ? (
-        <p className="text-xs text-text-muted py-4 text-center">
-          {t('dashboard.no_habits')}
-        </p>
+        <EmptyState title={t('dashboard.no_habits')} />
       ) : (
         <div className="flex-1">
           <div className="space-y-0.5 mb-4">

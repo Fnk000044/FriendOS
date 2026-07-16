@@ -10,6 +10,7 @@ import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Badge from '../common/Badge';
 import { CardSkeleton } from '../common/Skeleton';
+import EmptyState from '../common/EmptyState';
 import { DEFAULT_CATEGORIES } from '../../utils/constants';
 import { PRIORITY_CONFIG, CATEGORY_COLOR_MAP } from '../../utils/taskConstants';
 
@@ -76,7 +77,7 @@ export default function TodayTodos() {
       </div>
 
       {tasks.length === 0 ? (
-        <p className="text-xs text-text-muted py-4 text-center">{t('dashboard.no_todos')}</p>
+        <EmptyState title={t('dashboard.no_todos')} />
       ) : (
         <div className="flex-1">
           <div className="space-y-1">

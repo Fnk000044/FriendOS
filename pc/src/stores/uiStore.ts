@@ -9,6 +9,8 @@ interface UIState {
   currentDate: string;
   toggleSidebar: () => void;
   toggleSidebarCollapsed: () => void;
+  setSidebarCollapsed: (v: boolean) => void;
+  setSidebarOpen: (v: boolean) => void;
   openQuickCapture: () => void;
   closeQuickCapture: () => void;
   toggleAiAssistant: () => void;
@@ -23,6 +25,8 @@ export const useUIStore = create<UIState>((set) => ({
   currentDate: getToday(),
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
   toggleSidebarCollapsed: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+  setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
+  setSidebarOpen: (v) => set({ sidebarOpen: v }),
   openQuickCapture: () => set({ quickCaptureOpen: true }),
   closeQuickCapture: () => set({ quickCaptureOpen: false }),
   toggleAiAssistant: () => set((s) => ({ aiAssistantOpen: !s.aiAssistantOpen })),

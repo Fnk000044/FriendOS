@@ -308,12 +308,12 @@ export default function MindfulnessSession({ onComplete }: MindfulnessSessionPro
           <button
             onClick={handleScreeningComplete}
             disabled={Object.keys(screeningAnswers).length < SCREENING_QUESTIONS.length}
-            className={`flex-1 py-3 rounded-xl font-medium transition-colors ${
+            className={`flex-1 py-3 rounded-btn font-medium transition-colors cursor-pointer ${
               Object.keys(screeningAnswers).length < SCREENING_QUESTIONS.length
-                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
                 : hasContraindication
                 ? 'bg-red-500 text-white hover:bg-red-600'
-                : 'bg-green-500 text-white hover:bg-green-600'
+                : 'bg-primary text-white hover:opacity-90'
             }`}
           >
             {hasContraindication ? '返回选择' : '继续'}
@@ -334,10 +334,10 @@ export default function MindfulnessSession({ onComplete }: MindfulnessSessionPro
             <button
               key={v}
               onClick={() => setMoodBefore(v)}
-              className={`w-12 h-12 rounded-full text-lg font-bold transition-all ${
+              className={`w-12 h-12 rounded-full text-lg font-bold transition-all cursor-pointer ${
                 moodBefore === v
-                  ? 'bg-green-500 text-white scale-110'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-primary text-white scale-110'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
               {v}
@@ -347,7 +347,7 @@ export default function MindfulnessSession({ onComplete }: MindfulnessSessionPro
         {moodBefore && (
           <button
             onClick={handleStart}
-            className="w-full py-3 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors"
+            className="w-full py-3 bg-primary text-white rounded-btn font-medium hover:opacity-90 transition-opacity cursor-pointer"
           >
             开始冥想
           </button>
@@ -441,10 +441,10 @@ export default function MindfulnessSession({ onComplete }: MindfulnessSessionPro
             <button
               key={v}
               onClick={() => setMoodAfter(v)}
-              className={`w-12 h-12 rounded-full text-lg font-bold transition-all ${
+              className={`w-12 h-12 rounded-full text-lg font-bold transition-all cursor-pointer ${
                 moodAfter === v
-                  ? 'bg-green-500 text-white scale-110'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-primary text-white scale-110'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
               {v}
@@ -454,7 +454,7 @@ export default function MindfulnessSession({ onComplete }: MindfulnessSessionPro
         {moodAfter && (
           <button
             onClick={handleComplete}
-            className="w-full py-3 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors"
+            className="w-full py-3 bg-primary text-white rounded-btn font-medium hover:opacity-90 transition-opacity cursor-pointer"
           >
             完成
           </button>
@@ -481,7 +481,7 @@ export default function MindfulnessSession({ onComplete }: MindfulnessSessionPro
         )}
         <button
           onClick={onComplete}
-          className="px-6 py-2 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors"
+          className="px-6 py-2 bg-primary text-white rounded-btn font-medium hover:opacity-90 transition-opacity cursor-pointer"
         >
           返回
         </button>

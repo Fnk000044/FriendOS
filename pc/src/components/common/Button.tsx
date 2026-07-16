@@ -27,14 +27,16 @@ export default function Button({
   className = '',
   children,
   disabled,
+  type = 'button',
   ...props
 }: ButtonProps) {
   const isDisabled = disabled || loading;
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 font-medium rounded-btn transition-all duration-200
-        ${variants[variant]} ${sizes[size]} disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
-      style={variant === 'primary' ? { background: 'linear-gradient(135deg, #14B8A6, #0F766E)' } : variant === 'secondary' ? { background: 'var(--bg-hover)', borderColor: 'var(--glass-border)' } : undefined}
+      type={type}
+      className={`inline-flex items-center justify-center gap-2 font-medium rounded-btn transition-all duration-200 active:scale-[0.97]
+        ${variants[variant]} ${sizes[size]} disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 ${className}`}
+      style={variant === 'primary' ? { background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))' } : variant === 'secondary' ? { background: 'var(--bg-hover)', borderColor: 'var(--glass-border)' } : undefined}
       disabled={isDisabled}
       {...props}
     >

@@ -95,22 +95,33 @@ function calculateBehaviorScore(behaviorData) {
   const factors = [];
   let totalScore = 0;
 
-  // 1. 连续无日记
-  if (behaviorData.consecutiveNoDiary >= 3) {
+  // 1. 连续无日记 - 阶梯式递增，体现严重程度（3天与14天不再同分）
+  const noDiaryDays = behaviorData.consecutiveNoDiary || 0;
+  if (noDiaryDays >= 14) {
+    totalScore += 60;
+    factors.push({ type: 'no_diary', weight: 60, description: `连续${noDiaryDays}天未写日记（严重忽视）` });
+  } else if (noDiaryDays >= 7) {
+    totalScore += 40;
+    factors.push({ type: 'no_diary', weight: 40, description: `连续${noDiaryDays}天未写日记（明显忽视）` });
+  } else if (noDiaryDays >= 3) {
     totalScore += 25;
-    factors.push({ type: 'no_diary', weight: 25, description: `连续${behaviorData.consecutiveNoDiary}天未写日记` });
-  } else if (behaviorData.consecutiveNoDiary >= 2) {
+    factors.push({ type: 'no_diary', weight: 25, description: `连续${noDiaryDays}天未写日记` });
+  } else if (noDiaryDays >= 2) {
     totalScore += 10;
-    factors.push({ type: 'no_diary', weight: 10, description: `连续${behaviorData.consecutiveNoDiary}天未写日记` });
+    factors.push({ type: 'no_diary', weight: 10, description: `连续${noDiaryDays}天未写日记` });
   }
 
-  // 2. 连续低心情
-  if (behaviorData.consecutiveLowMood >= 3) {
+  // 2. 连续低心情 - 阶梯式递增
+  const lowMoodDays = behaviorData.consecutiveLowMood || 0;
+  if (lowMoodDays >= 7) {
+    totalScore += 45;
+    factors.push({ type: 'low_mood', weight: 45, description: `连续${lowMoodDays}天心情低落（持续低迷）` });
+  } else if (lowMoodDays >= 3) {
     totalScore += 30;
-    factors.push({ type: 'low_mood', weight: 30, description: `连续${behaviorData.consecutiveLowMood}天心情低落` });
-  } else if (behaviorData.consecutiveLowMood >= 2) {
+    factors.push({ type: 'low_mood', weight: 30, description: `连续${lowMoodDays}天心情低落` });
+  } else if (lowMoodDays >= 2) {
     totalScore += 15;
-    factors.push({ type: 'low_mood', weight: 15, description: `连续${behaviorData.consecutiveLowMood}天心情低落` });
+    factors.push({ type: 'low_mood', weight: 15, description: `连续${lowMoodDays}天心情低落` });
   }
 
   // 3. 任务完成率下降
@@ -213,10 +224,11 @@ function calculateChatScore(conversationSummaries) {
   const factors = [];
   let totalScore = 0;
 
-  // 检查情感状态关键词
-  const negativeKeywords = ['悲伤', '焦虑', '沮丧', '绝望', '无助', '痛苦', '孤独', '害怕', '紧张', '愤怒'];
-  const crisisKeywords = ['想死', '不想活', '自杀', '结束生命', '活着没意思'];
-  const crisisExclusions = ['九死一生', '生不如死', '笑死', '困死了', '无聊到想死', '烦死了', '笑死我了'];
+  // 统一从 crisisKeywords.cjs 引用，避免与 SentimentService 词表不同步
+  const { CRISIS_KEYWORDS, CRISIS_EXCLUSIONS, NEGATIVE_KEYWORDS } = require('./crisisKeywords.cjs');
+  const negativeKeywords = NEGATIVE_KEYWORDS;
+  const crisisKeywords = CRISIS_KEYWORDS;
+  const crisisExclusions = CRISIS_EXCLUSIONS;
 
   for (const summary of conversationSummaries) {
     const state = summary.emotionalState || '';
@@ -269,10 +281,11 @@ function calculateDiaryScore(diaries) {
     }
   }
 
-  // 2. 检查日记内容中的负面关键词
-  const negativeKeywords = ['累', '烦', '不想', '讨厌', '痛苦', '绝望', '无助', '孤独', '害怕'];
-  const crisisKeywords = ['想死', '不想活', '活着没意思', '结束', '解脱'];
-  const crisisExclusions = ['九死一生', '生不如死', '死里逃生', '笑死', '困死了', '无聊到想死', '烦死了'];
+  // 2. 检查日记内容中的负面关键词 - 统一从 crisisKeywords.cjs 引用
+  const { CRISIS_KEYWORDS, CRISIS_EXCLUSIONS, NEGATIVE_KEYWORDS } = require('./crisisKeywords.cjs');
+  const negativeKeywords = NEGATIVE_KEYWORDS;
+  const crisisKeywords = CRISIS_KEYWORDS;
+  const crisisExclusions = CRISIS_EXCLUSIONS;
 
   for (const diary of diaries) {
     const content = diary.content || '';

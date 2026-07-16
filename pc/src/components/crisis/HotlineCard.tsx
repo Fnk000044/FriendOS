@@ -42,6 +42,7 @@ export default function HotlineCard({ name, number, description }: HotlineCardPr
       </div>
       <button
         onClick={handleCopy}
+        aria-label={copied ? '已复制' : `复制号码 ${name}`}
         className={`flex-shrink-0 p-2 rounded-md transition-all ${
           copied
             ? 'bg-green-500/10 text-green-500'

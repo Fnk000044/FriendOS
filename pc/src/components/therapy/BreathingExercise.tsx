@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw } from 'lucide-react';
+import { Play, Pause, RotateCcw, Check } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { db } from '../../db';
 import { getToday } from '../../utils/date';
 
@@ -148,6 +149,7 @@ export default function BreathingExercise({ onComplete }: BreathingExerciseProps
       onComplete?.(moodBefore, moodAfter);
     } catch (err) {
       console.error('Failed to save breathing record:', err);
+      toast.error('保存失败');
     }
   };
 
@@ -175,19 +177,21 @@ export default function BreathingExercise({ onComplete }: BreathingExerciseProps
   if (completed) {
     return (
       <div className="max-w-md mx-auto text-center py-8">
-        <div className="text-6xl mb-4">🎉</div>
-        <h3 className="text-xl font-bold text-slate-800 mb-2">练习完成！</h3>
-        <p className="text-slate-600 mb-4">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/10 flex items-center justify-center">
+          <Check className="w-8 h-8 text-green-500" aria-hidden="true" />
+        </div>
+        <h3 className="text-xl font-bold text-text-primary mb-2">练习完成！</h3>
+        <p className="text-text-secondary mb-4">
           你完成了 {totalCycles} 个循环的 {PATTERNS[pattern].name}
         </p>
         {moodAfter < moodBefore && (
-          <p className="text-green-600 bg-green-50 rounded-lg p-3">
+          <p className="text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 rounded-lg p-3">
             情绪强度从 {moodBefore} 降低到 {moodAfter}，降低了 {moodBefore - moodAfter} 点！
           </p>
         )}
         <button
           onClick={handleReset}
-          className="mt-4 px-6 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+          className="mt-4 px-6 py-2 bg-primary text-white rounded-btn hover:opacity-90 transition-opacity cursor-pointer"
         >
           再次练习
         </button>
@@ -199,7 +203,7 @@ export default function BreathingExercise({ onComplete }: BreathingExerciseProps
     <div className="max-w-md mx-auto">
       <div className="glass-card glass-glow rounded-2xl shadow-lg overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-cyan-500 px-6 py-4">
+        <div className="bg-gradient-to-r from-primary to-primary-dark px-6 py-4">
           <h2 className="text-white font-bold text-lg">呼吸练习</h2>
           <p className="text-white/80 text-sm mt-1">通过呼吸调节情绪</p>
         </div>
@@ -262,6 +266,9 @@ export default function BreathingExercise({ onComplete }: BreathingExerciseProps
             {/* Animated circle - clickable */}
             <div
               ref={circleRef}
+              role="button"
+              tabIndex={0}
+              aria-label={isRunning ? '暂停' : '点击开始'}
               onClick={() => {
                 if (isRunning) {
                   handlePause();
@@ -269,7 +276,17 @@ export default function BreathingExercise({ onComplete }: BreathingExerciseProps
                   handleStart();
                 }
               }}
-              className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center cursor-pointer hover:opacity-90"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  if (isRunning) {
+                    handlePause();
+                  } else {
+                    handleStart();
+                  }
+                }
+              }}
+              className="w-32 h-32 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center cursor-pointer hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               style={getCircleAnimation()}
             >
               <div className="text-center text-white pointer-events-none">
@@ -352,7 +369,7 @@ export default function BreathingExercise({ onComplete }: BreathingExerciseProps
             />
             <button
               onClick={handleComplete}
-              className="w-full mt-3 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+              className="w-full mt-3 px-4 py-2 bg-primary text-white rounded-btn hover:opacity-90 transition-opacity cursor-pointer"
             >
               完成并保存
             </button>
@@ -365,7 +382,7 @@ export default function BreathingExercise({ onComplete }: BreathingExerciseProps
             {!isRunning ? (
               <button
                 onClick={handleStart}
-                className="flex items-center gap-2 px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-btn hover:opacity-90 transition-opacity cursor-pointer"
               >
                 <Play className="w-4 h-4" />
                 开始
@@ -373,7 +390,7 @@ export default function BreathingExercise({ onComplete }: BreathingExerciseProps
             ) : (
               <button
                 onClick={handlePause}
-                className="flex items-center gap-2 px-6 py-2.5 bg-slate-500 text-white rounded-lg hover:bg-slate-600"
+                className="flex items-center gap-2 px-6 py-2.5 bg-slate-500 text-white rounded-btn hover:bg-slate-600 transition-colors cursor-pointer"
               >
                 <Pause className="w-4 h-4" />
                 暂停
@@ -381,7 +398,7 @@ export default function BreathingExercise({ onComplete }: BreathingExerciseProps
             )}
             <button
               onClick={handleReset}
-              className="flex items-center gap-2 px-4 py-2.5 text-slate-500 hover:bg-slate-200 rounded-lg"
+              className="flex items-center gap-2 px-4 py-2.5 text-text-muted hover:bg-surface-hover rounded-btn cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" />
               重置

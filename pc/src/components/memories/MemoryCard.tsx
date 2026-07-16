@@ -21,7 +21,15 @@ export default React.memo(function MemoryCard({ memory, onClick, onTogglePin, on
   return (
     <div
       onClick={onClick}
-      className="glass-card p-4 glass-card-hover cursor-pointer transition-all duration-200 group relative"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className="glass-card p-4 glass-card-hover cursor-pointer transition-all duration-200 group relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
@@ -30,16 +38,18 @@ export default React.memo(function MemoryCard({ memory, onClick, onTogglePin, on
           </span>
           {memory.pinned && <Pin className="w-3 h-3 text-amber-500" />}
         </div>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
           <button
             onClick={(e) => { e.stopPropagation(); onTogglePin(); }}
-            className="p-1 rounded text-text-muted hover:bg-surface-hover"
+            aria-label={memory.pinned ? t('memory.edit') : t('memory.bookmark')}
+            className="p-1 rounded text-text-muted hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             {memory.pinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="p-1 rounded text-text-muted hover:bg-red-50 hover:text-red-500"
+            aria-label={t('common.delete')}
+            className="p-1 rounded text-text-muted hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>

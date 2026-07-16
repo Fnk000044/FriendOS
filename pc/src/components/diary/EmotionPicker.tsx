@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Smile, Frown, Angry, Wind, Eye, Leaf, Heart, Battery } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface EmotionPickerProps {
   value?: Record<string, number>;
@@ -6,15 +8,15 @@ interface EmotionPickerProps {
   compact?: boolean;
 }
 
-const EMOTIONS = [
-  { key: 'joy', label: '开心', emoji: '😊', color: '#F59E0B' },
-  { key: 'sadness', label: '难过', emoji: '😢', color: '#6366F1' },
-  { key: 'anger', label: '生气', emoji: '😠', color: '#EF4444' },
-  { key: 'fear', label: '焦虑', emoji: '😰', color: '#8B5CF6' },
-  { key: 'surprise', label: '惊讶', emoji: '😲', color: '#F97316' },
-  { key: 'calm', label: '平静', emoji: '😌', color: '#10B981' },
-  { key: 'love', label: '感恩', emoji: '🥰', color: '#EC4899' },
-  { key: 'tired', label: '疲惫', emoji: '😫', color: '#6B7280' },
+const EMOTIONS: { key: string; label: string; Icon: LucideIcon; color: string }[] = [
+  { key: 'joy', label: '开心', Icon: Smile, color: '#F59E0B' },
+  { key: 'sadness', label: '难过', Icon: Frown, color: '#6366F1' },
+  { key: 'anger', label: '生气', Icon: Angry, color: '#EF4444' },
+  { key: 'fear', label: '焦虑', Icon: Wind, color: '#8B5CF6' },
+  { key: 'surprise', label: '惊讶', Icon: Eye, color: '#F97316' },
+  { key: 'calm', label: '平静', Icon: Leaf, color: '#10B981' },
+  { key: 'love', label: '感恩', Icon: Heart, color: '#EC4899' },
+  { key: 'tired', label: '疲惫', Icon: Battery, color: '#6B7280' },
 ];
 
 const INTENSITY_LEVELS = [
@@ -69,6 +71,7 @@ export default function EmotionPicker({ value = {}, onChange, compact = false }:
         {EMOTIONS.map(emotion => {
           const isSelected = emotion.key in value;
           const isActive = selectedEmotion === emotion.key;
+          const { Icon } = emotion;
 
           return (
             <button
@@ -78,14 +81,14 @@ export default function EmotionPicker({ value = {}, onChange, compact = false }:
               role="option"
               aria-selected={isSelected}
               aria-label={`${emotion.label}${isSelected ? `，强度 ${value[emotion.key]}` : ''}`}
-              className={`relative flex flex-col items-center gap-1 p-2 rounded-lg border transition-all ${
+              className={`relative flex flex-col items-center gap-1 p-2 rounded-lg border transition-all cursor-pointer ${
                 isSelected
                   ? 'border-primary bg-primary/5'
-                  : 'hover:border-slate-300 hover:bg-slate-50'
+                  : 'hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
               } ${isActive ? 'ring-2 ring-primary/30' : ''}`}
               style={isSelected ? undefined : { borderColor: 'var(--glass-border)' }}
             >
-              <span className={compact ? 'text-lg' : 'text-xl'} aria-hidden="true">{emotion.emoji}</span>
+              <Icon className={compact ? 'w-5 h-5' : 'w-6 h-6'} style={{ color: emotion.color }} aria-hidden="true" />
               <span className="text-xs text-text-secondary">{emotion.label}</span>
               {isSelected && (
                 <div
@@ -104,8 +107,13 @@ export default function EmotionPicker({ value = {}, onChange, compact = false }:
       {/* Intensity selector for selected emotion */}
       {selectedEmotion && selectedEmotion in value && (
         <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--bg-hover)' }}>
-          <span className="text-sm text-text-secondary">
-            {EMOTIONS.find(e => e.key === selectedEmotion)?.emoji}
+          <span className="text-sm text-text-secondary flex items-center gap-1">
+            {(() => {
+              const e = EMOTIONS.find(em => em.key === selectedEmotion);
+              if (!e) return null;
+              const { Icon } = e;
+              return <Icon className="w-4 h-4" style={{ color: e.color }} aria-hidden="true" />;
+            })()}
             {EMOTIONS.find(e => e.key === selectedEmotion)?.label}强度：
           </span>
           <div className="flex gap-1">
@@ -114,7 +122,7 @@ export default function EmotionPicker({ value = {}, onChange, compact = false }:
                 key={level.value}
                 type="button"
                 onClick={() => handleIntensity(selectedEmotion, level.value)}
-                className={`px-2 py-1 rounded text-xs transition-all ${
+                className={`px-2 py-1 rounded text-xs transition-all cursor-pointer ${
                   value[selectedEmotion] === level.value
                     ? 'bg-primary text-white'
                     : 'border hover:border-primary/50'
@@ -128,7 +136,7 @@ export default function EmotionPicker({ value = {}, onChange, compact = false }:
           <button
             type="button"
             onClick={() => handleRemove(selectedEmotion)}
-            className="ml-auto text-xs text-red-400 hover:text-red-600"
+            className="ml-auto text-xs text-red-400 hover:text-red-600 cursor-pointer"
           >
             移除
           </button>
@@ -141,13 +149,15 @@ export default function EmotionPicker({ value = {}, onChange, compact = false }:
           {Object.entries(value).map(([key, intensity]) => {
             const emotion = EMOTIONS.find(e => e.key === key);
             if (!emotion) return null;
+            const { Icon } = emotion;
             return (
               <span
                 key={key}
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs"
                 style={{ backgroundColor: `${emotion.color}15`, color: emotion.color }}
               >
-                {emotion.emoji} {emotion.label}
+                <Icon className="w-3 h-3" aria-hidden="true" />
+                {emotion.label}
                 {intensity > 1 && ` ×${intensity}`}
               </span>
             );
@@ -157,4 +167,3 @@ export default function EmotionPicker({ value = {}, onChange, compact = false }:
     </div>
   );
 }
-

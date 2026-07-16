@@ -53,8 +53,9 @@ export default function ModelDownloadModal({ open, onClose, onSelectModel }: Mod
         const availableModels = await window.electronAPI.localModelList();
         setModels(availableModels);
       } else {
+        // Fallback: use the first model from registry (qwen3.5:0.8b)
         setModels([
-          { id: 'qwen3:0.6b', name: 'Qwen3 0.6B', size: '379 MB', path: 'models/Qwen3-0.6B-Q4_K_M.gguf', available: true },
+          { id: 'qwen3.5:0.8b', name: 'Qwen3.5 0.8B', size: '507 MB', path: 'models/Qwen3.5-0.8B-IQ4_NL.gguf', available: true },
         ]);
       }
     } catch (err) {

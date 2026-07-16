@@ -210,6 +210,9 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
+      // sandbox: true 会导致 preload.cjs 中的 require() 失败（沙箱限制 Node.js API）
+      // 本项目 preload 使用 CommonJS require 加载模块，需保持 false
+      sandbox: false,
       webSecurity: true,
       allowRunningInsecureContent: false,
       enableRemoteModule: false,
@@ -372,7 +375,7 @@ ipcMain.handle('open-external', async (_event, filePath) => {
 let localModelContext = null;
 let currentLocalModelPath = null;
 
-// No local models - AI chat uses online API only
+// Local model state
 // List available local models from registry
 ipcMain.handle('local-model-list', async () => {
   try {
@@ -443,22 +446,53 @@ ipcMain.handle('local-model-complete', async (_event, prompt, options = {}) => {
 // prompt: 纯文本用户消息（不含 ChatML 标记）
 // options: { temperature, maxTokens, systemPrompt }
 ipcMain.on('local-model-complete-stream', async (event, prompt, options = {}) => {
+  // 防御：检查 sender 是否已销毁，避免向已关闭窗口发送消息
+  const sender = event.sender;
+  const isDestroyed = () => !sender || sender.isDestroyed();
+
   try {
     const { completeStream } = require('./services/LocalModelService.cjs');
 
-    await completeStream(prompt, {
-      temperature: options.temperature || 0.7,
-      maxTokens: options.maxTokens || 512,
-      topP: options.topP || 0.8,
-      topK: options.topK || 20,
-      systemPrompt: options.systemPrompt,
-    }, (token) => {
-      event.sender.send('local-model-chunk', { token });
-    });
-    event.sender.send('local-model-chunk', { done: true });
+    // 后端超时保护（120秒，比前端180秒短，让后端先超时发 error）
+    const STREAM_TIMEOUT_MS = 120000;
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('模型推理超时（120秒），请检查模型状态或重新初始化')), STREAM_TIMEOUT_MS)
+    );
+
+    await Promise.race([
+      completeStream(prompt, {
+        temperature: options.temperature || 0.7,
+        maxTokens: options.maxTokens || 2048,
+        topP: options.topP || 0.8,
+        topK: options.topK || 20,
+        systemPrompt: options.systemPrompt,
+      }, (token) => {
+        if (!isDestroyed()) {
+          sender.send('local-model-chunk', { token });
+        }
+      }),
+      timeoutPromise,
+    ]);
+
+    if (!isDestroyed()) {
+      sender.send('local-model-chunk', { done: true });
+    }
   } catch (err) {
     console.error('[local-model-complete-stream] Error:', err);
-    event.sender.send('local-model-chunk', { error: err.message, done: true });
+    // Eval has failed / KV slot 错误：后台自动 dispose+重新加载模型，让前端下次调用可恢复
+    const errMsg = (err && err.message) || '';
+    if (errMsg.includes('Eval has failed') || errMsg.includes('KV slot') || errMsg.includes('could not find a KV slot') || errMsg.includes('模型推理失败')) {
+      console.log('[local-model-complete-stream] Auto-disposing model for recovery after eval failure');
+      try {
+        const { dispose } = require('./services/LocalModelService.cjs');
+        await dispose();
+      } catch (disposeErr) {
+        console.error('[local-model-complete-stream] Dispose during recovery failed:', disposeErr);
+      }
+    }
+    if (!isDestroyed()) {
+      sender.send('local-model-chunk', { error: errMsg || '模型推理失败', done: true });
+    }
   }
 });
 
@@ -558,6 +592,10 @@ SentimentService.setLocalModelComplete(async (prompt, options = {}) => {
 
 ipcMain.handle('sentiment-analyze', async (_event, text) => {
   try {
+    // 参数校验：限制文本长度，防止超长输入拖慢分析
+    if (typeof text !== 'string' || text.length > 10000) {
+      return { level: 'low', score: 0.5, positiveProb: 0.5, negativeProb: 0.5, keywords: [], needCloud: false, method: 'keyword', timestamp: Date.now(), error: '文本过长或格式无效' };
+    }
     // 确保 ONNX 模型已加载（首次调用时延迟加载）
     await ensureOnnxLoaded();
     // Use enhanced analysis (combines ONNX + keyword)
@@ -629,10 +667,77 @@ ipcMain.handle('sentiment-get-model-status', async () => {
   try {
     // 检查状态时触发模型加载（如果尚未加载）
     ensureOnnxLoaded();
-    const { getModelStatus } = require('./services/SentimentService.cjs');
+    const { getModelStatus, tryLoadOnnxModel } = require('./services/SentimentService.cjs');
     return getModelStatus();
   } catch (err) {
     return { onnxLoaded: false, onnxAvailable: false, method: 'keyword', error: err.message };
+  }
+});
+
+// 恢复初始化时重置 ONNX 状态
+ipcMain.handle('sentiment-reset-onnx', async () => {
+  try {
+    onnxLoadPromise = null;
+    const { resetOnnxState } = require('./services/SentimentService.cjs');
+    resetOnnxState();
+    console.log('[FriendOS] ONNX state reset for app reset');
+    return { success: true };
+  } catch (err) {
+    console.error('[sentiment-reset-onnx] Error:', err);
+    return { success: false, error: err.message };
+  }
+});
+
+// ── 备份导入导出 IPC Handlers ─────────────────────────────────
+ipcMain.handle('backup-export', async (_event, jsonData) => {
+  try {
+    // 参数校验：限制备份大小（10MB）
+    if (typeof jsonData !== 'string' || jsonData.length > 10 * 1024 * 1024) {
+      return { success: false, error: '备份数据过大或格式无效' };
+    }
+    const { dialog } = require('electron');
+    const fs = require('fs');
+    const today = new Date().toISOString().slice(0, 10);
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: '导出数据备份',
+      defaultPath: `lifeos-backup-${today}.json`,
+      filters: [{ name: 'JSON 文件', extensions: ['json'] }],
+    });
+    if (result.canceled || !result.filePath) {
+      return { success: false, error: '用户取消了导出', canceled: true };
+    }
+    fs.writeFileSync(result.filePath, jsonData, 'utf-8');
+    return { success: true, path: result.filePath };
+  } catch (err) {
+    console.error('[backup-export] Error:', err);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('backup-import', async () => {
+  try {
+    const { dialog } = require('electron');
+    const fs = require('fs');
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: '导入数据备份',
+      filters: [{ name: 'JSON 文件', extensions: ['json'] }],
+      properties: ['openFile'],
+    });
+    if (result.canceled || result.filePaths.length === 0) {
+      return { success: false, error: '用户取消了导入', canceled: true };
+    }
+    const filePath = result.filePaths[0];
+    const content = fs.readFileSync(filePath, 'utf-8');
+    let data;
+    try {
+      data = JSON.parse(content);
+    } catch (parseErr) {
+      return { success: false, error: '文件格式无效，无法解析 JSON' };
+    }
+    return { success: true, path: filePath, data };
+  } catch (err) {
+    console.error('[backup-import] Error:', err);
+    return { success: false, error: err.message };
   }
 });
 

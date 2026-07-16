@@ -290,7 +290,7 @@ export default function CrisisInterventionModal() {
               <ExternalLink className="w-3 h-3" aria-hidden="true" />
               {t('crisis.online_counseling')}
               <a
-                href="http://www.psych.ac.cn"
+                href="https://www.psych.ac.cn"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:underline"
@@ -299,7 +299,7 @@ export default function CrisisInterventionModal() {
               </a>
               {' | '}
               <a
-                href="http://www.crisisbj.com"
+                href="https://www.crisisbj.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:underline"

@@ -27,7 +27,9 @@ export default function SyncPage() {
     const api = window.electronAPI;
     if (!api) return;
 
-    api.getSyncStatus().then(setServerStatus);
+    api.getSyncStatus().then(setServerStatus).catch(() => {
+      // 状态查询失败保持 null，UI 显示未运行
+    });
 
     const onStatus = api.onSyncStatusChanged;
     if (onStatus) {
@@ -92,8 +94,8 @@ export default function SyncPage() {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    });
-  }, [serverStatus]);
+    }).catch(() => toast.error(t('common.copy_fail')));
+  }, [serverStatus, t]);
 
   if (!isElectron) {
     return (
@@ -142,7 +144,7 @@ export default function SyncPage() {
             disabled={loading}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               running
-                ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50'
                 : 'bg-primary text-white hover:bg-primary-dark'
             } disabled:opacity-50`}
           >

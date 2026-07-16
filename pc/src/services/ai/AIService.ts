@@ -177,7 +177,7 @@ ${context.implicitHints ? `\n## 含蓄表达提示\n${context.implicitHints}` : 
     // 复用 ContextService 已收集的对话摘要，避免重复查询
     const conversationHistory = context.conversationHistory || '';
 
-    const systemPrompt = buildSystemPrompt('counselor', contextText, conversationHistory);
+    const systemPrompt = buildSystemPrompt(this.config?.tone ?? 'counselor', contextText, conversationHistory);
     const messages = [
       { role: 'system' as const, content: systemPrompt },
       ...history.filter(m => m.content).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content || '' })),

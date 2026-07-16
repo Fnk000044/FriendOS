@@ -9,6 +9,7 @@ import EmotionHeatmap from '../components/emotion/EmotionHeatmap';
 import HealthRadar from '../components/emotion/HealthRadar';
 import EmotionPrediction from '../components/emotion/EmotionPrediction';
 import { generateHealthProfile } from '../services/emotion/HealthProfileService';
+import EmptyState from '../components/common/EmptyState';
 import type { HealthProfile } from '../db/models';
 
 export default function EmotionPage() {
@@ -96,7 +97,7 @@ export default function EmotionPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">情绪分析</h1>
-          <p className="text-sm text-text-muted mt-1">无感识别你的心理健康状态</p>
+          <p className="text-sm text-text-muted mt-1">温柔留意你的心理健康状态</p>
         </div>
         <div className="flex items-center gap-2 text-sm text-text-muted">
           <Activity className="w-4 h-4" />
@@ -180,14 +181,16 @@ export default function EmotionPage() {
           {emotionRecords && emotionRecords.length > 0 ? (
             <EmotionTrend records={emotionRecords || []} days={selectedDays} />
           ) : (
-            <div className="h-48 flex items-center justify-center text-text-muted">
-              <div className="text-center">
-                <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" aria-hidden="true" />
-                <p className="text-sm font-medium">暂无情绪数据</p>
-                <p className="text-xs mt-1">系统会通过日记、聊天等自动分析你的情绪状态</p>
-                <button onClick={() => navigate('/diary/new')} className="text-xs mt-1 text-primary hover:underline cursor-pointer">开始写第一篇日记吧 →</button>
-              </div>
-            </div>
+            <EmptyState
+              icon={<Activity className="w-12 h-12" />}
+              title="暂无情绪数据"
+              description="系统会通过日记、聊天等自动分析你的情绪状态"
+              action={
+                <button onClick={() => navigate('/diary/new')} className="text-sm text-primary hover:underline cursor-pointer">
+                  开始写第一篇日记吧 →
+                </button>
+              }
+            />
           )}
         </div>
 

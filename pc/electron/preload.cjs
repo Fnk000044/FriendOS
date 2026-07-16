@@ -1,52 +1,88 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+// 用 Map 存储 handler 引用，修复 removeSyncReceive/removeNotificationSent 引用不匹配 bug
+// 注册时包装成新 handler，移除时用外部 callback 无法匹配 -> 改用 Map 按通道存储
+const handlerMap = new Map();
+
 contextBridge.exposeInMainWorld('electronAPI', {
   platform: process.platform,
   isElectron: true,
   onSetLanguage: (callback) => {
     const handler = (_event, lang) => callback(lang);
+    handlerMap.set('set-language', handler);
     ipcRenderer.on('set-language', handler);
-    return () => ipcRenderer.removeListener('set-language', handler);
+    return () => {
+      ipcRenderer.removeListener('set-language', handler);
+      handlerMap.delete('set-language');
+    };
   },
+  // Backup / Export
+  backupExport: (jsonData) => ipcRenderer.invoke('backup-export', jsonData),
+  backupImport: () => ipcRenderer.invoke('backup-import'),
   onExportData: (callback) => {
     const handler = () => callback();
+    handlerMap.set('export-data', handler);
     ipcRenderer.on('export-data', handler);
-    return () => ipcRenderer.removeListener('export-data', handler);
+    return () => {
+      ipcRenderer.removeListener('export-data', handler);
+      handlerMap.delete('export-data');
+    };
   },
   onImportData: (callback) => {
     const handler = () => callback();
+    handlerMap.set('import-data', handler);
     ipcRenderer.on('import-data', handler);
-    return () => ipcRenderer.removeListener('import-data', handler);
+    return () => {
+      ipcRenderer.removeListener('import-data', handler);
+      handlerMap.delete('import-data');
+    };
   },
   onShowAbout: (callback) => {
     const handler = () => callback();
+    handlerMap.set('show-about', handler);
     ipcRenderer.on('show-about', handler);
-    return () => ipcRenderer.removeListener('show-about', handler);
+    return () => {
+      ipcRenderer.removeListener('show-about', handler);
+      handlerMap.delete('show-about');
+    };
   },
   openDataFolder: () => ipcRenderer.invoke('open-data-folder'),
 
   // Sync server
   onSyncReceive: (callback) => {
     const handler = (_event, items) => callback(items);
+    handlerMap.set('sync-receive', handler);
     ipcRenderer.on('sync-receive', handler);
-    return () => ipcRenderer.removeListener('sync-receive', handler);
+    return () => {
+      ipcRenderer.removeListener('sync-receive', handler);
+      handlerMap.delete('sync-receive');
+    };
   },
   onSyncStatusChanged: (callback) => {
     const handler = (_event, status) => callback(status);
+    handlerMap.set('sync-status-changed', handler);
     ipcRenderer.on('sync-status-changed', handler);
-    return () => ipcRenderer.removeListener('sync-status-changed', handler);
+    return () => {
+      ipcRenderer.removeListener('sync-status-changed', handler);
+      handlerMap.delete('sync-status-changed');
+    };
   },
   startSyncServer: () => ipcRenderer.invoke('start-sync-server'),
   stopSyncServer: () => ipcRenderer.invoke('stop-sync-server'),
   getSyncStatus: () => ipcRenderer.invoke('get-sync-status'),
-  removeSyncReceive: (callback) => {
-    if (callback) {
-      ipcRenderer.removeListener('sync-receive', callback);
+  // 保留向后兼容：通过 Map 存储的 handler 引用正确移除
+  removeSyncReceive: () => {
+    const handler = handlerMap.get('sync-receive');
+    if (handler) {
+      ipcRenderer.removeListener('sync-receive', handler);
+      handlerMap.delete('sync-receive');
     }
   },
-  removeSyncStatusChanged: (callback) => {
-    if (callback) {
-      ipcRenderer.removeListener('sync-status-changed', callback);
+  removeSyncStatusChanged: () => {
+    const handler = handlerMap.get('sync-status-changed');
+    if (handler) {
+      ipcRenderer.removeListener('sync-status-changed', handler);
+      handlerMap.delete('sync-status-changed');
     }
   },
 
@@ -57,8 +93,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   isMaximized: () => ipcRenderer.invoke('window-is-maximized'),
   onMaximizeChange: (callback) => {
     const handler = (_event, isMaximized) => callback(isMaximized);
+    handlerMap.set('window-maximize-change', handler);
     ipcRenderer.on('window-maximize-change', handler);
-    return () => ipcRenderer.removeListener('window-maximize-change', handler);
+    return () => {
+      ipcRenderer.removeListener('window-maximize-change', handler);
+      handlerMap.delete('window-maximize-change');
+    };
   },
 
   // External apps
@@ -74,16 +114,23 @@ contextBridge.exposeInMainWorld('electronAPI', {
   localModelInit: (modelPath) => ipcRenderer.invoke('local-model-init', modelPath),
   localModelComplete: (prompt, options) => ipcRenderer.invoke('local-model-complete', prompt, options),
   localModelCompleteStream: (prompt, onChunk, options) => {
+    // 移除旧监听器避免残留，但确保新 listener 在 send 之前注册
     ipcRenderer.removeAllListeners('local-model-chunk');
+    let listenerActive = true;
     const listener = (_event, data) => {
+      if (!listenerActive) return;
       onChunk(data);
       if (data.done) {
+        listenerActive = false;
         ipcRenderer.removeListener('local-model-chunk', listener);
       }
     };
+    // 先注册 listener，再 send，避免事件竞争
     ipcRenderer.on('local-model-chunk', listener);
     ipcRenderer.send('local-model-complete-stream', prompt, options);
+    // 返回 cleanup 函数，用于取消监听
     return () => {
+      listenerActive = false;
       ipcRenderer.removeListener('local-model-chunk', listener);
     };
   },
@@ -95,6 +142,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   sentimentCloudAnalyze: (text, context) => ipcRenderer.invoke('sentiment-cloud-analyze', text, context),
   sentimentSetApiKey: (apiKey) => ipcRenderer.invoke('sentiment-set-api-key', apiKey),
   sentimentGetModelStatus: () => ipcRenderer.invoke('sentiment-get-model-status'),
+  sentimentResetOnnx: () => ipcRenderer.invoke('sentiment-reset-onnx'),
 
   // Emotion analysis engine
   emotionAnalyzeDiary: (diary) => ipcRenderer.invoke('emotion:analyzeDiary', diary),
@@ -124,12 +172,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
   notificationTest: () => ipcRenderer.invoke('notification:test'),
   onNotificationSent: (callback) => {
     const handler = (_event, data) => callback(data);
+    handlerMap.set('notification:sent', handler);
     ipcRenderer.on('notification:sent', handler);
-    return () => ipcRenderer.removeListener('notification:sent', handler);
+    return () => {
+      ipcRenderer.removeListener('notification:sent', handler);
+      handlerMap.delete('notification:sent');
+    };
   },
-  removeNotificationSent: (callback) => {
-    if (callback) {
-      ipcRenderer.removeListener('notification:sent', callback);
+  removeNotificationSent: () => {
+    const handler = handlerMap.get('notification:sent');
+    if (handler) {
+      ipcRenderer.removeListener('notification:sent', handler);
+      handlerMap.delete('notification:sent');
     }
   },
 });

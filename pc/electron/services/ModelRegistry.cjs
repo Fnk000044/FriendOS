@@ -1,6 +1,12 @@
 /**
  * Model Registry - Local GGUF model management
  * Registers bundled models and resolves their paths for dev/packaged modes
+ *
+ * Paths:
+ * - Dev: looks in pc/models/ first (for models bundled with source),
+ *   then FriendOS/models/ (for large GGUF files kept outside the electron project)
+ * - Packaged: extraResources copies ../models → resources/models/
+ *   asarUnpack copies pc/models/** → resources/app.asar.unpacked/models/
  */
 
 const PATH = require('path');
@@ -20,25 +26,35 @@ const MODEL_REGISTRY = {
 
 /**
  * Get the absolute path to a model file
- * Handles both dev mode (relative to project root) and packaged mode (extraResources)
+ * Tries multiple locations in priority order
  */
 function getModelPath(modelId) {
   const entry = MODEL_REGISTRY[modelId];
   if (!entry) return null;
 
-  // In packaged mode, models are in resources/app.asar.unpacked/models/
-  // In dev mode, models are in the project root's models/ directory
-  const modelsDir = app.isPackaged
-    ? PATH.join(process.resourcesPath, 'app.asar.unpacked', 'models')
-    : PATH.join(__dirname, '..', '..', '..', 'models');
+  let candidateDirs = [];
 
-  const modelPath = PATH.join(modelsDir, entry.file);
-
-  if (FS.existsSync(modelPath)) {
-    return modelPath;
+  if (app.isPackaged) {
+    // extraResources copies ../models → resources/models/
+    candidateDirs.push(PATH.join(process.resourcesPath, 'models'));
+    // asarUnpack copies pc/models/** → resources/app.asar.unpacked/models/
+    candidateDirs.push(PATH.join(process.resourcesPath, 'app.asar.unpacked', 'models'));
+  } else {
+    // Dev: pc/models/ (bundled with source, e.g. sentiment.onnx sister)
+    candidateDirs.push(PATH.join(__dirname, '..', '..', 'models'));
+    // Dev: FriendOS/models/ (large GGUF files kept outside electron project)
+    // __dirname = pc/electron/services → ../../ = pc/electron → ../../.. = pc → ../../../.. = FriendOS
+    candidateDirs.push(PATH.join(__dirname, '..', '..', '..', '..', 'models'));
   }
 
-  console.warn(`[ModelRegistry] Model file not found: ${modelPath}`);
+  for (const dir of candidateDirs) {
+    const candidate = PATH.join(dir, entry.file);
+    if (FS.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  console.warn(`[ModelRegistry] Model file not found in: ${candidateDirs.map(d => PATH.join(d, entry.file)).join(', ')}`);
   return null;
 }
 

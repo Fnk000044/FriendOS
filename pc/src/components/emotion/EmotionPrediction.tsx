@@ -34,9 +34,9 @@ export default function EmotionPrediction() {
   }
 
   const trendConfig = {
-    improving: { icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50', label: '改善趋势' },
-    stable: { icon: Minus, color: 'text-slate-600', bg: 'bg-slate-50', label: '保持稳定' },
-    declining: { icon: TrendingDown, color: 'text-amber-600', bg: 'bg-amber-50', label: '需关注' },
+    improving: { icon: TrendingUp, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/30', label: '改善趋势' },
+    stable: { icon: Minus, color: 'text-slate-600 dark:text-slate-300', bg: 'bg-slate-50 dark:bg-slate-800', label: '保持稳定' },
+    declining: { icon: TrendingDown, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/30', label: '需关注' },
   };
 
   const config = trendConfig[trend.direction];

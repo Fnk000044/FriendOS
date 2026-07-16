@@ -86,6 +86,8 @@ export default function MoodSelector({ value, onChange, size = 'md' }: MoodSelec
           type="button"
           onClick={(e) => { e.stopPropagation(); e.preventDefault(); onChange(m); }}
           title={t(`mood.${m}` as any)}
+          aria-label={t(`mood.${m}` as any)}
+          aria-pressed={value === m}
           className={`${btnSize} rounded-lg transition-all ${
             value === m
               ? 'bg-primary/10 scale-110 shadow-sm'

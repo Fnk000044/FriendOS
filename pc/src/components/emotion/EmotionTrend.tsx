@@ -153,16 +153,16 @@ export default function EmotionTrend({ records = [], days = 7 }: EmotionTrendPro
       {/* Summary */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-slate-500">近{days}天情绪指数</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">近{days}天情绪指数</p>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-800">{averageScore}</span>
-            <span className="text-sm text-slate-400">/100</span>
+            <span className="text-3xl font-bold text-slate-800 dark:text-slate-100">{averageScore}</span>
+            <span className="text-sm text-slate-400 dark:text-slate-500">/100</span>
           </div>
         </div>
         <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium ${
-          trend === 'up' ? 'bg-green-50 text-green-600' :
-          trend === 'down' ? 'bg-red-50 text-red-600' :
-          'bg-blue-50 text-blue-600'
+          trend === 'up' ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
+          trend === 'down' ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400' :
+          'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
         }`}>
           <span>{trendInfo.icon}</span>
           <span>{trendInfo.label}</span>

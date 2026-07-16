@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Textarea from '../common/Textarea';
@@ -32,22 +32,29 @@ export default function MemoryEditor({ open, onClose, memory }: MemoryEditorProp
   const [source, setSource] = useState('');
   const [category, setCategory] = useState(t('memory.default_category'));
   const [tags, setTags] = useState<string[]>([]);
+  // 跟踪当前 memory 是否已填充到 state，避免 t 引用变化（语言切换）时清空用户编辑
+  const seededMemoryIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (memory) {
-      setTitle(memory.title);
-      setContent(memory.content);
-      setType(memory.type);
-      setSource(memory.source || '');
-      setCategory(memory.category);
-      setTags(memory.tags);
-    } else {
-      setTitle('');
-      setContent('');
-      setType('manual');
-      setSource('');
-      setCategory(t('memory.default_category'));
-      setTags([]);
+    // memory 变化或 open 重新打开时填充；t 不进 deps，避免切语言清空编辑
+    const expectedId = memory ? memory.id : null;
+    if (seededMemoryIdRef.current !== expectedId) {
+      if (memory) {
+        setTitle(memory.title);
+        setContent(memory.content);
+        setType(memory.type);
+        setSource(memory.source || '');
+        setCategory(memory.category);
+        setTags(memory.tags);
+      } else {
+        setTitle('');
+        setContent('');
+        setType('manual');
+        setSource('');
+        setCategory(t('memory.default_category'));
+        setTags([]);
+      }
+      seededMemoryIdRef.current = expectedId;
     }
   }, [memory, open, t]);
 

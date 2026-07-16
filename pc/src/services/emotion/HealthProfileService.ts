@@ -44,16 +44,26 @@ function computeDimensions(
     mood = Math.round((mood + normalized) / 2);
   }
 
-  // Stress: derived from negative emotions
+  // Stress: derived from negative emotions with frequency weighting
+  // 参考 ML_Detecting_Mental_Stress_College_2024.pdf：同时考虑强度和频率
+  // sadness 权重较高（抑郁倾向与压力的关联更强）
   let stress = 30;
   if (emotions.length > 0) {
-    const avgNegative = emotions.reduce((sum, e) => {
+    const negativeCount = emotions.filter(e => {
       const fear = e.emotions?.fear ?? 0;
       const anger = e.emotions?.anger ?? 0;
       const sadness = e.emotions?.sadness ?? 0;
-      return sum + Math.max(fear, anger, sadness);
+      return Math.max(fear, anger, sadness) > 0.1;
+    }).length;
+    const negativeFrequency = emotions.length > 0 ? negativeCount / emotions.length : 0;
+    const avgIntensity = emotions.reduce((sum, e) => {
+      const fear = e.emotions?.fear ?? 0;
+      const anger = e.emotions?.anger ?? 0;
+      const sadness = e.emotions?.sadness ?? 0;
+      // sadness 权重 0.5, anger 0.3, fear 0.2
+      return sum + sadness * 0.5 + anger * 0.3 + fear * 0.2;
     }, 0) / emotions.length;
-    stress = Math.round(Math.min(100, avgNegative * 100));
+    stress = Math.round(Math.min(100, avgIntensity * 60 + negativeFrequency * 40));
   }
 
   // Energy: based on positive emotion scores + activity frequency
@@ -118,7 +128,41 @@ export async function generateHealthProfile(): Promise<HealthProfile | null> {
       db.behaviorRecords.where('date').aboveOrEqual(startDate).toArray(),
     ]);
 
-    if (emotions.length === 0 && behaviors.length === 0) return null;
+	    if (emotions.length === 0 && behaviors.length === 0) {
+        // 首次运行无任何数据时生成中性基线画像，避免仪表盘"反复加载中"的空态循环
+        const baselineDimensions: HealthProfile['dimensions'] = {
+          mood: 50,
+          stress: 30,
+          energy: 50,
+          social: 30,
+          sleep: 70,
+          selfCare: 50,
+        };
+        const baselineProfile: Omit<HealthProfile, 'id' | 'createdAt'> = {
+          date: today,
+          emotionalHealthIndex: Math.round(
+            baselineDimensions.mood * 0.25 +
+            baselineDimensions.energy * 0.20 +
+            (100 - baselineDimensions.stress) * 0.20 +
+            baselineDimensions.social * 0.10 +
+            baselineDimensions.sleep * 0.15 +
+            baselineDimensions.selfCare * 0.10
+          ),
+          emotionalVolatility: 0,
+          riskLevel: 'low',
+          dimensions: baselineDimensions,
+          insights: ['欢迎使用 FriendOS！开始记录日记和完成任务，获得更精准的健康分析。'],
+          suggestions: ['写一篇今日日记', '添加一个日常习惯', '完成一个小任务'],
+        };
+        // Upsert 基线画像到数据库
+        const existing = await db.healthProfiles.where('date').equals(today).first();
+        if (existing?.id) {
+          await db.healthProfiles.update(existing.id, baselineProfile);
+        } else {
+          await db.healthProfiles.add(baselineProfile as HealthProfile);
+        }
+        return baselineProfile as HealthProfile;
+      }
 
     const dimensions = computeDimensions(emotions, behaviors);
 
