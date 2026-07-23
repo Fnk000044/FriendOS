@@ -14,8 +14,7 @@ export default function AppLayout() {
   useThemeStore((s) => s.resolved);
   // 激活外观 store（初始化时自动 applyAppearance + 订阅变化触发重渲染）
   useAppearanceStore((s) => ({
-    accent: s.accent, fontScale: s.fontScale, radiusScale: s.radiusScale,
-    glassBlur: s.glassBlur, reduceMotion: s.reduceMotion,
+    accent: s.accent, fontScale: s.fontScale, reduceMotion: s.reduceMotion,
   }));
 
   const sidebarMargin = sidebarOpen

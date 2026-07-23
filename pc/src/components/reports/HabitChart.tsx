@@ -36,10 +36,11 @@ const HabitChart = React.memo(function HabitChart({ data }: HabitChartProps) {
       <div className="h-[200px] flex items-center justify-center gap-8">
         <div className="relative">
           <svg width={140} height={140} viewBox="0 0 140 140">
+            {/* 背景轨道：固定灰（不依赖 --glass-border，后者在浅色玻璃卡上接近白看不清） */}
             <circle
               cx={70} cy={70} r={radius}
               fill="none"
-              stroke="var(--glass-border)"
+              stroke="#CBD5E1"
               strokeWidth={stroke}
             />
             <circle

@@ -17,6 +17,7 @@
     "models/**/*",
     "build/**/*"
   ],
+  "afterPack": "./build/after-pack.cjs",
   "win": {
     "icon": "build/custom-icon.ico",
     "target": [

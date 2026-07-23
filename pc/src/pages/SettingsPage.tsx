@@ -1,6 +1,6 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { Download, Upload, Database, Languages, FolderOpen, AlertTriangle, Sun, Moon, Monitor, Keyboard, Brain, Sparkles } from 'lucide-react';
+import { Download, Upload, Database, Languages, FolderOpen, AlertTriangle, Sun, Moon, Monitor, Keyboard, Brain, Sparkles, Trash2 } from 'lucide-react';
 import { db } from '../db';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
@@ -13,6 +13,7 @@ import type { Lang } from '../i18n/translations';
 import NotificationSettings from '../components/common/NotificationSettings';
 import AppLockSettings from '../components/common/AppLockSettings';
 import AppearanceSettings from '../components/settings/AppearanceSettings';
+import StorageInfo from '../components/settings/StorageInfo';
 import { getToday } from '../utils/date';
 import { seedDemoData } from '../utils/seedDemoData';
 
@@ -458,6 +459,8 @@ export default function SettingsPage() {
           <Database className="w-4 h-4" />
           <span>{t('settings.storage_desc')}</span>
         </div>
+        {/* 显示实际占用大小 + 清理缓存按钮 */}
+        <StorageInfo />
         {window.electronAPI && (
           <Button variant="secondary" size="sm" className="mt-3" onClick={handleOpenFolder}>
             <FolderOpen className="w-4 h-4" />
@@ -539,6 +542,14 @@ export default function SettingsPage() {
       <Card>
         <h3 className="text-sm font-semibold text-text-primary mb-1">{t('settings.about')}</h3>
         <p className="text-xs text-text-muted mt-1">{t('settings.about_desc')}</p>
+        <div className="flex items-center gap-3 mt-3">
+          <a
+            onClick={() => window.electronAPI?.openExternal('https://github.com/Fnk000044/FriendOS')}
+            className="text-xs text-primary hover:underline cursor-pointer flex items-center gap-1"
+          >
+            GitHub 仓库 ↗
+          </a>
+        </div>
       </Card>
     </div>
   );

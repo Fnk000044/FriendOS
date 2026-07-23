@@ -1,25 +1,22 @@
-import { Check, Palette, Type, Circle, Droplet, Zap } from 'lucide-react';
+import { Check, Palette, Type, Droplet, Zap } from 'lucide-react';
 import Card from '../common/Card';
 import Switch from '../common/Switch';
-import Slider from '../common/Slider';
 import { useLanguage } from '../../i18n/useLanguage';
 import {
   useAppearanceStore,
   ACCENT_PRESETS,
   type AccentColor,
   type FontScale,
-  type RadiusScale,
 } from '../../stores/useAppearanceStore';
 
 const ACCENTS: AccentColor[] = ['teal', 'purple', 'blue', 'pink', 'orange', 'slate'];
 const FONT_SCALES: FontScale[] = ['small', 'normal', 'large', 'xlarge'];
-const RADIUS_SCALES: RadiusScale[] = ['sharp', 'normal', 'round'];
 
 export default function AppearanceSettings() {
   const { t } = useLanguage();
   const {
-    accent, fontScale, radiusScale, glassBlur, reduceMotion,
-    setAccent, setFontScale, setRadiusScale, setGlassBlur, setReduceMotion,
+    accent, fontScale, reduceMotion,
+    setAccent, setFontScale, setReduceMotion,
   } = useAppearanceStore();
 
   return (
@@ -96,56 +93,6 @@ export default function AppearanceSettings() {
         <div className="px-3 py-2 rounded-lg text-sm text-text-secondary" style={{ background: 'var(--bg-hover)' }}>
           {t('appearance.preview')}: 今天心情不错
         </div>
-      </div>
-
-      {/* 圆角强度 */}
-      <div className="mb-5">
-        <div className="flex items-center gap-1.5 mb-1.5">
-          <Circle className="w-3.5 h-3.5 text-text-muted" />
-          <span className="text-xs font-medium text-text-secondary">{t('appearance.radius_scale')}</span>
-        </div>
-        <p className="text-xs text-text-muted mb-2.5">{t('appearance.radius_scale_desc')}</p>
-        <div className="flex gap-2">
-          {RADIUS_SCALES.map(r => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setRadiusScale(r)}
-              aria-pressed={radiusScale === r}
-              className={`flex-1 px-3 py-1.5 text-xs border transition-all cursor-pointer ${
-                radiusScale === r
-                  ? 'border-primary bg-primary/10 text-primary font-medium'
-                  : 'text-text-muted hover:border-slate-300'
-              }`}
-              style={{
-                borderColor: radiusScale === r ? 'var(--color-primary)' : 'var(--glass-border)',
-                borderRadius: r === 'sharp' ? '2px' : r === 'normal' ? '10px' : '20px',
-              }}
-            >
-              {t(`appearance.radius_${r}` as any)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 玻璃模糊 */}
-      <div className="mb-5">
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="flex items-center gap-1.5">
-            <Droplet className="w-3.5 h-3.5 text-text-muted" />
-            <span className="text-xs font-medium text-text-secondary">{t('appearance.glass_blur')}</span>
-          </div>
-          <span className="text-xs text-text-muted tabular-nums">{glassBlur}px</span>
-        </div>
-        <p className="text-xs text-text-muted mb-2.5">{t('appearance.glass_blur_desc')}</p>
-        <Slider
-          value={glassBlur}
-          min={0}
-          max={24}
-          step={2}
-          onChange={setGlassBlur}
-          ariaLabel={t('appearance.glass_blur')}
-        />
       </div>
 
       {/* 减少动效 */}

@@ -45,13 +45,12 @@ const MoodFace = ({ index, size }: { index: number; size: number }) => {
       <circle cx="15" cy="10.5" r="1" fill={color} />
       <path d="M9 14.5c1.5 1.5 4.5 1.5 6 0" stroke={color} strokeWidth={1.5} strokeLinecap="round" fill="none" />
     </g>,
-    // Very Happy
+    // Very Happy — 眼睛是两个点（删掉压眼的弧线，放大圆点与其它表情一致）
     <g key="very-happy">
       <circle cx="12" cy="12" r="10" fill={color} opacity={0.15} />
       <circle cx="12" cy="12" r="10" stroke={color} strokeWidth={1.5} fill="none" />
-      <path d="M8 10c0 0 1-2 4-2s4 2 4 2" stroke={color} strokeWidth={1.5} strokeLinecap="round" fill="none" />
-      <circle cx="9.5" cy="10" r="0.5" fill={color} />
-      <circle cx="14.5" cy="10" r="0.5" fill={color} />
+      <circle cx="9" cy="10.5" r="1" fill={color} />
+      <circle cx="15" cy="10.5" r="1" fill={color} />
       <path d="M8 14.5c1.5 2.5 6.5 2.5 8 0" stroke={color} strokeWidth={1.5} strokeLinecap="round" fill="none" />
       <path d="M9 15c1.2 1.5 4.8 1.5 6 0" fill={color} opacity={0.25} />
     </g>,

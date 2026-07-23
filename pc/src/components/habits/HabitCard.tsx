@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { Habit } from '../../db/models';
 import { useLanguage } from '../../i18n/useLanguage';
-import { Flame } from 'lucide-react';
+import { Flame, ChevronDown } from 'lucide-react';
+import HabitCalendar from './HabitCalendar';
 
 interface HabitCardProps {
   habit: Habit;
@@ -11,14 +12,17 @@ interface HabitCardProps {
   onToggle: () => void;
   onEdit: () => void;
   onDelete: (id: string) => void;
+  /** 补卡/取消任意日期打卡 */
+  onToggleDate?: (date: string) => void;
 }
 
-const HabitCard = React.memo(function HabitCard({ habit, isLogged, streak, onToggle, onEdit, onDelete }: HabitCardProps) {
+const HabitCard = React.memo(function HabitCard({ habit, isLogged, streak, onToggle, onEdit, onDelete, onToggleDate }: HabitCardProps) {
   const { t } = useLanguage();
   const [showDelete, setShowDelete] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [showBounce, setShowBounce] = useState(false);
   const [displayStreak, setDisplayStreak] = useState(streak);
+  const [showCalendar, setShowCalendar] = useState(false);
   const animationRef = useRef<number | null>(null);
 
   // 打卡动画
@@ -124,6 +128,28 @@ const HabitCard = React.memo(function HabitCard({ habit, isLogged, streak, onTog
           {isLogged ? t('habit.logged') : isAnimating ? '✓' : t('habit.log')}
         </button>
       </div>
+
+      {/* 打卡日历（可折叠） */}
+      {onToggleDate && (
+        <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--glass-border)' }}>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setShowCalendar((v) => !v); }}
+            className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text-secondary transition-colors cursor-pointer"
+            aria-expanded={showCalendar}
+          >
+            <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${showCalendar ? 'rotate-180' : ''}`} />
+            {showCalendar ? '收起月历' : '本月记录'}
+          </button>
+          {showCalendar && (
+            <HabitCalendar
+              habitId={habit.id}
+              color={habit.color}
+              onToggleDate={onToggleDate}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 });

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid, Area, AreaChart } from 'recharts';
+import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, Area, AreaChart } from 'recharts';
 import { Shield, TrendingUp, TrendingDown, Minus, AlertTriangle, Activity, Brain, MessageSquare, BookOpen, ClipboardList, RefreshCw } from 'lucide-react';
 import { db } from '../db';
 import { getDaysAgo, getToday, formatLocalDate } from '../utils/date';
@@ -49,7 +49,7 @@ export default function RiskDashboardPage() {
   const [riskResult, setRiskResult] = useState<RiskResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [trendData, setTrendData] = useState<{ date: string; score: number }[]>([]);
+  const [trendData, setTrendData] = useState<{ date: string; score: number; color?: string }[]>([]);
   // 重试计数器：递增以触发 risk 计算 effect 重新执行
   const [retryCount, setRetryCount] = useState(0);
   const [timedOut, setTimedOut] = useState(false);
@@ -100,10 +100,16 @@ export default function RiskDashboardPage() {
   useEffect(() => {
     const calculateRisk = async () => {
       if (!emotionRecords || !behaviorRecords || !assessments || !diaries) {
+        // 数据未就绪时也要释放 loading，避免整页骨架屏卡死
+        setIsLoading(false);
         return;
       }
 
-      setIsLoading(true);
+      // selectedDays 变化但已有 riskResult 时，不重置 loading（避免切换闪烁）
+      const isOnlyDaysChange = !!riskResult;
+      if (!isOnlyDaysChange) {
+        setIsLoading(true);
+      }
       setError(null);
       setTimedOut(false);
 
@@ -168,7 +174,10 @@ export default function RiskDashboardPage() {
         setTimedOut(true);
       } finally {
         clearTimeout(timeoutId);
-        setIsLoading(false);
+        // selectedDays 单独变化时不强制改 loading 状态（开头已按需跳过）
+        if (!isOnlyDaysChange) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -234,8 +243,8 @@ export default function RiskDashboardPage() {
     return lateNightCount / behaviorRecords.length;
   }
 
-  // 计算趋势数据
-  function calculateTrendData(emotions: any[], behaviors: any[], assessments: any[], diaries: any[], days: number): { date: string; score: number }[] {
+  // 计算趋势数据（color 字段用于按风险等级动态着色）
+  function calculateTrendData(emotions: any[], behaviors: any[], assessments: any[], diaries: any[], days: number): { date: string; score: number; color: string }[] {
     const result = [];
     const today = new Date();
 
@@ -262,7 +271,11 @@ export default function RiskDashboardPage() {
       void dayBehavior;
       void assessments;
 
-      result.push({ date: shortDate, score: Math.min(100, Math.max(0, score)) });
+      // 风险指数：0=最低风险，100=最高风险（基于情绪/心情反向计算）
+      const clamped = Math.min(100, Math.max(0, score));
+      // 按 score 动态着色：< 30 绿（低），30-60 黄（中），>= 60 红（高）
+      const color = clamped < 30 ? '#22C55E' : clamped < 60 ? '#F59E0B' : '#EF4444';
+      result.push({ date: shortDate, score: clamped, color });
     }
 
     return result;
@@ -371,7 +384,24 @@ export default function RiskDashboardPage() {
           </h1>
           <p className="text-sm text-text-muted mt-1">{t('risk.dashboard_subtitle')}</p>
         </div>
-        <div className="flex gap-2" role="group" aria-label="时间范围选择">
+        <div
+          className="relative flex gap-1 p-1 rounded-[12px] bg-surface-hover/60 backdrop-blur-sm"
+          role="group"
+          aria-label="时间范围选择"
+        >
+          {/* 滑动指示器：用 left/width 百分比 + transition 实现纯 CSS 滑动效果。
+              gap+padding 使每个按钮等分宽度，指示器位置 = active 索引 * (100% / N) */}
+          <span
+            aria-hidden="true"
+            className="absolute top-1 bottom-1 rounded-[10px] bg-primary shadow-sm pointer-events-none transition-all"
+            style={{
+              left: `calc(${[7, 14, 30].indexOf(selectedDays) * 100 / 3}% + 4px)`,
+              width: 'calc(100% / 3 - 8px)',
+              transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+              transitionDuration: 'var(--transition-smooth, 300ms)',
+              transitionProperty: 'left',
+            }}
+          />
           {[7, 14, 30].map(days => {
             const active = selectedDays === days;
             return (
@@ -380,10 +410,10 @@ export default function RiskDashboardPage() {
                 type="button"
                 onClick={() => setSelectedDays(days)}
                 aria-pressed={active}
-                className={`px-4 py-2 rounded-[10px] text-sm font-medium transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                className={`relative z-10 flex-1 px-4 py-2 rounded-[10px] text-sm font-medium transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                   active
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'bg-surface-hover text-text-secondary hover:text-text-primary'
+                    ? 'text-white'
+                    : 'text-text-secondary hover:text-text-primary'
                 }`}
               >
                 {days}天
@@ -574,7 +604,10 @@ export default function RiskDashboardPage() {
                   />
                   <Tooltip
                     contentStyle={tooltipContentStyle}
-                    formatter={(value: number) => [`${value}`, '风险指数']}
+                    formatter={(value: number) => {
+                      const level = value < 30 ? '低风险' : value < 60 ? '中风险' : '高风险';
+                      return [`${value} (${level})`, '风险指数'];
+                    }}
                   />
                   <defs>
                     <linearGradient id="riskGradient" x1="0" y1="0" x2="0" y2="1">
@@ -588,6 +621,11 @@ export default function RiskDashboardPage() {
                     stroke="#EF4444"
                     strokeWidth={2}
                     fill="url(#riskGradient)"
+                    dot={{ r: 3, fill: '#fff', stroke: '#EF4444', strokeWidth: 1.5 }}
+                    activeDot={{ r: 5 }}
+                    isAnimationActive
+                    animationDuration={400}
+                    animationEasing="ease-out"
                   />
                 </AreaChart>
               </ResponsiveContainer>

@@ -19,6 +19,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Backup / Export
   backupExport: (jsonData) => ipcRenderer.invoke('backup-export', jsonData),
   backupImport: () => ipcRenderer.invoke('backup-import'),
+  // Storage info + cache cleanup
+  getStorageSize: () => ipcRenderer.invoke('get-storage-size'),
+  clearCache: () => ipcRenderer.invoke('clear-cache'),
+  // Windows Hello biometric unlock
+  windowsHelloAvailable: () => ipcRenderer.invoke('windows-hello-available'),
+  windowsHelloVerify: () => ipcRenderer.invoke('windows-hello-verify'),
   onExportData: (callback) => {
     const handler = () => callback();
     handlerMap.set('export-data', handler);

@@ -60,17 +60,17 @@ export default function HealthRadar({ dimensions, hasData = true }: HealthRadarP
         <p className="text-sm font-medium mt-1" style={{ color: scoreInfo.color }}>{scoreInfo.label}</p>
       </div>
 
-      {/* Radar Chart */}
+      {/* Radar Chart — outerRadius 用百分比随容器自适应，避免 resize 时多边形与网格不同帧漂移 */}
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
             <PolarGrid stroke="var(--color-grid)" />
             <PolarAngleAxis
               dataKey="dimension"
-              tick={{ fontSize: 12, fill: 'var(--text-muted)' }}
+              tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
             />
             <PolarRadiusAxis
-              angle={30}
+              angle={90}
               domain={[0, 100]}
               tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
             />
@@ -91,6 +91,9 @@ export default function HealthRadar({ dimensions, hasData = true }: HealthRadarP
               strokeWidth={2}
               fill="var(--color-radar-fill)"
               fillOpacity={1}
+              isAnimationActive
+              animationDuration={400}
+              animationEasing="ease-out"
             />
           </RadarChart>
         </ResponsiveContainer>

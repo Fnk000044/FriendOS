@@ -47,10 +47,10 @@ export default function RiskRadar({ data, hasData = true }: RiskRadarProps) {
           <PolarGrid stroke="var(--color-grid, #E2E8F0)" />
           <PolarAngleAxis
             dataKey="dimension"
-            tick={{ fontSize: 12, fill: 'var(--text-muted, #64748B)' }}
+            tick={{ fontSize: 11, fill: 'var(--text-muted, #64748B)' }}
           />
           <PolarRadiusAxis
-            angle={30}
+            angle={90}
             domain={[0, 100]}
             tick={{ fontSize: 10, fill: 'var(--text-muted, #94A3B8)' }}
           />
@@ -65,6 +65,9 @@ export default function RiskRadar({ data, hasData = true }: RiskRadarProps) {
             strokeWidth={2}
             fill="var(--color-radar-stroke, #818CF8)"
             fillOpacity={0.3}
+            isAnimationActive
+            animationDuration={400}
+            animationEasing="ease-out"
           />
         </RadarChart>
       </ResponsiveContainer>

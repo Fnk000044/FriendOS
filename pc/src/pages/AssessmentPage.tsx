@@ -198,7 +198,7 @@ export default function AssessmentPage() {
             </div>
             {cssrsHistory.length > 0 && (
               <span className="text-xs text-text-muted">
-                上次：{cssrsHistory[0].level}
+                上次：{cssrsHistory[0].level === 'critical' ? '危机' : cssrsHistory[0].level === 'high' ? '高风险' : '低风险'}
               </span>
             )}
           </Card>
@@ -283,7 +283,9 @@ export default function AssessmentPage() {
                   <div>
                     <span className="text-sm text-text-muted">{a.date}</span>
                     <span className="ml-3 font-semibold">{a.totalScore} 分</span>
-                    <span className="ml-2 text-sm text-text-secondary">({a.level})</span>
+                    <span className="ml-2 text-sm text-text-secondary">
+                      ({a.level === 'minimal' ? '无症状' : a.level === 'mild' ? '轻度' : a.level === 'moderate' ? '中度' : a.level === 'moderately_severe' ? '中重度' : '重度'})
+                    </span>
                   </div>
                   <button
                     onClick={() => deleteAssessment(a.id)}
@@ -304,7 +306,9 @@ export default function AssessmentPage() {
                   <div>
                     <span className="text-sm text-text-muted">{a.date}</span>
                     <span className="ml-3 font-semibold">{a.totalScore} 分</span>
-                    <span className="ml-2 text-sm text-text-secondary">({a.level})</span>
+                    <span className="ml-2 text-sm text-text-secondary">
+                      ({a.level === 'minimal' ? '无症状' : a.level === 'mild' ? '轻度' : a.level === 'moderate' ? '中度' : '重度'})
+                    </span>
                   </div>
                   <button
                     onClick={() => deleteAssessment(a.id)}
@@ -326,6 +330,28 @@ export default function AssessmentPage() {
                     <span className="text-sm text-text-muted">{a.date}</span>
                     <span className="ml-3 font-semibold">{a.totalScore} 分</span>
                     <span className="ml-2 text-sm text-text-secondary">({a.level === 'low' ? '低压力' : a.level === 'moderate' ? '中等压力' : '高压力'})</span>
+                  </div>
+                  <button
+                    onClick={() => deleteAssessment(a.id)}
+                    className="p-1 hover:bg-red-50 rounded text-red-400 hover:text-red-600 cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {cssrsHistory.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="font-medium text-text-primary">C-SSRS 评估记录</h3>
+              {cssrsHistory.map(a => (
+                <Card key={a.id} className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm text-text-muted">{a.date}</span>
+                    <span className="ml-3 font-semibold">
+                      {a.level === 'critical' ? '危机' : a.level === 'high' ? '高风险' : '低风险'}
+                    </span>
                   </div>
                   <button
                     onClick={() => deleteAssessment(a.id)}

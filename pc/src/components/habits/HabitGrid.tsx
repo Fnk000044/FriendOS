@@ -19,7 +19,7 @@ export default function HabitGrid({ onEditHabit }: HabitGridProps) {
 
   const gridData = useLiveQuery(async () => {
     const [habits, todayLogs] = await Promise.all([
-      db.habits.where('archived').equals(0).toArray(),
+      db.habits.filter((h) => !h.archived).toArray(),
       db.habitLogs.where('date').equals(today).toArray(),
     ]);
     return { habits, todayLogs };
@@ -33,6 +33,10 @@ export default function HabitGrid({ onEditHabit }: HabitGridProps) {
 
   const handleToggle = async (habitId: string) => {
     await toggleLog(habitId, today);
+  };
+
+  const handleToggleDate = async (habitId: string, date: string) => {
+    await toggleLog(habitId, date);
   };
 
   const handleDelete = (habitId: string) => {
@@ -56,6 +60,7 @@ export default function HabitGrid({ onEditHabit }: HabitGridProps) {
           isLogged={loggedHabitIds.has(habit.id)}
           streak={0}
           onToggle={() => handleToggle(habit.id)}
+          onToggleDate={(date) => handleToggleDate(habit.id, date)}
           onEdit={() => onEditHabit(habit.id)}
           onDelete={handleDelete}
         />

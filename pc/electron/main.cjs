@@ -564,6 +564,125 @@ ipcMain.handle('backup-import', async () => {
 });
 
 // ── 综合风险评分 IPC Handlers ─────────────────────────────────
+// 储存信息：返回 userData 目录各子目录大小（应用数据/缓存/日志）
+ipcMain.handle('get-storage-size', async () => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const userDataPath = app.getPath('userData');
+
+    const dirSize = (dir) => {
+      if (!fs.existsSync(dir)) return 0;
+      let total = 0;
+      const walk = (d) => {
+        for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+          const full = path.join(d, entry.name);
+          if (entry.isDirectory()) walk(full);
+          else total += fs.statSync(full).size;
+        }
+      };
+      try { walk(dir); } catch {}
+      return total;
+    };
+
+    const cacheDirs = ['Cache', 'Code Cache', 'GPUCache', 'DawnGraphiteCache', 'DawnWebGPUCache', 'Network'];
+    const appDataDirs = ['IndexedDB', 'Local Storage', 'Preferences', 'Session Storage', 'WebStorage', 'Shared Dictionary'];
+    let cache = 0, appData = 0, logs = 0;
+
+    for (const d of cacheDirs) cache += dirSize(path.join(userDataPath, d));
+    for (const d of appDataDirs) appData += dirSize(path.join(userDataPath, d));
+
+    // 日志文件（sentiment.log 等）
+    try {
+      const logFile = path.join(userDataPath, 'sentiment.log');
+      if (fs.existsSync(logFile)) logs += fs.statSync(logFile).size;
+    } catch {}
+
+    return { total: cache + appData + logs, cache, appData, logs };
+  } catch (err) {
+    console.error('[get-storage-size] Error:', err);
+    return { total: 0, cache: 0, appData: 0, logs: 0 };
+  }
+});
+
+// 清理 Chromium 缓存（不影响应用数据）
+ipcMain.handle('clear-cache', async () => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const userDataPath = app.getPath('userData');
+    const cacheDirs = ['Cache', 'Code Cache', 'GPUCache', 'DawnGraphiteCache', 'DawnWebGPUCache'];
+
+    // 先通过 session API 清理，再删除残留目录
+    try {
+      await session.defaultSession.clearCache();
+      await session.defaultSession.clearCodeCache({});
+    } catch {}
+
+    for (const d of cacheDirs) {
+      const dir = path.join(userDataPath, d);
+      if (fs.existsSync(dir)) {
+        try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+      }
+    }
+    return { success: true };
+  } catch (err) {
+    console.error('[clear-cache] Error:', err);
+    return { success: false, error: err.message };
+  }
+});
+
+// Windows Hello 生物识别可用性检查
+ipcMain.handle('windows-hello-available', async () => {
+  if (process.platform !== 'win32') return { available: false, reason: '仅支持 Windows' };
+  try {
+    const { execSync } = require('child_process');
+    // 检查 WinRT UserConsentVerifier 是否可用（即系统是否配置了 Windows Hello）
+    const psScript = `
+$assemblies = @('System.Runtime','System.Runtime.InteropServices','Windows.Foundation','Windows.Security.Credentials.UI');
+try {
+  [Windows.Security.Credentials.UI.UserConsentVerifier,Windows.Security.Credentials.UI,ContentType=WindowsRuntime] | Out-Null
+  $verifier = [Windows.Security.Credentials.UI.UserConsentVerifier]::RequestVerificationAsync('')
+  Write-Output 'AVAILABLE'
+} catch {
+  Write-Output 'NOT_AVAILABLE'
+}
+`;
+    const result = execSync(`powershell -NoProfile -Command "${psScript.replace(/"/g, '\\"')}"`, { encoding: 'utf8', timeout: 5000 });
+    return { available: result.includes('AVAILABLE') };
+  } catch {
+    return { available: false, reason: 'Windows Hello 未配置或不可用' };
+  }
+});
+
+// Windows Hello 验证（人脸/PIN）
+ipcMain.handle('windows-hello-verify', async () => {
+  if (process.platform !== 'win32') return { success: false, error: '仅支持 Windows' };
+  try {
+    const { exec } = require('child_process');
+    const { promisify } = require('util');
+    const execAsync = promisify(exec);
+
+    // 调用 WinRT UserConsentVerifier.RequestVerificationAsync
+    // 返回值 0=Verified, 1=DeviceNotPresent, 2=NotConfiguredForUser, 3=DisabledByPolicy, 4=UserCanceled
+    const psScript = `
+[Windows.Security.Credentials.UI.UserConsentVerifier,Windows.Security.Credentials.UI,ContentType=WindowsRuntime] | Out-Null
+[Windows.Foundation.IAsyncOperation[Windows.Security.Credentials.UI.UserConsentVerificationResult],Windows.Foundation,ContentType=WindowsRuntime] | Out-Null
+$op = [Windows.Security.Credentials.UI.UserConsentVerifier]::RequestVerificationAsync('使用 Windows Hello 解锁 FriendOS')
+$res = ($op.AsTask()).Result
+Write-Output $res.Value__
+`;
+    const { stdout } = await execAsync(`powershell -NoProfile -Command "${psScript.replace(/"/g, '\\"')}"`, { encoding: 'utf8', timeout: 60000 });
+    const code = parseInt(stdout.trim(), 10);
+    // 0 = Verified
+    if (code === 0) return { success: true };
+    const errors = { 1: '未检测到生物识别设备', 2: 'Windows Hello 未配置', 3: '被组策略禁用', 4: '用户取消' };
+    return { success: false, error: errors[code] || '验证失败' };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 ipcMain.handle('risk:calculate', async (_event, data) => {
   try {
     const { calculateRiskScore } = require('./services/RiskScoringEngine.cjs');

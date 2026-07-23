@@ -206,8 +206,6 @@
 
 body {
   font-family: 'HarmonyOS Sans SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  /* 默认 16px，受 --font-scale 缩放（外观设置） */
-  font-size: calc(16px * var(--font-scale, 1));
   background: var(--bg-gradient);
   background-attachment: fixed;
   color: var(--text-primary);
@@ -215,6 +213,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
   height: 100vh;
+}
+
+/* html 的 font-size 决定 Tailwind rem 单位的基准值（1rem = html font-size）。
+   把 --font-scale 应用到 html 而非 body，这样 text-xs/text-sm 等所有 rem 类都会响应缩放。 */
+html {
+  font-size: calc(16px * var(--font-scale, 1));
 }
 
 /* 减少动效（外观设置开关启用时） */

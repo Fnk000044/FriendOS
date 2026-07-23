@@ -36,7 +36,7 @@ export default function StatusBar() {
     const [tasks, diariesCount, habits, todayLogs, emotionsCount, therapiesCount] = await Promise.all([
       needsTasks ? db.tasks.where('scheduledDate').equals(today).toArray() : Promise.resolve([]),
       needsDiaries ? db.diaries.count() : Promise.resolve(0),
-      needsHabits ? db.habits.where('archived').equals(0).toArray() : Promise.resolve([]),
+      needsHabits ? db.habits.filter((h) => !h.archived).toArray() : Promise.resolve([]),
       needsHabits ? db.habitLogs.where('date').equals(today).toArray() : Promise.resolve([]),
       needsEmotions ? db.emotionRecords.count() : Promise.resolve(0),
       needsTherapies ? db.therapyRecords.count() : Promise.resolve(0),

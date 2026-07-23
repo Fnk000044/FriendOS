@@ -1,7 +1,7 @@
 import Button from '../common/Button';
 
 interface AssessmentResultProps {
-  type: 'PHQ9' | 'GAD7' | 'PSS10';
+  type: 'PHQ9' | 'GAD7' | 'PSS10' | 'CSSRS';
   scores: number[];
   totalScore: number;
   level: string;
@@ -30,7 +30,13 @@ const PSS10_LEVELS: Record<string, { label: string; color: string; description: 
   high: { label: '高压力', color: '#EF4444', description: '总分 27-40 分', suggestion: '你目前承受较高的压力，建议寻求支持，尝试放松技巧，必要时咨询心理专业人士。' },
 };
 
-function getLevel(type: string, score: number) {
+const CSSRS_LEVELS: Record<string, { label: string; color: string; description: string; suggestion: string }> = {
+  low: { label: '低风险', color: '#10B981', description: '未检出自杀意念', suggestion: '当前未检出明显自杀风险，继续保持关注自身情绪状态。' },
+  high: { label: '高风险', color: '#EF4444', description: '检出自杀意念', suggestion: '检出自杀相关意念，建议尽快寻求专业心理帮助或拨打心理援助热线：400-161-9995。' },
+  critical: { label: '危机', color: '#DC2626', description: '检出自杀意念伴意图/计划', suggestion: '检出严重自杀风险（伴意图或计划），请立即联系信任的人或拨打心理援助热线：400-161-9995，或前往最近的精神卫生中心。' },
+};
+
+function getLevel(type: string, score: number, levelStr?: string) {
   if (type === 'PHQ9') {
     if (score <= 4) return PHQ9_LEVELS.minimal;
     if (score <= 9) return PHQ9_LEVELS.mild;
@@ -42,6 +48,11 @@ function getLevel(type: string, score: number) {
     if (score <= 9) return GAD7_LEVELS.mild;
     if (score <= 14) return GAD7_LEVELS.moderate;
     return GAD7_LEVELS.severe;
+  } else if (type === 'CSSRS') {
+    // C-SSRS 按 level 字符串判定（critical > high > low）
+    if (levelStr === 'critical') return CSSRS_LEVELS.critical;
+    if (levelStr === 'high') return CSSRS_LEVELS.high;
+    return CSSRS_LEVELS.low;
   } else {
     if (score <= 13) return PSS10_LEVELS.low;
     if (score <= 26) return PSS10_LEVELS.moderate;
@@ -49,9 +60,9 @@ function getLevel(type: string, score: number) {
   }
 }
 
-export default function AssessmentResult({ type, scores, totalScore, onClose, onRetake }: AssessmentResultProps) {
-  const level = getLevel(type, totalScore);
-  const typeName = type === 'PHQ9' ? 'PHQ-9 抑郁筛查' : type === 'GAD7' ? 'GAD-7 焦虑筛查' : 'PSS-10 压力评估';
+export default function AssessmentResult({ type, scores, totalScore, level: levelStr, onClose, onRetake }: AssessmentResultProps) {
+  const level = getLevel(type, totalScore, levelStr);
+  const typeName = type === 'PHQ9' ? 'PHQ-9 抑郁筛查' : type === 'GAD7' ? 'GAD-7 焦虑筛查' : type === 'CSSRS' ? 'C-SSRS 自杀风险筛查' : 'PSS-10 压力评估';
 
   return (
     <div className="space-y-6">

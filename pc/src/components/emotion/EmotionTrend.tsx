@@ -148,6 +148,9 @@ export default function EmotionTrend({ records = [], days = 7 }: EmotionTrendPro
 
   const trendInfo = trendConfig[trend];
 
+  // 是否完全没有有效数据（用于显示空态而非空坐标系）
+  const hasNoData = chartData.every(d => d.score === null);
+
   return (
     <div className="space-y-4">
       {/* Summary */}
@@ -169,15 +172,21 @@ export default function EmotionTrend({ records = [], days = 7 }: EmotionTrendPro
         </div>
       </div>
 
-      {/* Chart with keyboard navigation */}
-      <div
-        className="h-48 outline-none focus:ring-2 focus:ring-blue-300 rounded-lg"
-        tabIndex={0}
-        role="img"
-        aria-label={`情绪趋势图表，近${days}天数据。使用方向键导航数据点。`}
-        onKeyDown={handleKeyDown}
-      >
-        <ResponsiveContainer width="100%" height="100%">
+      {/* Chart with keyboard navigation — 无数据时显示空态提示，避免空坐标系 */}
+      {hasNoData ? (
+        <div className="h-48 flex flex-col items-center justify-center text-text-muted">
+          <p className="text-sm">暂无情绪数据</p>
+          <p className="text-xs mt-1">写日记后将自动生成趋势</p>
+        </div>
+      ) : (
+        <div
+          className="h-48 outline-none focus:ring-2 focus:ring-blue-300 rounded-lg"
+          tabIndex={0}
+          role="img"
+          aria-label={`情绪趋势图表，近${days}天数据。使用方向键导航数据点。`}
+          onKeyDown={handleKeyDown}
+        >
+          <ResponsiveContainer width="100%" height="100%" debounce={200}>
           <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
             <defs>
               <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
@@ -217,6 +226,7 @@ export default function EmotionTrend({ records = [], days = 7 }: EmotionTrendPro
           </AreaChart>
         </ResponsiveContainer>
       </div>
+      )}
 
       {/* Emotion Breakdown */}
       <div className="grid grid-cols-4 gap-2">

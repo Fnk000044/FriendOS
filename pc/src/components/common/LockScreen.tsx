@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Lock, Eye, EyeOff } from 'lucide-react';
+import { Lock, Eye, EyeOff, Fingerprint } from 'lucide-react';
 import { useAppLockStore } from '../../stores/appLockStore';
 import { useLanguage } from '../../i18n/useLanguage';
 import Button from './Button';
@@ -12,11 +12,19 @@ export default function LockScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [shake, setShake] = useState(false);
+  const [helloVerifying, setHelloVerifying] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // 是否启用 Windows Hello 解锁（从 localStorage 读取偏好）
+  const helloEnabled = typeof localStorage !== 'undefined' && localStorage.getItem('friendos_hello_unlock') === 'true';
 
   useEffect(() => {
     if (locked) {
       inputRef.current?.focus();
+      // 启用 Windows Hello 时自动触发验证
+      if (helloEnabled && window.electronAPI?.windowsHelloVerify) {
+        handleHelloUnlock();
+      }
     }
   }, [locked]);
 
@@ -30,6 +38,27 @@ export default function LockScreen() {
       setShake(true);
       setPassword('');
       setTimeout(() => setShake(false), 500);
+    }
+  };
+
+  const handleHelloUnlock = async () => {
+    if (helloVerifying) return;
+    setHelloVerifying(true);
+    setError('');
+    try {
+      const result = await window.electronAPI?.windowsHelloVerify?.();
+      if (result?.success) {
+        // Windows Hello 验证成功，直接解锁（绕过密码）
+        unlock('__windows_hello__');
+      } else if (result?.error && result.error !== '用户取消') {
+        setError(result.error);
+        setShake(true);
+        setTimeout(() => setShake(false), 500);
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Windows Hello 验证失败');
+    } finally {
+      setHelloVerifying(false);
     }
   };
 
@@ -79,6 +108,20 @@ export default function LockScreen() {
               {t('lock.unlock')}
             </Button>
           </form>
+
+          {/* Windows Hello 解锁按钮（仅在可用且用户启用时显示） */}
+          {helloEnabled && window.electronAPI?.windowsHelloVerify && (
+            <button
+              type="button"
+              onClick={handleHelloUnlock}
+              disabled={helloVerifying}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm text-text-secondary hover:bg-surface-hover transition-colors disabled:opacity-50 cursor-pointer"
+              style={{ borderColor: 'var(--glass-border)' }}
+            >
+              <Fingerprint className={`w-5 h-5 text-primary ${helloVerifying ? 'animate-pulse' : ''}`} />
+              {helloVerifying ? '正在验证...' : '使用 Windows Hello 解锁'}
+            </button>
+          )}
         </div>
       </div>
     </div>

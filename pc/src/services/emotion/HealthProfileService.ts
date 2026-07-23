@@ -208,7 +208,12 @@ export async function generateHealthProfile(): Promise<HealthProfile | null> {
       })) as HealthProfile['riskLevel'] ?? 'low';
     } catch (err) {
       console.error('[HealthProfileService] calculateRiskLevel error:', err);
-      if (emotionalHealthIndex < 30) riskLevel = 'high';
+      // fallback：IPC 不可用时按健康指数阈值推断
+      // critical < 15 < high < 30 < medium < 50 < medium_low < 65 < low
+      // 若存在 critical 情绪记录，强制升级到 critical（与 IPC 主链路判据一致）
+      const hasCritical = emotions.some(e => e.riskLevel === 'critical');
+      if (hasCritical || emotionalHealthIndex < 15) riskLevel = 'critical';
+      else if (emotionalHealthIndex < 30) riskLevel = 'high';
       else if (emotionalHealthIndex < 50) riskLevel = 'medium';
       else if (emotionalHealthIndex < 65) riskLevel = 'medium_low';
       else riskLevel = 'low';

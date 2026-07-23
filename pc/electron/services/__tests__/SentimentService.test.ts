@@ -17,7 +17,7 @@ const { analyze, analyzeEnhanced, isOnnxLoaded, getModelStatus } = require('../S
  * （前者由 EmotionAnalysisEngine 进一步转换）。
  */
 
-const RISK_ORDER = ['low', 'medium_low', 'medium', 'high', 'critical'];
+const RISK_ORDER = ['low', 'medium_low', 'medium', 'high', 'crisis', 'critical'];
 
 describe('SentimentService', () => {
   describe('analyze (Layer 1: keyword scan, ONNX 不可用降级路径)', () => {
@@ -65,12 +65,14 @@ describe('SentimentService', () => {
 
     it('excludes false-positive patterns (e.g. 九死一生)', async () => {
       const result = await analyze('这一路真是九死一生');
-      expect(result.level).not.toBe('critical');
+      // level 用 crisis（UI 语义，ONNX 判定），此处无 ONNX 应不会触发
+      // riskLevel 用 critical（数据/store 语义），level 用 crisis，两者分离
+      expect(result.level).not.toBe('crisis');
       expect(result.crisisLevel).toBe(0);
     });
   });
 
-  describe('analyzeEnhanced (Layer 1+2+3 fusion)', () => {
+  describe('analyzeEnhanced (Layer 1+2 fusion, L3 Qwen 已移除)', () => {
     it('returns result object with the documented enhanced-shape fields', async () => {
       const result = await analyzeEnhanced('今天心情不错');
       expect(result).toBeDefined();

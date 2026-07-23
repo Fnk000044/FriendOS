@@ -17,9 +17,9 @@
     </linearGradient>
   </defs>
 
-  <!-- 背景圆（暖色调白色基底） -->
-  <circle cx="128" cy="128" r="124" fill="#F8FAFC"/>
-  <circle cx="128" cy="128" r="124" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+  <!-- 背景圆（冷灰基底，比纯白稍深能看出背景层次） -->
+  <circle cx="128" cy="128" r="124" fill="#CBD5E1"/>
+  <circle cx="128" cy="128" r="124" fill="none" stroke="#94A3B8" stroke-width="1"/>
 
   <!-- 外层轨道环（倾斜椭圆） -->
   <g transform="rotate(-25 128 128)">

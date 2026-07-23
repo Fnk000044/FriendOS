@@ -40,7 +40,7 @@ export default function TaskDetailModal({ task, open, onClose }: TaskDetailModal
   const [repeatInterval, setRepeatInterval] = useState('');
   const [repeatEnd, setRepeatEnd] = useState('');
   const [saving, setSaving] = useState(false);
-  const [errors, setErrors] = useState<{ title?: boolean; interval?: boolean; endDate?: boolean }>({});
+  const [errors, setErrors] = useState<{ title?: boolean; interval?: boolean; endDate?: boolean; dueTime?: boolean }>({});
   const [shaking, setShaking] = useState(false);
 
   // 新增字段：截止时间 + 提醒 + 子任务
@@ -51,37 +51,39 @@ export default function TaskDetailModal({ task, open, onClose }: TaskDetailModal
 
   const isNew = !task;
 
+  // 仅在 modal 打开时（open 从 false→true）加载/重置字段，
+  // 关闭时不执行 reset——Modal 组件会在退出动画后卸载组件自然清理，
+  // 避免"内容先变空再淡出"的闪屏现象
   useEffect(() => {
-    if (open) {
-      if (task) {
-        setTitle(task.title);
-        setDescription(task.description || '');
-        setPriority(task.priority);
-        setScheduledDate(task.scheduledDate);
-        setTags(task.tags || []);
-        setRepeatEnabled(!!task.repeatInterval);
-        setRepeatInterval(task.repeatInterval ? String(task.repeatInterval) : '');
-        setRepeatEnd(task.repeatEnd || '');
-        setDueTime(task.dueTime || '');
-        setReminderEnabled(task.reminderEnabled ?? false);
-        setSubtasks(task.subtasks || []);
-      } else {
-        setTitle('');
-        setDescription('');
-        setPriority('medium');
-        setScheduledDate(format(new Date(), 'yyyy-MM-dd'));
-        setTags([]);
-        setRepeatEnabled(false);
-        setRepeatInterval('');
-        setRepeatEnd('');
-        setDueTime('');
-        setReminderEnabled(false);
-        setSubtasks([]);
-      }
-      setNewSubtaskTitle('');
-      setErrors({});
-      setShaking(false);
+    if (!open) return;
+    if (task) {
+      setTitle(task.title);
+      setDescription(task.description || '');
+      setPriority(task.priority);
+      setScheduledDate(task.scheduledDate);
+      setTags(task.tags || []);
+      setRepeatEnabled(!!task.repeatInterval);
+      setRepeatInterval(task.repeatInterval ? String(task.repeatInterval) : '');
+      setRepeatEnd(task.repeatEnd || '');
+      setDueTime(task.dueTime || '');
+      setReminderEnabled(task.reminderEnabled ?? false);
+      setSubtasks(task.subtasks || []);
+    } else {
+      setTitle('');
+      setDescription('');
+      setPriority('medium');
+      setScheduledDate(format(new Date(), 'yyyy-MM-dd'));
+      setTags([]);
+      setRepeatEnabled(false);
+      setRepeatInterval('');
+      setRepeatEnd('');
+      setDueTime('');
+      setReminderEnabled(false);
+      setSubtasks([]);
     }
+    setNewSubtaskTitle('');
+    setErrors({});
+    setShaking(false);
   }, [task, open]);
 
   const handleCategorySelect = useCallback((categoryId: string) => {
@@ -104,11 +106,17 @@ export default function TaskDetailModal({ task, open, onClose }: TaskDetailModal
   const handleSave = useCallback(async () => {
     if (saving) return;
 
-    const newErrors = { title: false, interval: false, endDate: false };
+    const newErrors = { title: false, interval: false, endDate: false, dueTime: false };
     let hasError = false;
 
     if (!title.trim()) {
       newErrors.title = true;
+      hasError = true;
+    }
+
+    // 截止时间必填（避免无截止时间的任务堆积）
+    if (!dueTime) {
+      newErrors.dueTime = true;
       hasError = true;
     }
 
@@ -233,14 +241,15 @@ export default function TaskDetailModal({ task, open, onClose }: TaskDetailModal
         {/* 截止时间 + 提醒开关 */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-text-primary">截止时间</label>
+            <label className="text-sm font-medium text-text-primary">截止时间 <span className="text-red-500">*</span></label>
             <input
               type="time"
               value={dueTime}
               onChange={(e) => setDueTime(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-btn border text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-              style={{ background: 'var(--bg-card-solid)', borderColor: 'var(--border-input)' }}
+              className={`w-full px-3 py-2.5 rounded-btn border text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${errors.dueTime ? 'border-red-400' : ''}`}
+              style={{ background: 'var(--bg-card-solid)', borderColor: errors.dueTime ? '#F87171' : 'var(--border-input)' }}
             />
+            {errors.dueTime && <p className="text-xs text-red-500">请选择截止时间</p>}
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-text-primary">到期提醒</label>

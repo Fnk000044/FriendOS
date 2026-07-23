@@ -97,6 +97,12 @@ export const useAppLockStore = create<AppLockState>((set, get) => ({
     const { passwordHash, salt } = get();
     if (!passwordHash) return true;
 
+    // Windows Hello 解锁令牌：跳过密码验证（验证已由 WinRT 完成）
+    if (password === '__windows_hello__') {
+      set({ locked: false });
+      return true;
+    }
+
     let isValid = false;
     let needsUpgrade = false;
 

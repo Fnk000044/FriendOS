@@ -13,7 +13,6 @@ import LearningCheckin from '../components/dashboard/LearningCheckin';
 import WeeklyReview from '../components/dashboard/WeeklyReview';
 import EmotionOverview from '../components/dashboard/EmotionOverview';
 import InterventionRecommendations from '../components/dashboard/InterventionRecommendations';
-import DailyQuote from '../components/dashboard/DailyQuote';
 
 export default function DashboardPage() {
   const { t, lang } = useLanguage();
@@ -30,7 +29,7 @@ export default function DashboardPage() {
   const counts = useLiveQuery(async () => {
     const [t, h, l] = await Promise.all([
       db.tasks.where('scheduledDate').equals(today).count(),
-      db.habits.where('archived').equals(0).count(),
+      db.habits.filter((h) => !h.archived).count(),
       db.habitLogs.where('date').equals(today).count(),
     ]);
     return { tasks: t, habits: h, logs: l };
@@ -72,10 +71,6 @@ export default function DashboardPage() {
         <TodayDiary />
         <LearningCheckin />
         <WeeklyReview />
-        {/* 每日金句跨两列，置底 */}
-        <div className="md:col-span-2">
-          <DailyQuote />
-        </div>
       </div>
     </div>
   );

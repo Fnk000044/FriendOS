@@ -7,6 +7,7 @@ import { ArrowLeft, Trash2, Sparkles } from 'lucide-react';
 import { db } from '../../db';
 import { useDiary } from '../../hooks/useDiary';
 import MoodSelector from './MoodSelector';
+import WeatherSelector from './WeatherSelector';
 import Button from '../common/Button';
 import TagInput from '../common/TagInput';
 import { useLanguage } from '../../i18n/useLanguage';
@@ -249,12 +250,16 @@ export default function DiaryEditor() {
               joy: sentimentResult.score > 0.5 ? sentimentResult.score : 0,
               sadness: sentimentResult.score < 0.3 ? 1 - sentimentResult.score : 0,
               anger: 0,
-              fear: sentimentResult.level === 'high' ? 0.8 : 0,
+              // fear：crisis（ONNX 明确判定）→ 1.0，high（关键词+ONNX 双重）→ 0.8
+              fear: sentimentResult.level === 'crisis' ? 1.0 : sentimentResult.level === 'high' ? 0.8 : 0,
               surprise: 0,
               disgust: 0,
             },
             socialScore,
-            riskLevel: sentimentResult.level === 'high' ? 'high' : sentimentResult.level === 'medium' ? 'medium' : 'low',
+            // riskLevel 映射：SentimentResult.level='crisis'（UI 语义）→ riskLevel='critical'（数据/store 语义）
+            riskLevel: sentimentResult.level === 'crisis' ? 'critical'
+              : sentimentResult.level === 'high' ? 'high'
+              : sentimentResult.level === 'medium' ? 'medium' : 'low',
             keywords: sentimentResult.keywords,
             createdAt: new Date().toISOString(),
           });
@@ -313,11 +318,20 @@ export default function DiaryEditor() {
         });
       });
 
-      // 高风险：立即触发危机干预（原 30s 延迟对真实危机有风险，改为立即）
+      // 触发记忆候选扫描（后台异步，从日记中提取值得记住的内容）
+      // 仅在非危机内容时执行（危机内容已在 scanForCandidates 内部过滤）
+      import('../../services/memory/MemoryCandidateService').then(({ memoryCandidateService }) => {
+        memoryCandidateService.scanForCandidates().catch(err => {
+          console.error('[DiaryEditor] Memory scan failed:', err);
+        });
+      });
+
+      // 高风险/危机：立即触发危机干预（原 30s 延迟对真实危机有风险，改为立即）
       // 文案柔和，避免打断保存流程后的情绪
-      if (sentimentResult?.level === 'high') {
+      // crisis（ONNX 明确判定）→ 'critical'（循环警报）；high（双重确认）→ 'high'（单次警报）
+      if (sentimentResult?.level === 'high' || sentimentResult?.level === 'crisis') {
         const savedContent = content;
-        showCrisis('high', 'diary', savedContent);
+        showCrisis(sentimentResult.level === 'crisis' ? 'critical' : 'high', 'diary', savedContent);
       }
 
       // Navigate first, then update state (prevents state update on unmounted component)
@@ -490,16 +504,12 @@ export default function DiaryEditor() {
           />
         )}
 
-        <div className="flex items-center gap-4 pt-4 border-t" style={{ borderColor: 'var(--glass-border)' }}>
-          <input
-            value={weather}
-            onChange={(e) => setWeather(e.target.value)}
-            placeholder={t('diary.weather_placeholder')}
-            aria-label={t('diary.weather')}
-            className="text-sm px-3 py-1.5 rounded-btn border focus:outline-none focus:ring-2 focus:ring-primary/30 w-32"
-            style={{ borderColor: 'var(--glass-border)' }}
-          />
-          <div className="flex-1">
+        <div className="flex items-center gap-4 pt-4 border-t flex-wrap" style={{ borderColor: 'var(--glass-border)' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-text-muted shrink-0">{t('diary.weather')}</span>
+            <WeatherSelector value={weather} onChange={setWeather} />
+          </div>
+          <div className="flex-1 min-w-[160px]">
             <TagInput tags={tags} onChange={setTags} placeholder={t('diary.tags_placeholder')} />
           </div>
         </div>

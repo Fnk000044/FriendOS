@@ -682,9 +682,10 @@ function generateSuggestions(profile) {
   const suggestions = [];
 
   if (profile.riskLevel === 'high' || profile.riskLevel === 'critical') {
-    suggestions.push('建议拨打心理援助热线：400-161-9995');
+    // 热线放在最后（不必要时不展现），先给可操作的自助建议
     suggestions.push('与信任的人分享你的感受');
     suggestions.push('尝试做一些让自己放松的事情');
+    suggestions.push('建议拨打心理援助热线：400-161-9995');
   } else if (profile.riskLevel === 'medium') {
     suggestions.push('尝试写一篇感恩日记，记录今天值得感恩的事');
     suggestions.push('做一次 4-7-8 呼吸练习');

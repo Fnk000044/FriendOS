@@ -1,7 +1,19 @@
 """
-Sentiment Analysis Model Training Script
-Trains BERT-base-chinese for Chinese text sentiment classification
-Output: Sentiment classification model (positive/negative/neutral)
+Sentiment Analysis Model Training Script (v2 - 4分类增强版)
+Trains BERT-base-chinese for Chinese text sentiment + crisis classification.
+
+标签体系（4分类）：
+  0 = negative  负面情绪（焦虑/抑郁/压力，无自杀意念）
+  1 = neutral   中性
+  2 = positive  积极
+  3 = crisis    危机（自杀意念/自伤/绝望）
+
+数据源：pc/scripts/train_sentiment/data/train_final.jsonl
+       pc/scripts/train_sentiment/data/test_final.jsonl
+（由 build_dataset.py + download_public.py + augment.py + merge_dataset.py 生成）
+
+输出：pc/scripts/train_sentiment/output/model/ （PyTorch 模型）
+后续用 export_onnx.py 导出 ONNX 替换 pc/models/sentiment/sentiment.onnx
 """
 
 import os
@@ -9,7 +21,7 @@ import json
 import random
 import numpy as np
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -25,7 +37,9 @@ from tqdm import tqdm
 # ── Configuration ──────────────────────────────────────────────
 
 MODEL_NAME = "bert-base-chinese"
-NUM_LABELS = 3  # positive, negative, neutral
+NUM_LABELS = 4  # negative, neutral, positive, crisis
+LABEL2ID = {'negative': 0, 'neutral': 1, 'positive': 2, 'crisis': 3}
+ID2LABEL = {0: 'negative', 1: 'neutral', 2: 'positive', 3: 'crisis'}
 MAX_LENGTH = 256
 BATCH_SIZE = 16
 EPOCHS = 3
@@ -35,33 +49,17 @@ SEED = 42
 
 # Paths
 SCRIPT_DIR = Path(__file__).parent
-PROJECT_ROOT = SCRIPT_DIR.parent.parent.parent
-DATASET_DIR = PROJECT_ROOT / "数据集1" / "PsyDTCorpus"
+DATA_DIR = SCRIPT_DIR / "data"
+TRAIN_PATH = DATA_DIR / "train_final.jsonl"
+TEST_PATH = DATA_DIR / "test_final.jsonl"
 OUTPUT_DIR = SCRIPT_DIR / "output"
 MODEL_DIR = OUTPUT_DIR / "model"
 
-# ── Sentiment Keywords for Auto-labeling ───────────────────────
-
-POSITIVE_WORDS = [
-    '开心', '快乐', '幸福', '满足', '安心', '平静', '温暖', '感恩',
-    '希望', '自信', '放松', '舒适', '满意', '喜悦', '兴奋', '感动',
-    '轻松', '自在', '乐观', '积极', '勇敢', '坚强', '成长', '进步',
-    '突破', '收获', '理解', '包容', '信任', '支持', '陪伴', '关爱',
-    '成就', '成功', '顺利', '好运', '惊喜', '享受', '充实', '美好',
-]
-
-NEGATIVE_WORDS = [
-    '难过', '焦虑', '抑郁', '绝望', '痛苦', '悲伤', '孤独', '恐惧',
-    '愤怒', '烦躁', '不安', '迷茫', '疲惫', '无力', '崩溃', '心碎',
-    '失落', '沮丧', '委屈', '压抑', '自卑', '内疚', '羞耻', '嫉妒',
-    '怨恨', '厌倦', '麻木', '空虚', '无助', '彷徨', '忧虑', '紧张',
-    '害怕', '担心', '烦恼', '苦闷', '消沉', '颓废', '失眠', '噩梦',
-]
 
 # ── Dataset ────────────────────────────────────────────────────
 
 class SentimentDataset(Dataset):
-    """Dataset for sentiment classification"""
+    """Dataset for 4-class sentiment + crisis classification"""
 
     def __init__(self, texts: List[str], labels: List[int], tokenizer, max_length: int):
         self.texts = texts
@@ -91,133 +89,59 @@ class SentimentDataset(Dataset):
         }
 
 
-def auto_label(text: str) -> int:
-    """
-    Auto-label text based on sentiment keywords
-    Returns: 0=negative, 1=neutral, 2=positive
-    """
-    text_clean = text.replace("，", "").replace("。", "").replace("！", "").replace("？", "")
-
-    pos_count = sum(1 for w in POSITIVE_WORDS if w in text_clean)
-    neg_count = sum(1 for w in NEGATIVE_WORDS if w in text_clean)
-
-    if pos_count > neg_count:
-        return 2  # positive
-    elif neg_count > pos_count:
-        return 0  # negative
-    else:
-        return 1  # neutral
+def read_jsonl(path: Path) -> List[dict]:
+    samples = []
+    with open(path, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                samples.append(json.loads(line))
+    return samples
 
 
-def load_dataset() -> Tuple[List[str], List[int]]:
-    """Load and preprocess dataset from PsyDTCorpus"""
+def load_train_data() -> Tuple[List[str], List[int]]:
+    """从 train_final.jsonl 加载训练数据"""
+    if not TRAIN_PATH.exists():
+        raise FileNotFoundError(
+            f"训练数据不存在: {TRAIN_PATH}\n"
+            "请先运行: python build_dataset.py && python augment.py && python merge_dataset.py"
+        )
 
-    print(f"Loading dataset from: {DATASET_DIR}")
-
-    # Try to load PsyDTCorpus
-    train_file = DATASET_DIR / "PsyDTCorpus_train_mulit_turn_packing.json"
-
-    if not train_file.exists():
-        print(f"Dataset file not found: {train_file}")
-        print("Generating synthetic training data...")
-        return generate_synthetic_data()
-
-    with open(train_file, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
+    samples = read_jsonl(TRAIN_PATH)
     texts = []
     labels = []
-
-    # Extract text from PsyDTCorpus format
-    for item in tqdm(data[:5000], desc="Processing dataset"):  # Use first 5000 samples
-        if isinstance(item, dict):
-            # Try different possible formats
-            text = None
-            if "input" in item:
-                text = item["input"]
-            elif "text" in item:
-                text = item["text"]
-            elif "content" in item:
-                text = item["content"]
-            elif "conversations" in item:
-                # Multi-turn conversation format
-                for conv in item["conversations"]:
-                    if isinstance(conv, dict) and conv.get("role") == "user":
-                        text = conv.get("content", "")
-                        break
-
-            if text and len(text) > 10:
-                label = auto_label(text)
-                texts.append(text[:512])  # Truncate long texts
-                labels.append(label)
-
-    if len(texts) < 100:
-        print("Not enough data from dataset, generating synthetic data...")
-        return generate_synthetic_data()
-
-    print(f"Loaded {len(texts)} samples")
-    print(f"Label distribution: neg={labels.count(0)}, neu={labels.count(1)}, pos={labels.count(2)}")
+    for s in samples:
+        label_str = s.get('label', 'neutral')
+        if label_str not in LABEL2ID:
+            continue
+        text = s.get('text', '').strip()
+        if len(text) < 4:
+            continue
+        texts.append(text[:512])
+        labels.append(LABEL2ID[label_str])
 
     return texts, labels
 
 
-def generate_synthetic_data() -> Tuple[List[str], int]:
-    """Generate synthetic training data for sentiment analysis"""
+def load_test_data() -> Tuple[List[str], List[int]]:
+    """从 test_final.jsonl 加载测试数据"""
+    if not TEST_PATH.exists():
+        return [], []
 
-    print("Generating synthetic training data...")
-
-    templates = {
-        0: [  # Negative
-            "今天心情{}，感觉{}",
-            "工作{}，压力{}",
-            "和朋友{}，感到{}",
-            "最近{}，{}得不行",
-            "生活{}，{}笼罩着我",
-        ],
-        1: [  # Neutral
-            "今天{}，没什么特别的",
-            "工作{}，一般般",
-            "天气{}，适合{}",
-            "日常{}，继续{}",
-            "平淡的一天，{}",
-        ],
-        2: [  # Positive
-            "今天{}，心情{}",
-            "工作{}，感到{}",
-            "和朋友{}，{}极了",
-            "最近{}，{}满满",
-            "生活{}，{}每一天",
-        ],
-    }
-
-    negative_words = ["难过", "焦虑", "疲惫", "烦躁", "失落", "沮丧", "委屈", "压抑"]
-    neutral_words = ["普通", "正常", "一般", "平淡", "平常", "还行", "可以", "不错"]
-    positive_words = ["开心", "快乐", "满足", "兴奋", "感动", "幸福", "愉快", "高兴"]
-
-    fill_words = {
-        0: negative_words,
-        1: neutral_words,
-        2: positive_words,
-    }
-
+    samples = read_jsonl(TEST_PATH)
     texts = []
     labels = []
+    for s in samples:
+        label_str = s.get('label', 'neutral')
+        if label_str not in LABEL2ID:
+            continue
+        text = s.get('text', '').strip()
+        if len(text) < 4:
+            continue
+        texts.append(text[:512])
+        labels.append(LABEL2ID[label_str])
 
-    for label in [0, 1, 2]:
-        for template in templates[label]:
-            for _ in range(50):  # 50 samples per template
-                words = fill_words[label]
-                text = template.format(*random.sample(words, 2))
-                texts.append(text)
-                labels.append(label)
-
-    # Shuffle
-    combined = list(zip(texts, labels))
-    random.shuffle(combined)
-    texts, labels = zip(*combined)
-
-    print(f"Generated {len(texts)} synthetic samples")
-    return list(texts), list(labels)
+    return texts, labels
 
 
 # ── Training ───────────────────────────────────────────────────
@@ -225,48 +149,47 @@ def generate_synthetic_data() -> Tuple[List[str], int]:
 def train():
     """Main training function"""
 
-    # Set seed
     random.seed(SEED)
     np.random.seed(SEED)
     torch.manual_seed(SEED)
 
-    # Create output directory
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Check device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
+    if device.type == 'cuda':
+        print(f"GPU: {torch.cuda.get_device_name(0)}")
 
-    # Load tokenizer and model
     print(f"Loading model: {MODEL_NAME}")
     tokenizer = BertTokenizer.from_pretrained(MODEL_NAME)
     model = BertForSequenceClassification.from_pretrained(
         MODEL_NAME,
         num_labels=NUM_LABELS,
+        id2label=ID2LABEL,
+        label2id=LABEL2ID,
     )
     model.to(device)
 
-    # Load dataset
-    texts, labels = load_dataset()
-
-    # Split dataset
-    split_idx = int(len(texts) * 0.8)
-    train_texts, val_texts = texts[:split_idx], texts[split_idx:]
-    train_labels, val_labels = labels[:split_idx], labels[split_idx:]
-
+    # Load training data
+    train_texts, train_labels = load_train_data()
     print(f"Training samples: {len(train_texts)}")
-    print(f"Validation samples: {len(val_texts)}")
+    dist = {ID2LABEL[i]: train_labels.count(i) for i in range(NUM_LABELS)}
+    print(f"Label distribution: {dist}")
 
-    # Create datasets
+    # 划分训练/验证（从训练集再切 10% 做验证）
+    split_idx = int(len(train_texts) * 0.9)
+    train_texts, val_texts = train_texts[:split_idx], train_texts[split_idx:]
+    train_labels, val_labels = train_labels[:split_idx], train_labels[split_idx:]
+
+    print(f"Train: {len(train_texts)}, Val: {len(val_texts)}")
+
     train_dataset = SentimentDataset(train_texts, train_labels, tokenizer, MAX_LENGTH)
     val_dataset = SentimentDataset(val_texts, val_labels, tokenizer, MAX_LENGTH)
 
-    # Create dataloaders
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-    # Optimizer and scheduler
     optimizer = AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=0.01)
     total_steps = len(train_loader) * EPOCHS
     scheduler = get_linear_schedule_with_warmup(
@@ -275,14 +198,12 @@ def train():
         num_training_steps=total_steps,
     )
 
-    # Training loop
     best_val_loss = float("inf")
     for epoch in range(EPOCHS):
         print(f"\n{'='*50}")
         print(f"Epoch {epoch + 1}/{EPOCHS}")
         print(f"{'='*50}")
 
-        # Training
         model.train()
         total_loss = 0
         progress = tqdm(train_loader, desc="Training")
@@ -338,20 +259,62 @@ def train():
         avg_val_loss = val_loss / len(val_loader)
         print(f"Validation loss: {avg_val_loss:.4f}")
 
-        # Classification report
-        target_names = ["negative", "neutral", "positive"]
-        print("\nClassification Report:")
-        print(classification_report(all_labels, all_preds, target_names=target_names))
+        target_names = ["negative", "neutral", "positive", "crisis"]
+        print("\nClassification Report (validation):")
+        print(classification_report(all_labels, all_preds, target_names=target_names, zero_division=0))
 
-        # Save best model
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
             print(f"Saving best model (val_loss: {avg_val_loss:.4f})...")
             model.save_pretrained(str(MODEL_DIR))
             tokenizer.save_pretrained(str(MODEL_DIR))
 
+    # ── 在测试集上最终评估 ──────────────────────────────────────
+    test_texts, test_labels = load_test_data()
+    if test_texts:
+        print(f"\n{'='*50}")
+        print(f"Final evaluation on test set ({len(test_texts)} samples)")
+        print(f"{'='*50}")
+
+        test_dataset = SentimentDataset(test_texts, test_labels, tokenizer, MAX_LENGTH)
+        test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+
+        model.eval()
+        all_preds = []
+        all_labels = []
+
+        with torch.no_grad():
+            for batch in tqdm(test_loader, desc="Testing"):
+                input_ids = batch["input_ids"].to(device)
+                attention_mask = batch["attention_mask"].to(device)
+                labels = batch["labels"].to(device)
+
+                outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+                preds = torch.argmax(outputs.logits, dim=1)
+                all_preds.extend(preds.cpu().numpy())
+                all_labels.extend(labels.cpu().numpy())
+
+        target_names = ["negative", "neutral", "positive", "crisis"]
+        print("\nClassification Report (test):")
+        print(classification_report(all_labels, all_preds, target_names=target_names, zero_division=0))
+
+        print("\nConfusion Matrix:")
+        cm = confusion_matrix(all_labels, all_preds)
+        print(f"{'':>12}" + "".join(f"{n:>12}" for n in target_names))
+        for i, row in enumerate(cm):
+            print(f"{target_names[i]:>12}" + "".join(f"{v:>12}" for v in row))
+
+        # 危机召回率（临床红线）
+        crisis_idx = LABEL2ID['crisis']
+        crisis_total = sum(1 for l in all_labels if l == crisis_idx)
+        crisis_correct = sum(1 for l, p in zip(all_labels, all_preds) if l == crisis_idx and p == crisis_idx)
+        crisis_recall = crisis_correct / crisis_total if crisis_total > 0 else 0
+        print(f"\n危机检测召回率: {crisis_recall*100:.1f}% ({crisis_correct}/{crisis_total})")
+        print(f"漏报率: {(1-crisis_recall)*100:.1f}%  ← 临床红线，应接近 0%")
+
     print(f"\nTraining complete! Model saved to: {MODEL_DIR}")
     print(f"Best validation loss: {best_val_loss:.4f}")
+    print(f"\n下一步: python export_onnx.py  导出 ONNX 模型")
 
     return MODEL_DIR
 

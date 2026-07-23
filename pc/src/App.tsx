@@ -56,7 +56,7 @@ function GlobalShortcuts() {
   const shortcuts = useShortcutStore((s) => s.shortcuts);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
+    const handler = async (e: KeyboardEvent) => {
       for (const [action, shortcut] of Object.entries(shortcuts)) {
         const parsed = parseShortcut(shortcut);
         const ctrl = parsed.ctrl ? (e.ctrlKey || e.metaKey) : !e.ctrlKey && !e.metaKey;
@@ -68,6 +68,24 @@ function GlobalShortcuts() {
           e.preventDefault();
           if (action === 'quickCapture') {
             openQuickCapture();
+          } else if (action === 'exportData') {
+            // 直接调主进程 IPC 弹出导出对话框（不依赖 SettingsPage 挂载）
+            try {
+              await window.electronAPI?.backupExport('');
+            } catch (err) {
+              console.error('[GlobalShortcuts] export failed:', err);
+            }
+          } else if (action === 'importData') {
+            // 导入数据：主进程读文件返回 JSON，再 dispatch onImportData 事件让 App 处理
+            try {
+              const result = await window.electronAPI?.backupImport();
+              if (result?.success && result.data) {
+                // 复用现有 onImportData IPC 事件链路（main.cjs 会 dispatch）
+                window.dispatchEvent(new CustomEvent('friendos-import', { detail: result.data }));
+              }
+            } catch (err) {
+              console.error('[GlobalShortcuts] import failed:', err);
+            }
           }
           break;
         }

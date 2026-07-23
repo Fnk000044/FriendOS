@@ -1,12 +1,13 @@
 /**
  * Sentiment Analysis Service
- * 三层分析：关键词预筛 → ONNX 情感 → Qwen3 语义判定
+ * 两层分析：关键词预筛 → ONNX 情感（4 分类：negative/neutral/positive/crisis）
  *
  * 设计原则：
  * 1. 关键词做宽松触发 + 简单否定窗口检测（减少误报）
- * 2. ONNX 提供情感概率参考
- * 3. Qwen3 理解语义，做最终判定
- * 4. 危机检测采用三级确认：关键词 → ONNX → Qwen3
+ * 2. ONNX 4 分类直接输出 crisis 概率，无需 L3 语义确认
+ * 3. 危机检测采用两级确认：关键词 → ONNX crisis 概率
+ *
+ * 注：L3 Qwen 层已移除（体积大、推理慢），qwenAnalyze/cloudAnalyze 保留为兼容空实现
  */
 
 const path = require('path');
@@ -154,7 +155,7 @@ async function analyzeWithONNX(text) {
     // 置信度分层标记：
     // - >= 0.85：高置信，直接采信 ONNX
     // - 0.55 ~ 0.85：中置信，由 analyzeEnhanced 结合关键词加权
-    // - < 0.55：低置信，升级 Qwen 二次确认
+    // - < 0.55：低置信，标记供后续逻辑判断
     let method;
     if (maxProb >= 0.85) {
       method = 'onnx';
@@ -164,10 +165,12 @@ async function analyzeWithONNX(text) {
       method = 'onnx-lowconf';
     }
 
+    // 4 分类标签顺序：{negative:0, neutral:1, positive:2, crisis:3}
     return {
       negativeProb: Math.round(probs[0] * 100) / 100,
       neutralProb: Math.round(probs[1] * 100) / 100,
       positiveProb: Math.round(probs[2] * 100) / 100,
+      crisisProb: Math.round(probs[3] * 100) / 100,
       confidence: maxProb,
       method,
     };
@@ -256,14 +259,15 @@ async function analyzeEnhanced(text) {
   // 第1层：关键词预筛（含否定词排除）
   const scan = keywordScan(text);
 
-  // 第2层：ONNX 情感分析
+  // 第2层：ONNX 4 分类情感分析
   const onnx = await analyzeWithONNX(text);
 
   // 融合 ONNX + 关键词层 negativeProb（分层置信度策略）
   // - onnx 高置信（>=0.85）：以 ONNX 为主
   // - onnx 中置信（0.55~0.85）：ONNX 与关键词加权平均
-  // - onnx 低置信（<0.55）：以关键词为主，触发 Qwen
+  // - onnx 低置信（<0.55）：以关键词为主
   let negativeProb;
+  let crisisProb = onnx ? onnx.crisisProb : 0;
   if (!onnx) {
     negativeProb = scan.negativeProb;
   } else if (onnx.method === 'onnx') {
@@ -276,35 +280,24 @@ async function analyzeEnhanced(text) {
     negativeProb = Math.round((scan.negativeProb * 0.6 + onnx.negativeProb * 0.4) * 100) / 100;
   }
 
-  // 三级确认：关键词 → ONNX → Qwen3
-  const needQwen = scan.hasCrisis || negativeProb > 0.5 || (onnx && onnx.method === 'onnx-lowconf');
-
-  // 第3层：Qwen3 语义判定
-  let qwenResult = null;
-  if (needQwen && localModelCompleteFn) {
-    qwenResult = await qwenAnalyze(text, {
-      negativeProb,
-      crisisKeywords: scan.crisisKeywords,
-    });
-  }
-
-  // 合并结果（三级确认）
+  // 两级确认：关键词 → ONNX crisis 概率
+  // 等级映射（4 分类 crisis 单独成级，最高优先级）：
+  // - crisisProb >= 0.5 → 'crisis'（ONNX 明确判定为危机）
+  // - scan.hasCrisis && crisisProb > 0.3 → 'high'（关键词+ONNX 双重确认）
+  // - scan.hasCrisis → 'medium'（仅关键词命中）
+  // - negativeProb > 0.7 → 'medium'（严重负面情绪）
+  // - 否则 → 'low'
   let level = 'low';
   let crisisLevel = 0;
   let method = 'keyword';
 
-  if (qwenResult) {
-    // Level 3 确认：Qwen3 最终判定
-    method = 'qwen';
-    if (qwenResult.crisisLevel === 'high') {
-      level = 'high';
-      crisisLevel = 3;
-    } else if (qwenResult.crisisLevel === 'medium') {
-      level = 'medium';
-      crisisLevel = 1;
-    }
-  } else if (scan.hasCrisis && negativeProb > 0.7) {
-    // Level 2 确认：关键词 + ONNX 双重确认
+  if (crisisProb >= 0.5) {
+    // ONNX 直接判定为危机类，最高优先级
+    level = 'crisis';
+    crisisLevel = 3;
+    method = onnx ? 'onnx' : 'keyword';
+  } else if (scan.hasCrisis && crisisProb > 0.3) {
+    // Level 2 确认：关键词 + ONNX crisis 概率双重确认
     level = 'high';
     crisisLevel = 2;
     method = 'onnx';
@@ -325,10 +318,11 @@ async function analyzeEnhanced(text) {
     score: Math.round((1 - negativeProb) * 100) / 100,
     positiveProb: onnx ? onnx.positiveProb : Math.round((1 - negativeProb) * 100) / 100,
     negativeProb: Math.round(negativeProb * 100) / 100,
+    crisisProb: Math.round(crisisProb * 100) / 100,
     keywords,
-    needCloud: level === 'high',
+    needCloud: level === 'high' || level === 'crisis',
     method,
-    qwenAnalysis: qwenResult?.reason || '',
+    qwenAnalysis: '',
     timestamp,
   };
 }
@@ -363,37 +357,20 @@ async function analyze(text) {
       score: Math.round((1 - negativeProb) * 100) / 100,
       positiveProb: Math.round((1 - negativeProb) * 100) / 100,
       negativeProb: Math.round(negativeProb * 100) / 100,
+      crisisProb: 0,
       keywords,
-      needCloud: level === 'high',
+      needCloud: level === 'high' || level === 'crisis',
       method: 'keyword',
       timestamp: Date.now(),
     };
   }
 }
 
-// ── LLM 语义确认（原 cloudAnalyze，实际调用本地 Qwen3，非云端）──
+// ── LLM 语义确认（原 cloudAnalyze，L3 Qwen 层已移除）──────────
 // 重命名：semanticAnalyze 更准确，cloudAnalyze 保留为向后兼容别名
+// L3 已废，返回 null 让调用方走 ONNX/关键词兜底，不再返回"本地模型未加载"误导提示
 async function semanticAnalyze(text, context = {}) {
-  const qwenResult = await qwenAnalyze(text, { negativeProb: 0.5 });
-
-  if (qwenResult) {
-    return {
-      crisisLevel: qwenResult.crisisLevel,
-      analysis: qwenResult.reason,
-      suggestions: qwenResult.crisisLevel === 'high'
-        ? ['请立即联系信任的人或拨打心理援助热线：400-161-9995']
-        : ['建议与朋友或家人分享你的感受'],
-      method: 'qwen',
-      timestamp: Date.now(),
-    };
-  }
-
-  return {
-    crisisLevel: 'low',
-    analysis: '本地模型未加载，无法分析。',
-    suggestions: [],
-    timestamp: Date.now(),
-  };
+  return null;
 }
 
 // 向后兼容别名（旧代码可能仍引用 cloudAnalyze）

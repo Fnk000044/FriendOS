@@ -7,18 +7,13 @@ import { create } from 'zustand';
 export type AccentColor = 'teal' | 'purple' | 'blue' | 'pink' | 'orange' | 'slate';
 
 export type FontScale = 'small' | 'normal' | 'large' | 'xlarge';
-export type RadiusScale = 'sharp' | 'normal' | 'round';
 
 interface AppearanceState {
   accent: AccentColor;
   fontScale: FontScale;
-  radiusScale: RadiusScale;
-  glassBlur: number;       // 0-24
   reduceMotion: boolean;
   setAccent: (a: AccentColor) => void;
   setFontScale: (f: FontScale) => void;
-  setRadiusScale: (r: RadiusScale) => void;
-  setGlassBlur: (b: number) => void;
   setReduceMotion: (r: boolean) => void;
 }
 
@@ -68,13 +63,9 @@ const FONT_SCALE_MAP: Record<FontScale, number> = {
   small: 0.9, normal: 1.0, large: 1.1, xlarge: 1.25,
 };
 
-const RADIUS_SCALE_MAP: Record<RadiusScale, number> = {
-  sharp: 0.5, normal: 1.0, round: 1.5,
-};
-
 /** 把外观偏好写到 documentElement，全局 CSS 变量响应 */
 export function applyAppearance(state: Pick<AppearanceState,
-  'accent' | 'fontScale' | 'radiusScale' | 'glassBlur' | 'reduceMotion'>) {
+  'accent' | 'fontScale' | 'reduceMotion'>) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
   const preset = ACCENT_PRESETS[state.accent] || ACCENT_PRESETS.teal;
@@ -89,11 +80,11 @@ export function applyAppearance(state: Pick<AppearanceState,
   const fontScale = FONT_SCALE_MAP[state.fontScale] ?? 1.0;
   root.style.setProperty('--font-scale', String(fontScale));
 
-  const radiusFactor = RADIUS_SCALE_MAP[state.radiusScale] ?? 1.0;
-  root.style.setProperty('--radius-card', `${Math.round(16 * radiusFactor)}px`);
-  root.style.setProperty('--radius-button', `${Math.round(10 * radiusFactor)}px`);
-
-  root.style.setProperty('--glass-blur', `${state.glassBlur}px`);
+  // 圆角与玻璃模糊已不再对用户开放调节，写入固定默认值，
+  // 让依赖 --radius-card/--radius-button/--glass-blur 的组件样式继续生效。
+  root.style.setProperty('--radius-card', '16px');
+  root.style.setProperty('--radius-button', '10px');
+  root.style.setProperty('--glass-blur', '16px');
 
   if (state.reduceMotion) {
     root.dataset.reduceMotion = 'true';
@@ -110,8 +101,6 @@ function getStored(): Partial<AppearanceState> {
     return {
       accent: ['teal', 'purple', 'blue', 'pink', 'orange', 'slate'].includes(parsed.accent) ? parsed.accent : 'teal',
       fontScale: ['small', 'normal', 'large', 'xlarge'].includes(parsed.fontScale) ? parsed.fontScale : 'normal',
-      radiusScale: ['sharp', 'normal', 'round'].includes(parsed.radiusScale) ? parsed.radiusScale : 'normal',
-      glassBlur: typeof parsed.glassBlur === 'number' ? parsed.glassBlur : 16,
       reduceMotion: typeof parsed.reduceMotion === 'boolean' ? parsed.reduceMotion : false,
     };
   } catch {
@@ -124,8 +113,6 @@ function persist(state: AppearanceState) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       accent: state.accent,
       fontScale: state.fontScale,
-      radiusScale: state.radiusScale,
-      glassBlur: state.glassBlur,
       reduceMotion: state.reduceMotion,
     }));
   } catch {}
@@ -137,8 +124,6 @@ export const useAppearanceStore = create<AppearanceState>((set, get) => {
   const initial = {
     accent: (stored.accent as AccentColor) || 'teal',
     fontScale: (stored.fontScale as FontScale) || 'normal',
-    radiusScale: (stored.radiusScale as RadiusScale) || 'normal',
-    glassBlur: stored.glassBlur ?? 16,
     reduceMotion: stored.reduceMotion ?? false,
   };
 
@@ -156,8 +141,6 @@ export const useAppearanceStore = create<AppearanceState>((set, get) => {
     ...initial,
     setAccent: (a) => update({ accent: a }),
     setFontScale: (f) => update({ fontScale: f }),
-    setRadiusScale: (r) => update({ radiusScale: r }),
-    setGlassBlur: (b) => update({ glassBlur: b }),
     setReduceMotion: (r) => update({ reduceMotion: r }),
   };
 });

@@ -23,8 +23,9 @@ export default React.memo(function TaskItem({ task, onToggle, onClick, onToggleS
   const pConfig = PRIORITY_CONFIG[task.priority];
   const priorityColor = task.priority === 'urgent' ? '#DC2626' : task.priority === 'high' ? '#D97706' : task.priority === 'medium' ? '#2563EB' : '#94A3B8';
   const isOverdue = !isCompleted && task.scheduledDate < getToday();
-  const categoryTag = task.tags.find((tag) => CATEGORY_COLOR_MAP[tag]);
-  const categoryColor = categoryTag ? CATEGORY_COLOR_MAP[categoryTag] : null;
+  // 显示所有标签：有颜色映射的用对应色，无色的用默认灰；最多显示 3 个，多余的 +N
+  const visibleTags = (task.tags || []).slice(0, 3);
+  const hiddenTagCount = (task.tags || []).length - visibleTags.length;
 
   // 子任务进度
   const subtasks = task.subtasks || [];
@@ -121,13 +122,24 @@ export default React.memo(function TaskItem({ task, onToggle, onClick, onToggleS
               {task.title}
             </p>
             <Badge variant={pConfig.variant} size="sm" className="self-center font-semibold shadow-sm shrink-0">{t(pConfig.key)}</Badge>
-            {categoryColor && (
-              <span
-                className="ml-auto shrink-0 px-2 py-0.5 text-[10px] rounded-full text-white font-medium"
-                style={{ backgroundColor: categoryColor }}
-              >
-                {categoryTag}
-              </span>
+            {visibleTags.length > 0 && (
+              <div className="ml-auto flex items-center gap-1 flex-wrap shrink-0">
+                {visibleTags.map((tag) => {
+                  const color = CATEGORY_COLOR_MAP[tag] || '#6B7280';
+                  return (
+                    <span
+                      key={tag}
+                      className="px-2 py-0.5 text-[10px] rounded-full text-white font-medium"
+                      style={{ backgroundColor: color }}
+                    >
+                      {tag}
+                    </span>
+                  );
+                })}
+                {hiddenTagCount > 0 && (
+                  <span className="text-[10px] text-text-muted px-1">+{hiddenTagCount}</span>
+                )}
+              </div>
             )}
           </div>
 

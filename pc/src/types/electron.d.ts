@@ -32,10 +32,11 @@ interface CudaStatus {
 }
 
 interface SentimentResult {
-  level: 'low' | 'medium' | 'high';
+  level: 'low' | 'medium' | 'high' | 'crisis';
   score: number;
   positiveProb: number;
   negativeProb: number;
+  crisisProb?: number;
   keywords: string[];
   needCloud: boolean;
   method: 'keyword' | 'onnx';
@@ -148,6 +149,14 @@ interface ElectronAPI {
   // Backup / restore
   backupExport: (json: string) => Promise<{ success: boolean; path?: string; canceled?: boolean; error?: string }>;
   backupImport: () => Promise<{ success: boolean; data?: any; canceled?: boolean; error?: string }>;
+
+  // Storage info + cache cleanup
+  getStorageSize: () => Promise<{ total: number; cache: number; appData: number; logs: number }>;
+  clearCache: () => Promise<{ success: boolean; error?: string }>;
+
+  // Windows Hello biometric unlock
+  windowsHelloAvailable: () => Promise<{ available: boolean; reason?: string }>;
+  windowsHelloVerify: () => Promise<{ success: boolean; error?: string }>;
 
   // External apps
   openExternal: (path: string) => Promise<{ success: boolean; error?: string }>;

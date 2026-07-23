@@ -145,9 +145,8 @@ export type TranslationKey =
   | 'risk.early_warning' | 'risk.early_warning_subtitle' | 'risk.days_to_critical' | 'risk.no_warning' | 'risk.no_warning_desc'
   | 'risk.warning_green' | 'risk.warning_yellow' | 'risk.warning_orange' | 'risk.warning_red' | 'risk.anomaly_score' | 'risk.refresh' | 'risk.refreshing' | 'risk.partial_data'
   | 'appearance.title' | 'appearance.subtitle' | 'appearance.accent' | 'appearance.accent_desc' | 'appearance.font_scale' | 'appearance.font_scale_desc'
-  | 'appearance.radius_scale' | 'appearance.radius_scale_desc' | 'appearance.glass_blur' | 'appearance.glass_blur_desc' | 'appearance.reduce_motion' | 'appearance.reduce_motion_desc'
+  | 'appearance.reduce_motion' | 'appearance.reduce_motion_desc'
   | 'appearance.preview' | 'appearance.font_small' | 'appearance.font_normal' | 'appearance.font_large' | 'appearance.font_xlarge'
-  | 'appearance.radius_sharp' | 'appearance.radius_normal' | 'appearance.radius_round'
   | 'appearance.color_teal' | 'appearance.color_purple' | 'appearance.color_blue' | 'appearance.color_pink' | 'appearance.color_orange' | 'appearance.color_slate'
   | 'settings.auto_backup' | 'settings.auto_backup_desc' | 'settings.auto_backup_enable' | 'settings.backup_interval' | 'settings.last_backup' | 'settings.never' | 'settings.backup_now' | 'settings.backing_up'
   | 'chat.history' | 'chat.no_history' | 'chat.no_title' | 'chat.input_hint' | 'chat.new_conversation'
@@ -700,10 +699,6 @@ export const translations: Translations = {
     'appearance.accent_desc': '影响按钮、链接、强调元素的色调',
     'appearance.font_scale': '字号缩放',
     'appearance.font_scale_desc': '调整全局文字大小',
-    'appearance.radius_scale': '圆角强度',
-    'appearance.radius_scale_desc': '调整卡圆、按钮的圆角程度',
-    'appearance.glass_blur': '玻璃模糊',
-    'appearance.glass_blur_desc': '毛玻璃效果强度（0 为关闭）',
     'appearance.reduce_motion': '减少动效',
     'appearance.reduce_motion_desc': '适用于对动效敏感的用户',
     'appearance.preview': '预览',
@@ -711,9 +706,6 @@ export const translations: Translations = {
     'appearance.font_normal': '默认',
     'appearance.font_large': '大',
     'appearance.font_xlarge': '超大',
-    'appearance.radius_sharp': '锐利',
-    'appearance.radius_normal': '适中',
-    'appearance.radius_round': '圆润',
     'appearance.color_teal': '青绿',
     'appearance.color_purple': '紫色',
     'appearance.color_blue': '蓝色',
@@ -1303,10 +1295,6 @@ export const translations: Translations = {
     'appearance.accent_desc': 'Affects buttons, links, and emphasis elements',
     'appearance.font_scale': 'Font Scale',
     'appearance.font_scale_desc': 'Adjust global text size',
-    'appearance.radius_scale': 'Corner Radius',
-    'appearance.radius_scale_desc': 'Adjust card and button corner roundness',
-    'appearance.glass_blur': 'Glass Blur',
-    'appearance.glass_blur_desc': 'Frosted glass intensity (0 disables)',
     'appearance.reduce_motion': 'Reduce Motion',
     'appearance.reduce_motion_desc': 'For users sensitive to motion',
     'appearance.preview': 'Preview',
@@ -1314,9 +1302,6 @@ export const translations: Translations = {
     'appearance.font_normal': 'Default',
     'appearance.font_large': 'Large',
     'appearance.font_xlarge': 'X-Large',
-    'appearance.radius_sharp': 'Sharp',
-    'appearance.radius_normal': 'Normal',
-    'appearance.radius_round': 'Round',
     'appearance.color_teal': 'Teal',
     'appearance.color_purple': 'Purple',
     'appearance.color_blue': 'Blue',

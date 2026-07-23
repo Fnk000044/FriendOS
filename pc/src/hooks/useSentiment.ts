@@ -1,10 +1,11 @@
 import { useState, useCallback, useRef } from 'react';
 
 export interface SentimentResult {
-  level: 'low' | 'medium' | 'high';
+  level: 'low' | 'medium' | 'high' | 'crisis';
   score: number;
   positiveProb: number;
   negativeProb: number;
+  crisisProb?: number;
   keywords: string[];
   needCloud: boolean;
   timestamp: number;

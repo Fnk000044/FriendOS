@@ -15,13 +15,14 @@ const MIN_CONTENT_LENGTH = 50;
 /**
  * 使用 ONNX 情感分析模型判断内容是否包含危机信号
  * 返回 true 表示内容有危机风险，不应提取为记忆
+ * high（关键词+ONNX 双重确认）或 crisis（ONNX 明确判定）都跳过
  */
 async function isCrisisContent(text: string): Promise<boolean> {
   try {
     const api = window.electronAPI;
     if (!api?.sentimentAnalyze) return false;
     const result = await api.sentimentAnalyze(text);
-    return result?.level === 'high';
+    return result?.level === 'high' || result?.level === 'crisis';
   } catch {
     return false;
   }

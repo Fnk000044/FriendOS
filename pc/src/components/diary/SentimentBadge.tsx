@@ -1,11 +1,12 @@
-import { AlertTriangle, Smile, Meh, Frown, Lightbulb, Heart, X } from 'lucide-react';
+import { AlertTriangle, Smile, Meh, Frown, Lightbulb, Heart, X, Siren } from 'lucide-react';
 import FeedbackButtons from '../common/FeedbackButtons';
 
 interface SentimentResult {
-  level: 'low' | 'medium' | 'high';
+  level: 'low' | 'medium' | 'high' | 'crisis';
   score: number;
   positiveProb: number;
   negativeProb: number;
+  crisisProb?: number;
   keywords: string[];
   needCloud: boolean;
   timestamp: number;
@@ -22,14 +23,25 @@ interface SentimentDisplay {
   label: string;
   color: string;
   Icon: typeof AlertTriangle;
+  pulse?: boolean;
 }
 
 /**
  * 根据 negativeProb 判断情感状态（而不是危机等级）
  * negativeProb: 0=正面, 1=负面
+ * crisis（ONNX 4 分类明确判定危机）：最高优先级，循环警报（pulse 动画）
  */
 function getSentimentDisplay(negativeProb: number, crisisLevel: string): SentimentDisplay {
-  // 危机等级高时优先显示危机
+  // 危机等级最高优先级：crisis 为 ONNX 明确判定的危机（循环警报级别）
+  if (crisisLevel === 'crisis') {
+    return {
+      label: '危机',
+      color: 'text-red-700 bg-red-100 border-red-300 dark:text-red-300 dark:bg-red-900/50 dark:border-red-700 animate-pulse',
+      Icon: Siren,
+      pulse: true,
+    };
+  }
+  // high：单次警报级别（关键词+ONNX 双重确认）
   if (crisisLevel === 'high') {
     return {
       label: '高风险',

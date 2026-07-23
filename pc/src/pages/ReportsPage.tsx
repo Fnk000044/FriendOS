@@ -6,6 +6,7 @@ import StatCard from '../components/reports/StatCard';
 import TaskChart from '../components/reports/TaskChart';
 import MoodChart from '../components/reports/MoodChart';
 import HabitChart from '../components/reports/HabitChart';
+import CorrelationChart from '../components/reports/CorrelationChart';
 import HealthRadar from '../components/emotion/HealthRadar';
 import EmotionTrend from '../components/emotion/EmotionTrend';
 import WeeklyReportCard from '../components/reports/WeeklyReportCard';
@@ -45,8 +46,12 @@ export default function ReportsPage() {
   };
 
   useEffect(() => {
+    // 默认范围：近 7 天（与 EmotionPage 一致），避免当天无情绪记录时图表全空白
     const today = format(new Date(), 'yyyy-MM-dd');
-    handleRangeChange(today, today);
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    const start = format(sevenDaysAgo, 'yyyy-MM-dd');
+    handleRangeChange(start, today);
   }, []);
 
   const trendIcon = aiReport?.highlights.trend === 'improving'
@@ -159,11 +164,55 @@ export default function ReportsPage() {
 
             {/* Charts */}
             {report && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <TaskChart data={report.chartData} />
-                <MoodChart data={report.chartData} />
-                <HabitChart data={report.chartData} />
-              </div>
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <TaskChart data={report.chartData} />
+                  <MoodChart data={report.chartData} />
+                  <HabitChart data={report.chartData} />
+                </div>
+
+                {/* 多维度综合分析 */}
+                <div className="mt-6">
+                  <h2 className="font-semibold text-text-primary mb-4 flex items-center gap-2">
+                    <Brain className="w-4 h-4 text-primary" />
+                    多维度综合分析
+                  </h2>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <CorrelationChart
+                      data={report.chartData}
+                      correlation={report.correlation.moodVsTask}
+                    />
+                    <div className="glass-card p-5">
+                      <h3 className="text-sm font-semibold text-text-primary mb-4">相关性总览</h3>
+                      <div className="space-y-3 text-sm">
+                        {[
+                          { label: '心情 ↔ 任务完成率', r: report.correlation.moodVsTask },
+                          { label: '心情 ↔ 习惯完成率', r: report.correlation.moodVsHabit },
+                          { label: '任务 ↔ 习惯', r: report.correlation.taskVsHabit },
+                        ].map(({ label, r }) => (
+                          <div key={label} className="flex items-center justify-between">
+                            <span className="text-text-secondary">{label}</span>
+                            <span
+                              className="font-mono text-xs px-2 py-0.5 rounded"
+                              style={{
+                                background: 'var(--bg-hover)',
+                                color: r === null ? 'var(--text-muted)' :
+                                  r >= 0 ? 'var(--color-success, #22C55E)' : 'var(--color-info, #3B82F6)',
+                              }}
+                            >
+                              {r === null ? '样本不足' : `${r >= 0 ? '+' : ''}${r.toFixed(2)}`}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-text-muted mt-4 leading-relaxed">
+                        相关性范围 -1 到 +1。正值表示两个维度同向变化（例如心情好时任务完成率也高），
+                        绝对值越大关联越强。需要至少 3 天同时具备两个维度数据才能计算。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>

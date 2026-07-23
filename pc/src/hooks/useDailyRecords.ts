@@ -8,7 +8,7 @@ export function useDailyRecords() {
         db.tasks.where('scheduledDate').equals(date).toArray(),
         db.diaries.where('date').equals(date).first(),
         db.habitLogs.where('date').equals(date).toArray(),
-        db.habits.where('archived').equals(0).toArray(),
+        db.habits.filter((h) => !h.archived).toArray(),
       ]);
 
       const tasksTotal = todayTasks.length;

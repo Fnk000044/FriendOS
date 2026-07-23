@@ -16,10 +16,23 @@ function groupTasks(tasks: Task[], t: (key: any) => string, lang: string): { lab
   const groups: { label: string; tasks: Task[] }[] = [];
   const today = getToday();
 
-  const overdue = tasks.filter((t) => t.status === 'pending' && t.scheduledDate < today);
+  // 组内排序：紧急 > 高 > 中 > 低，同优先级按截止时间升序，再按日期升序
+  const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 } as const;
+  const sortWithinGroup = (a: Task, b: Task) => {
+    if (a.status !== b.status) return a.status === 'pending' ? -1 : 1;
+    const diff = priorityOrder[a.priority] - priorityOrder[b.priority];
+    if (diff !== 0) return diff;
+    const aTime = a.dueTime || '99:99';
+    const bTime = b.dueTime || '99:99';
+    if (aTime !== bTime) return aTime.localeCompare(bTime);
+    return a.scheduledDate.localeCompare(b.scheduledDate);
+  };
+
+  const overdue = tasks.filter((t) => t.status === 'pending' && t.scheduledDate < today)
+    .sort(sortWithinGroup);
   if (overdue.length) groups.push({ label: t('task.overdue'), tasks: overdue });
 
-  const todays = tasks.filter((t) => t.scheduledDate === today);
+  const todays = tasks.filter((t) => t.scheduledDate === today).sort(sortWithinGroup);
   if (todays.length) groups.push({ label: t('task.today'), tasks: todays });
 
   const dateFormat = lang === 'zh-CN' ? 'M月d日' : 'MMM d';
@@ -31,11 +44,12 @@ function groupTasks(tasks: Task[], t: (key: any) => string, lang: string): { lab
       futureGroups[t.scheduledDate].push(t);
     }
     for (const [date, ts] of Object.entries(futureGroups).sort()) {
-      groups.push({ label: format(parseISO(date), dateFormat), tasks: ts });
+      // 组内必须再排一次，否则会回落到 createdAt 顺序
+      groups.push({ label: format(parseISO(date), dateFormat), tasks: ts.sort(sortWithinGroup) });
     }
   }
 
-  const completed = tasks.filter((t) => t.status === 'completed');
+  const completed = tasks.filter((t) => t.status === 'completed').sort(sortWithinGroup);
   if (completed.length) groups.push({ label: t('task.completed'), tasks: completed });
 
   return groups;
@@ -75,12 +89,16 @@ export default function TaskList() {
       list = list.filter((t) => t.status === 'pending' && t.scheduledDate < today);
     }
 
-    // Sort: pending first, then by priority, then by date
+    // Sort: pending first, then by priority (urgent→low), then by dueTime, then by date
     list.sort((a, b) => {
       if (a.status !== b.status) return a.status === 'pending' ? -1 : 1;
       const order = { urgent: 0, high: 1, medium: 2, low: 3 };
       const diff = order[a.priority] - order[b.priority];
       if (diff !== 0) return diff;
+      // 同优先级按截止时间升序（无截止时间排最后）
+      const aTime = a.dueTime || '99:99';
+      const bTime = b.dueTime || '99:99';
+      if (aTime !== bTime) return aTime.localeCompare(bTime);
       return a.scheduledDate.localeCompare(b.scheduledDate);
     });
 
