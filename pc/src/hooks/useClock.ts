@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
+import { shouldReduceMotion } from '../utils/reduceMotion';
 
 /**
  * 全局实时时钟 hook
  *
  * - 默认每秒刷新，精确到秒，与本地系统时间同步
- * - 当用户开启 prefers-reduced-motion 时降级到 60 秒刷新（减少重绘）
+ * - 当用户在外观设置开启"减少动效"时降级到 60 秒刷新（减少重绘）
  * - 多个组件共用本 hook 时各自持有独立 timer（开销极小），
  *   若未来需要全局唯一可改为 Zustand store，当前简单实现已足够
  *
@@ -14,11 +15,10 @@ export function useClock(): Date {
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
-    // 尊重减少动效偏好：降到分钟级刷新
-    const prefersReducedMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const interval = prefersReducedMotion ? 60000 : 1000;
+    // 尊重用户显式设置：应用内 reduceMotion 开关开启时降到分钟级刷新
+    // （历史上读 OS matchMedia，会无视应用开关；现统一由 shouldReduceMotion 决策）
+    const reduce = shouldReduceMotion();
+    const interval = reduce ? 60000 : 1000;
 
     const timer = setInterval(() => setNow(new Date()), interval);
     return () => clearInterval(timer);

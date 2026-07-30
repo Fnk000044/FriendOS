@@ -500,6 +500,41 @@ export async function seedDemoData() {
     });
     console.log('[Seed] 添加危机干预记录');
 
+    // 12. 添加 AI 对话历史（0.0.5+ 演示用）
+    const sessionId = `sess_${getToday()}`;
+    await db.conversations.add({
+      id: sessionId,
+      title: '最近的对话',
+      sessionId,
+      provider: 'fallback',
+      createdAt: new Date(getDateOffset(-3) + 'T22:00:00+08:00').toISOString(),
+      updatedAt: new Date(getDateOffset(-1) + 'T21:30:00+08:00').toISOString(),
+      messages: [
+        { role: 'assistant', content: '晚上好，今天辛苦了。想聊聊吗？', timestamp: Date.now() - 3 * 86400000 },
+        { role: 'user', content: '最近期末复习压力好大，感觉有点喘不过气。', timestamp: Date.now() - 3 * 86400000 + 60000 },
+        { role: 'assistant', content: '听出来你扛着不少东西，辛苦了。期末复习确实是一段高强度的日子。要不要试试 4-7-8 呼吸，两分钟就能让心跳慢下来？', timestamp: Date.now() - 3 * 86400000 + 120000 },
+        { role: 'user', content: '好的，我试试。', timestamp: Date.now() - 3 * 86400000 + 180000 },
+        { role: 'assistant', content: '嗯，慢慢来。做完可以告诉我感觉怎么样。', timestamp: Date.now() - 3 * 86400000 + 200000 },
+        { role: 'user', content: '做完呼吸感觉好一点了，谢谢。', timestamp: Date.now() - 1 * 86400000 },
+        { role: 'assistant', content: '听到你这么说我也安心。记得今晚早点休息，明天再继续。', timestamp: Date.now() - 1 * 86400000 + 60000 },
+      ],
+    });
+
+    // 对应对话情感记录（喂 RiskScoringEngine chat 通道）
+    await db.emotionRecords.add({
+      id: crypto.randomUUID(),
+      date: getDateOffset(-3),
+      source: 'chat',
+      sourceId: sessionId,
+      sentimentScore: -0.4,
+      emotions: { joy: 0.1, sadness: 0.5, anger: 0.1, fear: 0.3, surprise: 0, disgust: 0 },
+      riskLevel: 'medium',
+      keywords: ['压力', '喘不过气'],
+      analysis: '期末复习压力好大',
+      createdAt: new Date(getDateOffset(-3) + 'T22:05:00+08:00').toISOString(),
+    });
+    console.log('[Seed] 添加 AI 对话历史 + 对话情感记录');
+
     console.log('[Seed] ✅ 演示数据填充完成！');
     console.log('[Seed] 故事线：小明经历了"正常→压力→焦虑→危机→恢复"的完整心理变化');
     return { success: true };

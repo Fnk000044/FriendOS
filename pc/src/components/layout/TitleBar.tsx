@@ -3,11 +3,16 @@ import { Minus, Square, X, Sparkles } from 'lucide-react';
 
 export default function TitleBar() {
   const [isMaximized, setIsMaximized] = useState(false);
-  const isMac = window.electronAPI?.platform === 'darwin';
+  const [isMac, setIsMac] = useState(false);
 
   useEffect(() => {
-    window.electronAPI?.isMaximized().then(setIsMaximized);
-    const cleanup = window.electronAPI?.onMaximizeChange((maximized: boolean) => {
+    // 沙箱模式下 platform 走异步 IPC（preload 不再同步暴露 process.platform）
+    const api = window.electronAPI;
+    if (api?.getPlatform) {
+      api.getPlatform().then((p: string) => setIsMac(p === 'darwin'));
+    }
+    api?.isMaximized().then(setIsMaximized);
+    const cleanup = api?.onMaximizeChange((maximized: boolean) => {
       setIsMaximized(maximized);
     }) as unknown as (() => void) | undefined;
     return () => {

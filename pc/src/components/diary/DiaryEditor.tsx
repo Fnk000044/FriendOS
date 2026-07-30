@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Trash2, Sparkles } from 'lucide-react';
 import { db } from '../../db';
@@ -16,17 +15,24 @@ import type { SentimentResult, CloudAnalysisResult } from '../../hooks/useSentim
 import { useCrisisStore } from '../../stores/crisisStore';
 import GuidedJournal, { JOURNAL_TEMPLATES, type JournalTemplate, GuidedJournalWizard } from './GuidedJournal';
 import EmotionPicker from './EmotionPicker';
+import { useTypingTracker, useDateParam } from '../../hooks/useTypingTracker';
+import { useDiarySaveEffects } from '../../hooks/useDiarySaveEffects';
 
-// 打字行为追踪器 - 参考 StudentLife (2014)
-interface TypingSession {
-  startTime: number;
-  keyCount: number;
-  deleteCount: number;
-  pauseCount: number;
-  lastKeyTime: number;
-  totalChars: number;
-}
-
+/**
+ * DiaryEditor —— 日记编辑器
+ *
+ * 历史上单文件 541 行，承载：
+ *  - 编辑态（title/content/mood/weather/tags/emotions）
+ *  - 情感分析 debounce + UI
+ *  - 打字行为追踪
+ *  - 保存副作用链（emotionRecords + behaviorRecords + 健康画像 + 记忆扫描 + 危机触发）
+ *
+ * 现已抽出：
+ *  - 打字追踪 → useTypingTracker()
+ *  - 保存副作用 → useDiarySaveEffects().runDiarySaveEffects(...)
+ *  - ?date= 参数 → useDateParam()
+ * 本组件保留：编辑态管理 + 情感分析 debounce + UI 渲染 + 保存编排。
+ */
 export default function DiaryEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -38,10 +44,11 @@ export default function DiaryEditor() {
     [id],
   );
 
-  // 支持 ?date= 参数指定日期
-  const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
-  const dateParam = urlParams.get('date');
-  const [date, setDate] = useState(dateParam || format(new Date(), 'yyyy-MM-dd'));
+  const date = useDateParam();
+  const [dateState, setDateState] = useState(date);
+  // useDateParam 初始值是同步计算的，但若 hash 后续变化需要同步——这里简单用一次
+  useEffect(() => { setDateState(date); }, [date]);
+
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [mood, setMood] = useState<1 | 2 | 3 | 4 | 5>(3);
@@ -49,7 +56,6 @@ export default function DiaryEditor() {
   const [showEmotionPicker, setShowEmotionPicker] = useState(false);
   const [weather, setWeather] = useState('');
   const [tags, setTags] = useState<string[]>([]);
-  const [saving, setSaving] = useState(false);
   const [sentimentResult, setSentimentResult] = useState<SentimentResult | null>(null);
   const [cloudResult, setCloudResult] = useState<CloudAnalysisResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -59,63 +65,16 @@ export default function DiaryEditor() {
   const [wizardTemplate, setWizardTemplate] = useState<JournalTemplate | null>(null);
   const showCrisis = useCrisisStore((s) => s.show);
 
-  // 打字行为追踪
-  const typingSessionRef = useRef<TypingSession>({
-    startTime: Date.now(),
-    keyCount: 0,
-    deleteCount: 0,
-    pauseCount: 0,
-    lastKeyTime: Date.now(),
-    totalChars: 0,
-  });
+  const { typingSessionRef, handleKeyDown, updateTotalChars, calculateTypingMetrics } = useTypingTracker();
+  const { saving, setSaving, runDiarySaveEffects } = useDiarySaveEffects();
+
   // 跟踪 existingEntry 是否已填充到本地 state，避免 LiveQuery 新引用覆盖用户编辑
   const seededRef = useRef(false);
-  const PAUSE_THRESHOLD = 2000; // 2秒无输入视为停顿
 
-  // 追踪打字行为
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    const session = typingSessionRef.current;
-    const now = Date.now();
-
-    // 检测停顿（超过2秒无输入）
-    if (now - session.lastKeyTime > PAUSE_THRESHOLD && session.lastKeyTime > session.startTime) {
-      session.pauseCount++;
-    }
-
-    session.keyCount++;
-    session.lastKeyTime = now;
-
-    // 检测删除键
-    if (e.key === 'Backspace' || e.key === 'Delete') {
-      session.deleteCount++;
-    }
-  }, []);
-
-  // 计算打字行为指标
-  const calculateTypingMetrics = useCallback(() => {
-    const session = typingSessionRef.current;
-    const durationMinutes = (Date.now() - session.startTime) / 60000;
-
-    if (durationMinutes < 0.1 || session.keyCount < 10) {
-      return null; // 数据不足
-    }
-
-    const avgSpeed = Math.round(session.totalChars / durationMinutes);
-    const deleteRate = session.keyCount > 0 ? session.deleteCount / session.keyCount : 0;
-    const pauseRate = session.pauseCount / durationMinutes;
-
-    return {
-      avgSpeed,
-      deleteRate: Math.round(deleteRate * 100) / 100,
-      pauseRate: Math.round(pauseRate * 10) / 10,
-      sessionDuration: Math.round(durationMinutes * 10) / 10,
-    };
-  }, []);
-
+  // 仅在切换日记条目（id 变化）时填充，避免 LiveQuery 每次 tick 返回新引用覆盖用户编辑
   useEffect(() => {
-    // 仅在切换日记条目（id 变化）时填充，避免 LiveQuery 每次 tick 返回新引用覆盖用户编辑
     if (id !== undefined && !seededRef.current && existingEntry) {
-      setDate(existingEntry.date);
+      setDateState(existingEntry.date);
       setTitle(existingEntry.title || '');
       setContent(existingEntry.content);
       setMood(existingEntry.mood);
@@ -123,13 +82,9 @@ export default function DiaryEditor() {
       setTags(existingEntry.tags || []);
       seededRef.current = true;
     }
-    // id 变化时重置 seed 标记，允许新条目填充
-    return () => {
-      // 不在此重置 seededRef，由下方独立 effect 处理 id 切换
-    };
   }, [existingEntry, id]);
 
-  // 添加键盘事件监听
+  // 添加键盘事件监听（打字追踪）
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -223,116 +178,19 @@ export default function DiaryEditor() {
       if (id) {
         await updateEntry(id, { title, content, mood, weather, tags: mergedTags });
       } else {
-        await createEntry({ date, title, content, mood, weather, tags: mergedTags });
+        await createEntry({ date: dateState, title, content, mood, weather, tags: mergedTags });
       }
 
-      // 保存情感记录到数据库（仅在保存日记时写入，避免每 1.5s 重复写入）
-      if (sentimentResult) {
-        try {
-          // 计算社交分数（从日记文本中提取社交关键词）
-          let socialScore = 0;
-          try {
-            const socialResult = await window.electronAPI?.emotionAnalyzeDiary?.({
-              content, date, mood,
-            });
-            socialScore = socialResult?.socialScore ?? 0;
-          } catch {
-            // 社交分数计算失败不影响保存
-          }
-
-          await db.emotionRecords.put({
-            id: `diary-${id || date}`,
-            date: date,
-            source: 'diary',
-            sourceId: id,
-            sentimentScore: sentimentResult.score,
-            emotions: {
-              joy: sentimentResult.score > 0.5 ? sentimentResult.score : 0,
-              sadness: sentimentResult.score < 0.3 ? 1 - sentimentResult.score : 0,
-              anger: 0,
-              // fear：crisis（ONNX 明确判定）→ 1.0，high（关键词+ONNX 双重）→ 0.8
-              fear: sentimentResult.level === 'crisis' ? 1.0 : sentimentResult.level === 'high' ? 0.8 : 0,
-              surprise: 0,
-              disgust: 0,
-            },
-            socialScore,
-            // riskLevel 映射：SentimentResult.level='crisis'（UI 语义）→ riskLevel='critical'（数据/store 语义）
-            riskLevel: sentimentResult.level === 'crisis' ? 'critical'
-              : sentimentResult.level === 'high' ? 'high'
-              : sentimentResult.level === 'medium' ? 'medium' : 'low',
-            keywords: sentimentResult.keywords,
-            createdAt: new Date().toISOString(),
-          });
-        } catch (err) {
-          console.error('[DiaryEditor] Failed to save emotion record:', err);
-          toast.error(t('diary.save_emotion_fail'));
-        }
-      }
-
-      // 保存行为记录（无感采集）
-      try {
-        const existingBehavior = await db.behaviorRecords.where('date').equals(date).first();
-
-        // 计算打字行为指标
-        const typingMetrics = calculateTypingMetrics();
-
-        const behaviorData = {
-          id: existingBehavior?.id || crypto.randomUUID(),
-          date,
-          diaryWritten: true,
-          diaryWordCount: content.length,
-          moodRating: mood,
-          tasksCompleted: existingBehavior?.tasksCompleted || 0,
-          tasksTotal: existingBehavior?.tasksTotal || 0,
-          habitsChecked: existingBehavior?.habitsChecked || 0,
-          habitsTotal: existingBehavior?.habitsTotal || 0,
-          activeHours: existingBehavior?.activeHours || [new Date().getHours()],
-          chatMessages: existingBehavior?.chatMessages || 0,
-          // 打字行为数据（无感识别创新）
-          typingBehavior: typingMetrics || existingBehavior?.typingBehavior || null,
-          createdAt: existingBehavior?.createdAt || new Date().toISOString(),
-        };
-
-        if (existingBehavior) {
-          await db.behaviorRecords.update(existingBehavior.id, behaviorData);
-        } else {
-          await db.behaviorRecords.add(behaviorData);
-        }
-
-        // 调用行为分析引擎（如果可用）
-        if (typingMetrics && window.electronAPI?.behaviorAnalyzeDaily) {
-          try {
-            await window.electronAPI.behaviorAnalyzeDaily(behaviorData, {});
-          } catch (err) {
-            console.error('[DiaryEditor] Behavior analysis error:', err);
-          }
-        }
-      } catch (err) {
-        console.error('[DiaryEditor] Failed to save behavior record:', err);
-      }
-
-      // 生成健康画像（后台异步，不阻塞保存）
-      import('../../services/emotion/HealthProfileService').then(({ generateHealthProfile }) => {
-        generateHealthProfile().catch(err => {
-          console.error('[DiaryEditor] Failed to generate health profile:', err);
-        });
+      // 触发保存副作用链（emotionRecords / behaviorRecords / 健康画像 / 记忆扫描 / 危机触发）
+      await runDiarySaveEffects({
+        date: dateState,
+        content,
+        mood,
+        diaryId: id,
+        sentimentResult,
+        typingMetrics: calculateTypingMetrics(),
+        showCrisis,
       });
-
-      // 触发记忆候选扫描（后台异步，从日记中提取值得记住的内容）
-      // 仅在非危机内容时执行（危机内容已在 scanForCandidates 内部过滤）
-      import('../../services/memory/MemoryCandidateService').then(({ memoryCandidateService }) => {
-        memoryCandidateService.scanForCandidates().catch(err => {
-          console.error('[DiaryEditor] Memory scan failed:', err);
-        });
-      });
-
-      // 高风险/危机：立即触发危机干预（原 30s 延迟对真实危机有风险，改为立即）
-      // 文案柔和，避免打断保存流程后的情绪
-      // crisis（ONNX 明确判定）→ 'critical'（循环警报）；high（双重确认）→ 'high'（单次警报）
-      if (sentimentResult?.level === 'high' || sentimentResult?.level === 'crisis') {
-        const savedContent = content;
-        showCrisis(sentimentResult.level === 'crisis' ? 'critical' : 'high', 'diary', savedContent);
-      }
 
       // Navigate first, then update state (prevents state update on unmounted component)
       navigate('/diary');
@@ -360,8 +218,8 @@ export default function DiaryEditor() {
             <span className="text-text-muted sr-only">{t('diary.date_label')}</span>
             <input
               type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
+              value={dateState}
+              onChange={(e) => setDateState(e.target.value)}
               aria-label={t('diary.date_label')}
               className="text-sm px-3 py-1.5 rounded-btn border focus:outline-none focus:ring-2 focus:ring-primary/30"
               style={{ borderColor: 'var(--glass-border)' }}
@@ -462,7 +320,7 @@ export default function DiaryEditor() {
             const newContent = e.target.value;
             setContent(newContent);
             // 追踪打字字符数
-            typingSessionRef.current.totalChars = newContent.length;
+            updateTotalChars(newContent.length);
           }}
           placeholder={t('diary.content_placeholder')}
           aria-label={t('diary.content_placeholder')}

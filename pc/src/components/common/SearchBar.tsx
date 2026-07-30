@@ -1,4 +1,5 @@
 import { Search } from 'lucide-react';
+import { useLanguage } from '../../i18n/useLanguage';
 
 interface SearchBarProps {
   value: string;
@@ -6,15 +7,17 @@ interface SearchBarProps {
   placeholder?: string;
 }
 
-export default function SearchBar({ value, onChange, placeholder = '搜索...' }: SearchBarProps) {
+export default function SearchBar({ value, onChange, placeholder }: SearchBarProps) {
+  const { t } = useLanguage();
+  const ph = placeholder ?? t('common.search_placeholder');
   return (
     <div className="relative" role="search">
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" aria-hidden="true" />
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        aria-label={placeholder}
+        placeholder={ph}
+        aria-label={ph}
         className="w-full pl-9 pr-4 py-2 rounded-btn border text-sm
           placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
           transition-all"

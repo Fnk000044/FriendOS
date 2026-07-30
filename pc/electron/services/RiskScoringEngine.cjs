@@ -250,14 +250,15 @@ function calculateAssessmentScore(assessments) {
 /**
  * 计算聊天情感评分 (0-100, 越高越危险)
  * @param {Array} conversationSummaries - 近期聊天摘要
- * @returns {object} { score, factors }
+ * @returns {object} { score, factors, exclusionsHit }
  */
 function calculateChatScore(conversationSummaries) {
   if (!conversationSummaries || conversationSummaries.length === 0) {
-    return { score: 0, factors: [] };
+    return { score: 0, factors: [], exclusionsHit: [] };
   }
 
   const factors = [];
+  const exclusionsHit = [];
   let totalScore = 0;
 
   // 统一从 crisisKeywords.cjs 引用，避免与 SentimentService 词表不同步
@@ -269,12 +270,16 @@ function calculateChatScore(conversationSummaries) {
   for (const summary of conversationSummaries) {
     const state = summary.emotionalState || '';
 
-    // 检查危机关键词（排除常见误报）
-    const isExcluded = crisisExclusions.some(ex => state.includes(ex));
-    if (!isExcluded && crisisKeywords.some(k => state.includes(k))) {
-      totalScore += 40;
-      factors.push({ type: 'crisis_in_chat', weight: 40, description: '聊天中出现危机内容' });
-      break;
+    // 检查危机关键词（排除常见误报；被排除规则抑制的危机命中记入诊断，便于归因）
+    if (crisisKeywords.some(k => state.includes(k))) {
+      const matchedExclusions = crisisExclusions.filter(ex => state.includes(ex));
+      if (matchedExclusions.length > 0) {
+        matchedExclusions.forEach(rule => exclusionsHit.push({ source: 'chat', rule }));
+      } else {
+        totalScore += 40;
+        factors.push({ type: 'crisis_in_chat', weight: 40, description: '聊天中出现危机内容' });
+        break;
+      }
     }
 
     // 检查负面情感关键词
@@ -288,20 +293,21 @@ function calculateChatScore(conversationSummaries) {
     }
   }
 
-  return { score: Math.min(100, totalScore), factors };
+  return { score: Math.min(100, totalScore), factors, exclusionsHit };
 }
 
 /**
  * 计算日记情绪评分 (0-100, 越高越危险)
  * @param {Array} diaries - 近期日记
- * @returns {object} { score, factors }
+ * @returns {object} { score, factors, exclusionsHit }
  */
 function calculateDiaryScore(diaries) {
   if (!diaries || diaries.length === 0) {
-    return { score: 0, factors: [] };
+    return { score: 0, factors: [], exclusionsHit: [] };
   }
 
   const factors = [];
+  const exclusionsHit = [];
   let totalScore = 0;
 
   // 1. 平均心情评分 (1-5, 越低越危险)
@@ -326,12 +332,16 @@ function calculateDiaryScore(diaries) {
   for (const diary of diaries) {
     const content = diary.content || '';
 
-    // 检查危机关键词（排除常见误报）
-    const isExcluded = crisisExclusions.some(ex => content.includes(ex));
-    if (!isExcluded && crisisKeywords.some(k => content.includes(k))) {
-      totalScore += 40;
-      factors.push({ type: 'crisis_in_diary', weight: 40, description: '日记中出现危机内容' });
-      break;
+    // 检查危机关键词（排除常见误报；被排除规则抑制的危机命中记入诊断，便于归因）
+    if (crisisKeywords.some(k => content.includes(k))) {
+      const matchedExclusions = crisisExclusions.filter(ex => content.includes(ex));
+      if (matchedExclusions.length > 0) {
+        matchedExclusions.forEach(rule => exclusionsHit.push({ source: 'diary', rule }));
+      } else {
+        totalScore += 40;
+        factors.push({ type: 'crisis_in_diary', weight: 40, description: '日记中出现危机内容' });
+        break;
+      }
     }
 
     // 检查负面关键词
@@ -342,7 +352,7 @@ function calculateDiaryScore(diaries) {
     }
   }
 
-  return { score: Math.min(100, totalScore), factors };
+  return { score: Math.min(100, totalScore), factors, exclusionsHit };
 }
 
 // ── 主要导出函数 ──────────────────────────────────────────────
@@ -374,14 +384,7 @@ function calculateRiskScore(data) {
 
   const totalScore = Math.round(Math.min(100, Math.max(0, weightedScore)));
 
-  // 确定风险等级
-  let riskLevel = 'low';
-  if (totalScore >= 91) riskLevel = 'critical';
-  else if (totalScore >= 76) riskLevel = 'high';
-  else if (totalScore >= 51) riskLevel = 'medium';
-  else if (totalScore >= 26) riskLevel = 'medium_low';
-
-  // 收集所有因素
+  // 收集所有因素（提前计算，供临床升级逻辑使用）
   const allFactors = [
     ...emotionResult.factors,
     ...behaviorResult.factors,
@@ -389,6 +392,35 @@ function calculateRiskScore(data) {
     ...chatResult.factors,
     ...diaryResult.factors,
   ].sort((a, b) => b.weight - a.weight);
+
+  // ── 临床升级（safety net，参考 C-SSRS 急性风险判定）──────────────
+  // 触发条件（任一满足即 critical）:
+  //   1. totalScore >= 91（原始阈值，保留）
+  //   2. C-SSRS Q3/Q4/Q5 任一阳性（伴意图/计划/行为 → 临床急性风险）
+  //   3. totalScore >= 76（已达 high）且 >= 2 个危机信号源（多通道危机收敛）
+  const cssrs = (data.assessments || []).find(a => a.type === 'CSSRS');
+  const cssrsAcute = cssrs && (cssrs.scores || []).slice(2, 5).some(s => s >= 1);
+  const crisisFactorCount = allFactors.filter(f =>
+    ['cssrs_high_risk', 'crisis_in_chat', 'crisis_in_diary'].includes(f.type)
+  ).length;
+
+  // 升级触发原因（可归因诊断：记录哪条规则把等级推到 critical）
+  const escalationReasons = [];
+  if (totalScore >= 91) escalationReasons.push('score_threshold');
+  if (cssrsAcute) escalationReasons.push('cssrs_acute');
+  if (totalScore >= 76 && crisisFactorCount >= 2) escalationReasons.push('multi_channel_crisis');
+
+  // 确定风险等级
+  let riskLevel = 'low';
+  if (escalationReasons.length > 0) {
+    riskLevel = 'critical';
+  } else if (totalScore >= 76) {
+    riskLevel = 'high';
+  } else if (totalScore >= 51) {
+    riskLevel = 'medium';
+  } else if (totalScore >= 26) {
+    riskLevel = 'medium_low';
+  }
 
   // 生成摘要
   let summary = '当前心理状态良好';
@@ -414,6 +446,15 @@ function calculateRiskScore(data) {
       diary: { score: Math.round(diaryResult.score), weight: WEIGHTS.diary },
     },
     factors: allFactors.slice(0, 10), // 最多返回10个因素
+    // 可归因诊断：命中的排除规则（rule 为词表静态词条，非日记原文）与升级触发原因
+    diagnostics: {
+      exclusionsHit: [...chatResult.exclusionsHit, ...diaryResult.exclusionsHit],
+      escalation: {
+        escalated: riskLevel === 'critical',
+        reasons: escalationReasons,
+        crisisFactorCount,
+      },
+    },
     summary,
     timestamp: Date.now(),
   };

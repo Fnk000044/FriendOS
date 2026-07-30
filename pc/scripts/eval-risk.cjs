@@ -131,6 +131,33 @@ function main() {
   console.log('   建议补充真实危机干预热线语料提升评估代表性。');
   console.log('4. 历史 Qwen L3 语义判定层已移除，现仅 L1+L2 两层，');
   console.log('   对反讽/歌词等误报场景的识别能力下降，需关注 FP 变化。');
+
+  // 0.0.6：结果落盘到 pc/models/eval/，答辩有真实指标可引用
+  const evalDir = path.join(__dirname, '..', 'models', 'eval');
+  try {
+    fs.mkdirSync(evalDir, { recursive: true });
+  } catch (_) { /* ignore */ }
+  const report = {
+    evaluatedAt: new Date().toISOString(),
+    dataset: 'PsyDTCorpus + SoulChat2.0',
+    layer: 'keyword (L1) approximation',
+    sampleCount: samples.length,
+    crisisSupport: crisisSamples.length,
+    nonCrisisSupport: nonCrisisSamples.length,
+    metrics: { tp, fp, fn, tn, accuracy, precision, recall, f1, missRate },
+    notes: [
+      '标签为关键词弱标注，非临床专家标注，噪声 ±10%。',
+      '本脚本评估关键词层（L1）。完整 L1+L2 管道评估需在 Electron 主进程内跑 analyzeEnhanced。',
+      '漏报率（missRate）是临床红线，应尽量接近 0。',
+    ],
+  };
+  const outPath = path.join(evalDir, 'risk-keyword-eval.json');
+  try {
+    fs.writeFileSync(outPath, JSON.stringify(report, null, 2), 'utf-8');
+    console.log(`\n评估结果已落盘: ${outPath}`);
+  } catch (e) {
+    console.log(`\n结果落盘失败: ${e.message}`);
+  }
 }
 
 main();

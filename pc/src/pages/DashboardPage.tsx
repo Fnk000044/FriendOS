@@ -13,6 +13,8 @@ import LearningCheckin from '../components/dashboard/LearningCheckin';
 import WeeklyReview from '../components/dashboard/WeeklyReview';
 import EmotionOverview from '../components/dashboard/EmotionOverview';
 import InterventionRecommendations from '../components/dashboard/InterventionRecommendations';
+import BehaviorInsightCard from '../components/dashboard/BehaviorInsightCard';
+import RiskBanner from '../components/common/RiskBanner';
 
 export default function DashboardPage() {
   const { t, lang } = useLanguage();
@@ -62,6 +64,12 @@ export default function DashboardPage() {
       </div>
 
       <QuickStats />
+
+      {/* 主动风险预警横幅 + 行为洞察 */}
+      <div className="space-y-4">
+        <RiskBanner />
+        <BehaviorInsightCard />
+      </div>
 
       {/* 主内容区：严格两列网格，整齐对齐，所有卡片等高 */}
       <div className="grid gap-5 grid-cols-1 md:grid-cols-2 items-stretch">

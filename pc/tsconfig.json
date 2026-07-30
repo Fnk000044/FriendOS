@@ -12,6 +12,8 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "strict": true,
+    // noUnusedLocals/noUnusedParameters: 历史代码残留 87 处未使用变量/参数告警；
+    // 强制启用会阻塞构建，待后续单独清理后再开启
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,

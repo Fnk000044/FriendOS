@@ -6,6 +6,10 @@ export type TranslationKey =
   | 'nav.assistant' | 'nav.knowledge' | 'nav.resources' | 'nav.assessment'
   | 'nav.data_local'
   | 'nav.group_daily' | 'nav.group_analysis' | 'nav.group_tools' | 'nav.group_system'
+  | 'chat.offline_mode' | 'chat.cloud_mode' | 'chat.welcome' | 'chat.input_placeholder' | 'chat.disclaimer'
+  | 'chat.suggest_diary' | 'chat.suggest_breathing' | 'chat.suggest_assessment'
+  | 'chat.settings_title' | 'chat.settings_desc' | 'chat.provider' | 'chat.api_key' | 'chat.api_key_placeholder'
+  | 'chat.test_connection' | 'chat.testing' | 'chat.test_success' | 'chat.test_fail' | 'chat.no_key' | 'chat.save_key'
   | 'sync.title' | 'sync.description' | 'sync.scan_to_connect'
   | 'sync.server_status_running' | 'sync.server_status_stopped'
   | 'sync.start_server' | 'sync.stop_server'
@@ -84,6 +88,9 @@ export type TranslationKey =
   | 'common.backup_success' | 'common.backup_fail' | 'common.import_success' | 'common.import_fail' | 'common.delete_confirm'
   | 'common.save_fail' | 'common.delete_fail' | 'common.copy_fail'
   | 'common.empty_title' | 'common.empty_desc' | 'common.load_more'
+  | 'common.clickable_card' | 'common.tag_input' | 'common.add_tag' | 'common.remove_tag' | 'common.tag_placeholder'
+  | 'common.search_placeholder' | 'common.feedback_thanks' | 'common.feedback_accurate' | 'common.feedback_inaccurate'
+  | 'common.feedback_ask' | 'common.loading_label'
   | 'task.title_label' | 'task.description_label' | 'task.priority_label' | 'task.scheduled_date_label' | 'task.tags_label'
   | 'task.status_filter' | 'task.priority_filter'
   | 'task.rollover_notice' | 'task.more' | 'task.rollover_banner'
@@ -144,6 +151,9 @@ export type TranslationKey =
   | 'risk.dim_emotion' | 'risk.dim_behavior' | 'risk.dim_assessment' | 'risk.dim_chat' | 'risk.dim_diary'
   | 'risk.early_warning' | 'risk.early_warning_subtitle' | 'risk.days_to_critical' | 'risk.no_warning' | 'risk.no_warning_desc'
   | 'risk.warning_green' | 'risk.warning_yellow' | 'risk.warning_orange' | 'risk.warning_red' | 'risk.anomaly_score' | 'risk.refresh' | 'risk.refreshing' | 'risk.partial_data'
+  | 'risk.trend_title' | 'risk.risk_index' | 'risk.level_low' | 'risk.level_medium' | 'risk.level_high'
+  | 'risk.status_high' | 'risk.status_attention' | 'risk.status_normal' | 'risk.status_good'
+  | 'risk.seek_help_title' | 'risk.hotline_label' | 'risk.partial_loading_hint'
   | 'appearance.title' | 'appearance.subtitle' | 'appearance.accent' | 'appearance.accent_desc' | 'appearance.font_scale' | 'appearance.font_scale_desc'
   | 'appearance.reduce_motion' | 'appearance.reduce_motion_desc'
   | 'appearance.preview' | 'appearance.font_small' | 'appearance.font_normal' | 'appearance.font_large' | 'appearance.font_xlarge'
@@ -207,6 +217,25 @@ export const translations: Translations = {
     'assistant.suggest_status': '看看我的状态',
     'assistant.suggest_help': '你能做什么',
     'assistant.clear': '清除对话',
+    'chat.offline_mode': '离线陪伴模式',
+    'chat.cloud_mode': '云对话已连接',
+    'chat.welcome': '和知己聊聊吧，我在听。',
+    'chat.input_placeholder': '说点什么…',
+    'chat.disclaimer': '知己是陪伴助手，不能替代专业医疗。如有危机请拨打 400-161-9995。',
+    'chat.suggest_diary': '写日记',
+    'chat.suggest_breathing': '做呼吸',
+    'chat.suggest_assessment': '做量表',
+    'chat.settings_title': 'AI 对话设置',
+    'chat.settings_desc': '配置后启用云对话，未配置时使用离线陪伴模式，数据仅存本地。',
+    'chat.provider': '服务商',
+    'chat.api_key': 'API Key',
+    'chat.api_key_placeholder': '粘贴 API Key（加密存储）',
+    'chat.test_connection': '测试连接',
+    'chat.testing': '测试中…',
+    'chat.test_success': '连接成功，延迟 {latency}ms，模型 {model}',
+    'chat.test_fail': '连接失败：{error}',
+    'chat.no_key': '未配置',
+    'chat.save_key': '保存',
 
     'header.quick_capture': 'Ctrl+K 快速记录',
 
@@ -514,6 +543,17 @@ export const translations: Translations = {
     'common.copy_fail': '复制失败',
     'common.empty_title': '暂无数据',
     'common.empty_desc': '还没有内容，快去创建一条吧',
+    'common.clickable_card': '可点击卡片',
+    'common.tag_input': '标签输入',
+    'common.add_tag': '添加标签',
+    'common.remove_tag': '移除标签 {name}',
+    'common.tag_placeholder': '输入标签后回车',
+    'common.search_placeholder': '搜索...',
+    'common.feedback_thanks': '感谢反馈',
+    'common.feedback_accurate': '准确',
+    'common.feedback_inaccurate': '不准',
+    'common.feedback_ask': '分析准确吗？',
+    'common.loading_label': '加载中',
     'quick_capture.type_label': '分类:',
     'mood.1': '很差',
     'mood.2': '不好',
@@ -693,6 +733,18 @@ export const translations: Translations = {
     'risk.refresh': '刷新',
     'risk.refreshing': '分析中',
     'risk.partial_data': '数据不足，仅显示部分信号',
+    'risk.trend_title': '风险趋势',
+    'risk.risk_index': '风险指数',
+    'risk.level_low': '低风险',
+    'risk.level_medium': '中风险',
+    'risk.level_high': '高风险',
+    'risk.status_high': '高风险',
+    'risk.status_attention': '需关注',
+    'risk.status_normal': '正常',
+    'risk.status_good': '良好',
+    'risk.seek_help_title': '建议立即寻求专业帮助',
+    'risk.hotline_label': '24 小时心理援助热线',
+    'risk.partial_loading_hint': '部分信号源加载中，以下为已可用数据。可点击下方重试获取完整分析。',
     'appearance.title': '外观',
     'appearance.subtitle': '个性化你的视觉体验',
     'appearance.accent': '强调色',
@@ -802,6 +854,25 @@ export const translations: Translations = {
     'assistant.suggest_status': 'Check my status',
     'assistant.suggest_help': 'What can you do',
     'assistant.clear': 'Clear chat',
+    'chat.offline_mode': 'Offline companion mode',
+    'chat.cloud_mode': 'Cloud chat connected',
+    'chat.welcome': 'Talk to ZhiJi, I am listening.',
+    'chat.input_placeholder': 'Say something…',
+    'chat.disclaimer': 'ZhiJi is a companion, not a substitute for professional care. In crisis call 400-161-9995.',
+    'chat.suggest_diary': 'Write diary',
+    'chat.suggest_breathing': 'Breathing',
+    'chat.suggest_assessment': 'Assessment',
+    'chat.settings_title': 'AI Chat Settings',
+    'chat.settings_desc': 'Configure to enable cloud chat. Without config, offline companion mode is used, data stays local.',
+    'chat.provider': 'Provider',
+    'chat.api_key': 'API Key',
+    'chat.api_key_placeholder': 'Paste API Key (encrypted)',
+    'chat.test_connection': 'Test connection',
+    'chat.testing': 'Testing…',
+    'chat.test_success': 'Connected, latency {latency}ms, model {model}',
+    'chat.test_fail': 'Failed: {error}',
+    'chat.no_key': 'Not configured',
+    'chat.save_key': 'Save',
 
     'header.quick_capture': 'Ctrl+K Quick Capture',
 
@@ -1110,6 +1181,17 @@ export const translations: Translations = {
     'common.copy_fail': 'Copy failed',
     'common.empty_title': 'No data yet',
     'common.empty_desc': 'No content yet, create your first entry',
+    'common.clickable_card': 'Clickable card',
+    'common.tag_input': 'Tag input',
+    'common.add_tag': 'Add tag',
+    'common.remove_tag': 'Remove tag {name}',
+    'common.tag_placeholder': 'Type a tag and press Enter',
+    'common.search_placeholder': 'Search...',
+    'common.feedback_thanks': 'Thanks for feedback',
+    'common.feedback_accurate': 'Accurate',
+    'common.feedback_inaccurate': 'Inaccurate',
+    'common.feedback_ask': 'Is the analysis accurate?',
+    'common.loading_label': 'Loading',
     'quick_capture.type_label': 'Type:',
     'mood.1': 'Awful',
     'mood.2': 'Bad',
@@ -1289,6 +1371,18 @@ export const translations: Translations = {
     'risk.refresh': 'Refresh',
     'risk.refreshing': 'Analyzing',
     'risk.partial_data': 'Insufficient data, showing partial signals',
+    'risk.trend_title': 'Risk Trend',
+    'risk.risk_index': 'Risk Index',
+    'risk.level_low': 'Low risk',
+    'risk.level_medium': 'Medium risk',
+    'risk.level_high': 'High risk',
+    'risk.status_high': 'High risk',
+    'risk.status_attention': 'Needs attention',
+    'risk.status_normal': 'Normal',
+    'risk.status_good': 'Good',
+    'risk.seek_help_title': 'Please seek professional help immediately',
+    'risk.hotline_label': '24-hour psychological helpline',
+    'risk.partial_loading_hint': 'Some signal sources are still loading. Showing available data. Click retry for full analysis.',
     'appearance.title': 'Appearance',
     'appearance.subtitle': 'Personalize your visual experience',
     'appearance.accent': 'Accent Color',

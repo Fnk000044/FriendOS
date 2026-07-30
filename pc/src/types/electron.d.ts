@@ -95,9 +95,65 @@ interface CloudAnalysisResult {
   timestamp: number;
 }
 
+// ── AI 对话陪伴类型 ──────────────────────────────────────────
+interface ChatChunk {
+  requestId: string;
+  delta: string;
+}
+
+interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp?: number;
+}
+
+interface ChatContext {
+  avgMood7d?: number;
+  moodTrend?: 'improving' | 'stable' | 'declining';
+  riskScore?: number;
+  riskLevel?: string;
+  lastAssessment?: string;
+  termPhase?: string;
+  stressLevel?: number;
+  lateNightHint?: string;
+  lastSummary?: string;
+  bestIntervention?: string;
+}
+
+interface ChatSendResult {
+  ok: boolean;
+  fullText?: string;
+  provider?: string;
+  model?: string;
+  error?: string;
+  code?: 'LLM_UNAVAILABLE' | 'LLM_TIMEOUT' | 'LLM_UNAUTHORIZED' | 'LLM_HTTP_ERROR' | 'LLM_BAD_REQUEST' | 'LLM_UNKNOWN';
+}
+
+interface ChatProviderConfig {
+  provider: string;
+  providerName: string;
+  model: string;
+  hasKey: boolean;
+  availableProviders: Array<{ key: string; name: string }>;
+}
+
+interface ChatFallbackResult {
+  text: string;
+  branch: string;
+  isCrisis: boolean;
+}
+
+interface ChatGreetingResult {
+  text: string;
+  branch: string;
+}
+
 interface ElectronAPI {
-  platform: string;
+  // 沙箱模式下 platform 走异步 IPC 缓存；isElectron 仍是常量
+  // 旧的同步 platform 属性保留（首帧可能为 null），新增 getPlatform() 异步入口
+  platform: string | null;
   isElectron: boolean;
+  getPlatform: () => Promise<string>;
   onSetLanguage: (callback: (lang: string) => void) => void;
   onExportData: (callback: () => void) => void;
   onImportData: (callback: () => void) => void;
@@ -186,6 +242,29 @@ interface ElectronAPI {
     conversationSummaries: any[];
     diaries: any[];
   }) => Promise<any>;
+
+  // AI 对话陪伴（云 LLM 走主进程代理，渲染层不持有 key）
+  chatSend: (params: {
+    requestId: string;
+    messages: ChatMessage[];
+    context?: ChatContext;
+    systemPrompt?: string;
+    providerOverride?: string;
+  }) => Promise<ChatSendResult>;
+  chatTestConnection: (providerOverride?: string) => Promise<{ success: boolean; latency?: number; model?: string; provider?: string; error?: string }>;
+  chatGetProviderConfig: () => Promise<ChatProviderConfig>;
+  chatFallback: (params: { text: string; emotionLabel?: string }) => Promise<ChatFallbackResult>;
+  chatGreeting: (params: { silentDays?: number; riskRising?: boolean }) => Promise<ChatGreetingResult>;
+  onChatChunk: (callback: (chunk: ChatChunk) => void) => () => void;
+  removeChatChunk: () => void;
+
+  // 主动风险预警
+  riskNotify: (params: {
+    level: 'attention' | 'reminder' | 'warning' | 'crisis';
+    title: string;
+    body: string;
+    action?: string;
+  }) => Promise<{ success: boolean; error?: string }>;
 }
 
 interface Window {

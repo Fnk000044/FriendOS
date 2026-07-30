@@ -1,7 +1,20 @@
 import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 
 // Mock IndexedDB for Dexie
 import 'fake-indexeddb/auto';
+
+// jsdom 无 navigator.clipboard，提供最小 stub 避免 HotlineCard 等组件复制路径抛错
+if (!('clipboard' in navigator)) {
+  Object.defineProperty(navigator, 'clipboard', {
+    value: { writeText: vi.fn().mockResolvedValue(undefined), readText: vi.fn().mockResolvedValue('') },
+    configurable: true,
+  });
+}
+// document.execCommand 在 jsdom 中缺失，HotlineCard fallback 路径会兜底捕获
+if (typeof (document as any).execCommand !== 'function') {
+  (document as any).execCommand = vi.fn(() => false);
+}
 
 // Mock Electron API
 (window as any).electronAPI = {
@@ -58,4 +71,13 @@ import 'fake-indexeddb/auto';
   sentimentCloudAnalyze: vi.fn().mockResolvedValue(null),
   sentimentSetApiKey: vi.fn().mockResolvedValue({ success: true }),
   openDataFolder: vi.fn(),
+  chatSend: vi.fn().mockResolvedValue({ ok: false, code: 'LLM_UNAVAILABLE', error: 'no key' }),
+  chatTestConnection: vi.fn().mockResolvedValue({ success: false, error: 'no key' }),
+  chatGetProviderConfig: vi.fn().mockResolvedValue({ provider: 'qwen', providerName: '通义千问', model: 'qwen-plus', hasKey: false, availableProviders: [{ key: 'qwen', name: '通义千问' }] }),
+  chatFallback: vi.fn().mockResolvedValue({ text: '我在听，能再说清楚一点吗？', branch: 'neutral', isCrisis: false }),
+  chatGreeting: vi.fn().mockResolvedValue({ text: '我在呢，想聊聊吗？', branch: 'greeting' }),
+  onChatChunk: vi.fn().mockReturnValue(() => {}),
+  removeChatChunk: vi.fn(),
+  riskNotify: vi.fn().mockResolvedValue({ success: true }),
+  riskCalculate: vi.fn().mockResolvedValue({ totalScore: 30, riskLevel: 'medium_low', diagnostics: {} }),
 };

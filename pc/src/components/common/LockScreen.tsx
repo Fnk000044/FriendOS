@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Lock, Eye, EyeOff, Fingerprint } from 'lucide-react';
 import { useAppLockStore } from '../../stores/appLockStore';
 import { useLanguage } from '../../i18n/useLanguage';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import Button from './Button';
 
 export default function LockScreen() {
@@ -14,6 +15,10 @@ export default function LockScreen() {
   const [shake, setShake] = useState(false);
   const [helloVerifying, setHelloVerifying] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // 焦点陷阱：锁屏期间焦点不逃逸到背后页面
+  useFocusTrap(containerRef, locked);
 
   // 是否启用 Windows Hello 解锁（从 localStorage 读取偏好）
   const helloEnabled = typeof localStorage !== 'undefined' && localStorage.getItem('friendos_hello_unlock') === 'true';
@@ -65,6 +70,7 @@ export default function LockScreen() {
   return (
     <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center">
       <div
+        ref={containerRef}
         className={`glass-card glass-glow rounded-2xl p-8 w-full max-w-sm shadow-2xl ${
           shake ? 'animate-shake' : ''
         }`}

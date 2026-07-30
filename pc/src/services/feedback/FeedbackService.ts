@@ -32,9 +32,10 @@ export async function logFeedback(payload: FeedbackPayload): Promise<void> {
       id: crypto.randomUUID(),
       type: payload.type,
       predicted: payload.predicted || '',
-      feedback: payload.feedback || '',
+      feedback: payload.accurate,
       accurate: payload.accurate,
       refId: payload.refId || '',
+      createdAt: new Date().toISOString(),
       timestamp: Date.now(),
     });
   } catch (err) {
@@ -53,7 +54,7 @@ export async function getAccuracyStats(type: FeedbackType): Promise<{
 }> {
   try {
     const all = await db.feedbackLogs.where('type').equals(type).toArray();
-    const accurate = all.filter(f => f.accurate === 'accurate').length;
+    const accurate = all.filter(f => f.feedback === 'accurate').length;
     const inaccurate = all.length - accurate;
     return {
       total: all.length,

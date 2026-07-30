@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { shouldReduceMotion } from '../../utils/reduceMotion';
 
 interface AnimatedNumberProps {
   value: number;
@@ -26,9 +27,9 @@ export default function AnimatedNumber({
     // 如果值没有变化，不执行动画
     if (startValueRef.current === value) return;
 
-    // 尊重 prefers-reduced-motion：直接跳到终值
-    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) {
+    // 尊重用户显式设置：应用内 reduceMotion 开关开启时直接跳到终值
+    // （历史上读 OS matchMedia，会无视应用开关；现统一由 shouldReduceMotion 决策）
+    if (shouldReduceMotion()) {
       startValueRef.current = value;
       setDisplayValue(value);
       return;

@@ -181,6 +181,10 @@ async function analyzeWithONNX(text) {
 }
 
 // ── 第3层：Qwen3 语义判定 ───────────────────────────────────────
+// 注意（0.0.5）：此函数依赖 localModelCompleteFn，而 main.cjs 已不再注入该函数，
+// 因此运行时永远返回 null，analyzeEnhanced 自动降级为 L1+L2。
+// 对话式 AI 陪伴已迁移到独立的 ChatLLMService.cjs（主进程代理云 LLM）。
+// 本函数保留仅为历史代码兼容，新代码请勿引用，未来清理时可安全移除。
 async function qwenAnalyze(text, context = {}) {
   if (!localModelCompleteFn) return null;
 
@@ -369,6 +373,10 @@ async function analyze(text) {
 // ── LLM 语义确认（原 cloudAnalyze，L3 Qwen 层已移除）──────────
 // 重命名：semanticAnalyze 更准确，cloudAnalyze 保留为向后兼容别名
 // L3 已废，返回 null 让调用方走 ONNX/关键词兜底，不再返回"本地模型未加载"误导提示
+//
+// 注意（0.0.5）：对话式 AI 陪伴已迁移到独立的 ChatLLMService.cjs（主进程代理云 LLM）。
+// 此处的 semanticAnalyze/cloudAnalyze 仅为历史 IPC 通道的兼容空壳，不再用于任何业务路径。
+// 新代码请勿引用，未来清理时可安全移除。
 async function semanticAnalyze(text, context = {}) {
   return null;
 }

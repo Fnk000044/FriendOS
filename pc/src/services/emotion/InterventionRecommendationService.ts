@@ -1,9 +1,14 @@
 /**
  * Intervention Recommendation Service
  * 基于用户健康画像，智能推荐最适合的治疗练习
+ *
+ * 0.0.6 增强：加入"历史有效率"权重
+ *   推荐分 = 规则基础分 × 0.6 + 历史有效率 × 0.4
+ *   数据不足（< 3 次）时退回纯规则
  */
 
 import type { HealthProfile } from '../../db/models';
+import { getBestIntervention } from '../therapy/EffectivenessService';
 
 export interface Recommendation {
   id: string;
@@ -18,8 +23,58 @@ export interface Recommendation {
 
 /**
  * 根据健康画像生成个性化干预推荐
+ *
+ * @param profile 健康画像
+ * @param useEffectiveness 是否融合历史有效率权重（默认 true，<3 次记录退回纯规则）
  */
-export function getRecommendations(profile: HealthProfile | null): Recommendation[] {
+export async function getRecommendations(
+  profile: HealthProfile | null,
+  useEffectiveness = true
+): Promise<Recommendation[]> {
+  const baseRecs = getBaseRecommendations(profile);
+
+  if (!useEffectiveness) return baseRecs;
+
+  // 融合历史有效率权重
+  const best = await getBestIntervention();
+  if (!best) return baseRecs; // 数据不足退回纯规则
+
+  // 规则基础分 × 0.6 + 历史有效率 × 0.4
+  const maxBase = Math.max(...baseRecs.map(r => r.priority), 1);
+  return baseRecs.map(rec => {
+    const isBestType = bestTypeMatch(rec.type, best.type);
+    const effectivenessScore = isBestType ? best.effectivenessRate : (best.effectivenessRate * 0.5);
+    const weightedPriority = round2(
+      (rec.priority / maxBase) * 6 + effectivenessScore * 4
+    );
+    return {
+      ...rec,
+      priority: weightedPriority,
+      reason: isBestType
+        ? `${rec.reason}（你过去体验效果最好，有效率 ${Math.round(best.effectivenessRate * 100)}%）`
+        : rec.reason,
+    };
+  }).sort((a, b) => b.priority - a.priority).slice(0, 4);
+}
+
+/**
+ * 推荐类型与统计类型的映射
+ */
+function bestTypeMatch(recType: Recommendation['type'], statType: string): boolean {
+  if (recType === 'breathing' && statType === 'breathing') return true;
+  if (recType === 'mindfulness' && statType === 'mindfulness') return true;
+  if (recType === 'thoughtRecord' && statType === 'thought_record') return true;
+  return false;
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+/**
+ * 纯规则推荐（原 getRecommendations 逻辑）
+ */
+function getBaseRecommendations(profile: HealthProfile | null): Recommendation[] {
   if (!profile) return getDefaultRecommendations();
 
   const recs: Recommendation[] = [];
@@ -109,7 +164,7 @@ export function getRecommendations(profile: HealthProfile | null): Recommendatio
     route: '/therapy?exercise=thought_record',
   });
 
-  return recs.sort((a, b) => b.priority - a.priority).slice(0, 4);
+  return recs.sort((a, b) => b.priority - a.priority);
 }
 
 /**

@@ -13,9 +13,8 @@ export default function AppLayout() {
   // 激活主题 store（初始化时自动 applyTheme + 监听系统变化）
   useThemeStore((s) => s.resolved);
   // 激活外观 store（初始化时自动 applyAppearance + 订阅变化触发重渲染）
-  useAppearanceStore((s) => ({
-    accent: s.accent, fontScale: s.fontScale, reduceMotion: s.reduceMotion,
-  }));
+  // 订阅 reduceMotion，开启时跳过页面切换入场动画类，避免重挂载造成的瞬时闪烁
+  const reduceMotion = useAppearanceStore((s) => s.reduceMotion);
 
   const sidebarMargin = sidebarOpen
     ? (collapsed ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width)')
@@ -47,7 +46,7 @@ export default function AppLayout() {
         <Header />
         <div className="flex" style={{ height: 'calc(100vh - 32px - var(--header-height) - 28px)' }}>
           <main className="flex-1 px-4 md:px-7 py-6 max-w-7xl mx-auto min-w-0 overflow-y-auto" role="main" aria-label="主内容区">
-            <div key={location.pathname} className="page-transition-enter h-full">
+            <div key={location.pathname} className={reduceMotion ? 'h-full' : 'page-transition-enter h-full'}>
               <Outlet />
             </div>
           </main>

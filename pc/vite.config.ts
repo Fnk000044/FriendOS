@@ -14,6 +14,12 @@ export default defineConfig({
     port: 5173,
     open: false,
   },
+  // esbuild：生产构建 drop console.log/debugger（保留 error/warn 便于排查）
+  // 14 处 console.log 残留主要在 seedDemoData 调试路径，生产无意义且泄漏细节
+  esbuild: {
+    drop: process.env.NODE_ENV === 'production' ? ['debugger'] : [],
+    pure: process.env.NODE_ENV === 'production' ? ['console.log', 'console.debug'] : [],
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,

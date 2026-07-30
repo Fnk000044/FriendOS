@@ -558,6 +558,14 @@ function calculateVolatility(moodScores) {
 
 /**
  * Calculate risk level from multiple factors
+ *
+ * 职责边界（0.0.6 统一口径）：
+ * - RiskScoringEngine.cjs 是综合风险评分的权威来源（五通道加权 0-100 + 临床升级）。
+ * - 本函数只做情绪维度的快速分档，供 EmotionAnalysisEngine 在没有完整五通道数据时
+ *   给出一个近似情绪风险等级，不用于最终风险判定。
+ * - EarlyWarningService 做趋势预测（距临界点天数），不做当前评分。
+ * - 三者口径以 RiskScoringEngine 为准；若需最终风险分，请调 risk:calculate IPC。
+ *
  * @param {object} factors
  * @returns {string} Risk level
  */

@@ -64,7 +64,7 @@ export default function EarlyWarningCard() {
       type: 'early_warning',
       predicted: result ? `level=${result.level}, anomaly=${Math.round(result.anomalyScore)}, signals=${result.signals.length}` : '',
       accurate,
-      refId: result ? String(result.generatedAt || Date.now()) : '',
+      refId: result ? String(Date.now()) : '',
     });
   };
 

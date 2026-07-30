@@ -21,10 +21,15 @@ export default function HotlineCard({ name, number, description }: HotlineCardPr
       textArea.value = number;
       document.body.appendChild(textArea);
       textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      try {
+        document.execCommand('copy');
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        // execCommand 在 jsdom / 部分浏览器中不可用；静默降级，避免抛错
+      } finally {
+        document.body.removeChild(textArea);
+      }
     }
   };
 

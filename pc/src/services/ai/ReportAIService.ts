@@ -205,11 +205,115 @@ async function gatherReportData(startDate: string, endDate: string): Promise<Rep
 }
 
 /**
- * 主入口：基于规则引擎生成报告
+ * 主入口：优先用云 LLM 生成报告，不可用时降级规则引擎。
+ *
+ * 0.0.6 改进：
+ * - 若用户配置了 chat LLM（通义千问/DeepSeek），用 LLM 生成"AI 解读"段落，method='ai'。
+ * - 未配置/调用失败 → 降级到 generateWithRules，method='rule'。
+ * - 无论哪种，报告底部标注生成方式（诚实透明）。
  */
 export async function generateAIReport(startDate: string, endDate: string): Promise<AIReport> {
   const reportData = await gatherReportData(startDate, endDate);
-  return generateWithRules(reportData);
+
+  // 缓存命中：同周期报告直接复用
+  const cacheKey = `${startDate}_${endDate}`;
+  try {
+    const cached = await db.aiReportCache.get(cacheKey);
+    if (cached?.report) {
+      return cached.report as AIReport;
+    }
+  } catch (err) {
+    console.warn('[ReportAIService] Cache read failed, will regenerate:', err);
+  }
+
+  // 尝试用 LLM 生成
+  let report: AIReport;
+  try {
+    report = await generateWithLLM(reportData);
+  } catch (err) {
+    console.warn('[ReportAIService] LLM generation failed, falling back to rules:', err);
+    report = generateWithRules(reportData);
+  }
+
+  // 写缓存
+  try {
+    await db.aiReportCache.put({
+      id: cacheKey,
+      period: report.period,
+      report,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.warn('[ReportAIService] Cache write failed:', err);
+  }
+
+  return report;
+}
+
+/**
+ * 用云 LLM 生成报告解读
+ * 输入统计数据 JSON，要求 3-5 句自然语言总结。
+ * 走主进程代理（chat:send），不持有 key。
+ */
+async function generateWithLLM(data: ReportData): Promise<AIReport> {
+  const API = typeof window !== 'undefined' ? window.electronAPI : undefined;
+  if (!API) throw new Error('electronAPI unavailable');
+
+  // 检查是否有配置 LLM
+  const config = await API.chatGetProviderConfig();
+  if (!config.hasKey) throw new Error('LLM not configured');
+
+  const statsJSON = JSON.stringify({
+    period: data.periodLabel,
+    avgMood: Number(data.avgMood.toFixed(2)),
+    diaryDays: data.diaryDays,
+    totalDays: data.totalDays,
+    highRiskCount: data.highRiskCount,
+    trend: data.trend,
+    taskAvgRate: Number(data.taskAvgRate.toFixed(2)),
+    lateNightCount: data.lateNightCount,
+    bestDay: data.bestDay,
+    worstDay: data.worstDay,
+  });
+
+  const systemPrompt = `你是心理健康报告分析助手。根据用户提供的统计数据 JSON，生成一份简洁的中文健康报告。
+要求：
+- summary：3-5 句自然语言总结，先说整体状态，再点出关键发现，语气温暖不评判。
+- insights：2-3 条洞察，基于数据具体说，不要套话。
+- suggestions：2-3 条建议，可执行、具体。
+- 只返回 JSON：{"summary":"...","insights":["..."],"suggestions":["..."]}
+- 不要包含 markdown 代码块标记`;
+
+  const requestId = `report_${Date.now()}`;
+  const result = await API.chatSend({
+    requestId,
+    messages: [{ role: 'user', content: `请基于以下数据生成报告：\n${statsJSON}` }],
+    systemPrompt,
+  });
+
+  if (!result.ok || !result.fullText) {
+    throw new Error(result.error || 'LLM generation failed');
+  }
+
+  // 提取 JSON
+  const jsonMatch = result.fullText.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('LLM response is not JSON');
+
+  let parsed: { summary?: string; insights?: string[]; suggestions?: string[] };
+  try {
+    parsed = JSON.parse(jsonMatch[0]);
+  } catch {
+    throw new Error('LLM JSON parse failed');
+  }
+
+  return {
+    period: `${data.startDate} ~ ${data.endDate}`,
+    summary: parsed.summary || '',
+    insights: parsed.insights || [],
+    suggestions: parsed.suggestions || [],
+    highlights: { bestDay: data.bestDay, worstDay: data.worstDay, trend: data.trend },
+    method: 'ai',
+  };
 }
 
 /**
@@ -225,39 +329,12 @@ export async function generateAIReportStream(
   endDate: string,
   onSummaryChunk?: (chunk: string) => void
 ): Promise<AIReport> {
-  const reportData = await gatherReportData(startDate, endDate);
-
-  // 缓存命中：同周期报告直接复用
-  const cacheKey = `${startDate}_${endDate}`;
-  try {
-    const cached = await db.aiReportCache.get(cacheKey);
-    if (cached?.report) {
-      if (onSummaryChunk && cached.report.summary) {
-        for (const ch of cached.report.summary) onSummaryChunk(ch);
-      }
-      return cached.report as AIReport;
-    }
-  } catch (err) {
-    console.warn('[ReportAIService] Cache read failed, will regenerate:', err);
-  }
-
-  const report = generateWithRules(reportData);
+  // 复用主入口（已含 LLM 优先 + 缓存 + 降级）
+  const report = await generateAIReport(startDate, endDate);
 
   // 逐字符回放 summary，保持 UI 流式过渡效果
   if (onSummaryChunk && report.summary) {
     for (const ch of report.summary) onSummaryChunk(ch);
-  }
-
-  // 写缓存
-  try {
-    await db.aiReportCache.put({
-      id: cacheKey,
-      period: report.period,
-      report,
-      generatedAt: new Date().toISOString(),
-    });
-  } catch (err) {
-    console.warn('[ReportAIService] Cache write failed:', err);
   }
 
   return report;

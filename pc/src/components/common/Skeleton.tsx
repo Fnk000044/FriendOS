@@ -1,3 +1,5 @@
+import { useLanguage } from '../../i18n/useLanguage';
+
 interface SkeletonProps {
   className?: string;
   count?: number;
@@ -16,8 +18,9 @@ export function Skeleton({ className = 'h-4 w-full rounded' }: SkeletonProps) {
 
 /** 卡片骨架屏 */
 export function CardSkeleton({ lines = 3 }: { lines?: number }) {
+  const { t } = useLanguage();
   return (
-    <div className="glass-card p-5 space-y-3" aria-busy="true" aria-label="加载中">
+    <div className="glass-card p-5 space-y-3" aria-busy="true" aria-label={t('common.loading_label')}>
       <Skeleton className="h-4 w-1/3 rounded" />
       {Array.from({ length: lines }).map((_, i) => (
         <Skeleton key={i} className="h-3 w-full rounded" />

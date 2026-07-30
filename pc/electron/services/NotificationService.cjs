@@ -285,6 +285,37 @@ let lastRiskLevel = 'low';
 let consecutiveAnomalyDays = 0;
 
 /**
+ * 发送分级风险预警通知（0.0.6 新增）
+ * 由渲染层 DailyCheckScheduler 通过 IPC 调用。
+ * @param {object} opts
+ * @param {string} opts.level    attention|reminder|warning|crisis
+ * @param {string} opts.title
+ * @param {string} opts.body
+ * @param {string} [opts.action] 跳转目标（如 '/chat' '/risk'）
+ * @param {object} win          BrowserWindow
+ */
+function sendRiskNotification(opts, win) {
+  if (!opts || !opts.level || !opts.title) return;
+  const payload = {
+    id: `risk_${opts.level}_${Date.now()}`,
+    type: 'risk_warning',
+    level: opts.level,
+    title: opts.title,
+    body: opts.body || '',
+    action: opts.action || '/risk',
+    time: new Date().toISOString(),
+  };
+
+  // 系统通知（crisis 级静音，由 CrisisInterventionModal 负责强提示）
+  sendNotification(opts.title, opts.body);
+
+  // 推送给渲染层（RiskBanner / Toast 显示）
+  if (win && !win.isDestroyed()) {
+    win.webContents.send('notification:sent', payload);
+  }
+}
+
+/**
  * 检查风险等级变化并发送通知
  * @param {object} riskResult - 风险评分结果
  * @param {object} mainWindow - 主窗口实例
@@ -358,6 +389,7 @@ module.exports = {
   startReminderCheck,
   stopReminderCheck,
   sendNotification,
+  sendRiskNotification,
   checkRiskAndNotify,
   registerHandlers,
 };

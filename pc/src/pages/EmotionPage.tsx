@@ -6,6 +6,7 @@ import { db } from '../db';
 import { getDaysAgo, getToday } from '../utils/date';
 import EmotionTrend from '../components/emotion/EmotionTrend';
 import EmotionHeatmap from '../components/emotion/EmotionHeatmap';
+import MoodHeatmap from '../components/emotion/MoodHeatmap';
 import HealthRadar from '../components/emotion/HealthRadar';
 import EmotionPrediction from '../components/emotion/EmotionPrediction';
 import { generateHealthProfile } from '../services/emotion/HealthProfileService';
@@ -242,6 +243,9 @@ export default function EmotionPage() {
       <div className="glass-card rounded-xl p-5 shadow-sm">
         <EmotionHeatmap records={emotionRecords || []} weeks={12} />
       </div>
+
+      {/* 心情热力图（日记 mood + 情感分，GitHub 风格） */}
+      <MoodHeatmap />
 
       {/* Insights */}
       {healthProfile && healthProfile.insights.length > 0 && (

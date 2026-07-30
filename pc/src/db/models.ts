@@ -253,6 +253,8 @@ export interface Conversation {
   id: string;
   title: string;
   messages: ChatMessage[];
+  sessionId?: string;      // 会话隔离（v11，AI 对话陪伴）
+  provider?: 'cloud' | 'fallback';  // 最后一条来源标记
   createdAt: string;
   updatedAt: string;
 }
@@ -280,12 +282,15 @@ export interface TherapyRecord {
 
 export interface FeedbackLog {
   id: string;
-  type: 'sentiment' | 'ai_response' | 'recommendation';
+  type: 'sentiment' | 'ai_response' | 'recommendation' | 'early_warning';
   targetId?: string;
-  text: string;
+  text?: string;
   predicted: string;
   feedback: 'accurate' | 'inaccurate';
+  accurate?: 'accurate' | 'inaccurate';
+  refId?: string;
   createdAt: string;
+  timestamp?: number;
 }
 
 /**

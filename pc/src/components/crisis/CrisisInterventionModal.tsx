@@ -5,6 +5,7 @@ import { useCrisisStore } from '../../stores/crisisStore';
 import { db } from '../../db';
 import { getToday } from '../../utils/date';
 import { useLanguage } from '../../i18n/useLanguage';
+import { prefersReducedMotion } from '../../utils/reduceMotion';
 
 const HOTLINE_KEYS = [
   { nameKey: 'crisis.hotline_national_name' as const, number: '400-161-9995', descKey: 'crisis.hotline_national_desc' as const },
@@ -18,13 +19,6 @@ const HOTLINE_KEYS = [
  * - high：播放一次短促双音
  * - critical：循环播放直到用户交互
  */
-/**
- * Checks if the user prefers reduced motion.
- */
-function prefersReducedMotion(): boolean {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
 
 function useCrisisAlertAudio(riskLevel: string | null, visible: boolean) {
   const audioCtxRef = useRef<AudioContext | null>(null);

@@ -221,10 +221,21 @@ html {
   font-size: calc(16px * var(--font-scale, 1));
 }
 
-/* 减少动效（外观设置开关启用时） */
-[data-reduce-motion="true"] *,
-[data-reduce-motion="true"] *::before,
-[data-reduce-motion="true"] *::after {
+/* 减少动效（外观设置开关启用时）
+   历史上用全局 `*` 选择器把所有动画/过渡压成 0.01ms，导致功能性反馈动画
+   （页面切换入场、Modal 弹出、进度条、spinner）一并失效。
+   现收紧为只降级装饰性动画；功能性动画保留，因为瞬时切换反而会让用户困惑。
+   OS 级 prefers-reduced-motion 不再直接控制 CSS，由应用开关统一写入
+   data-reduce-motion dataset（见 utils/reduceMotion.ts）。 */
+[data-reduce-motion="true"] .animate-float,
+[data-reduce-motion="true"] .animate-float-slow,
+[data-reduce-motion="true"] .animate-float-slower,
+[data-reduce-motion="true"] .scan-line::after,
+[data-reduce-motion="true"] .breathe-glow,
+[data-reduce-motion="true"] .status-pulse,
+[data-reduce-motion="true"] .card-float,
+[data-reduce-motion="true"] .stagger-in > *,
+[data-reduce-motion="true"] .stagger-animate > * {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
@@ -393,10 +404,10 @@ input[type="range"]::-moz-range-thumb {
   to { transform: scale(1); }
 }
 
-/* Stagger animation for list items (disabled to prevent page flash) */
-.stagger-item {
-  /* No animation - instant render prevents flash on page switch */
-}
+/* 历史上 .stagger-item 曾用作列表项错峰淡入动画，但因触发
+   页面切换闪烁被禁用（注释 "disabled to prevent page flash"）。
+   全项目无任何组件引用此类（已 grep 确认），属死代码，删除。
+   如需列表错峰动画，改用上方的 .stagger-in 或 .stagger-animate。 */
 
 /* ══ Float 动画 ══ */
 @keyframes float {
@@ -653,16 +664,14 @@ input[type="range"]::-moz-range-thumb {
   animation: statusPulse 2s ease-in-out infinite;
 }
 
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
+/* Reduced motion support
+   历史上这里用 @media (prefers-reduced-motion: reduce) 把所有动画/过渡
+   压成 0.01ms，但它在 Electron Chromium 下会命中 OS 级"减少动画"设置，
+   即使应用内 reduceMotion 开关未开也会压平所有动画——
+   导致页面切换入场、Modal 弹出、LoadingPage 进度条等全部看起来"失效"。
+   现已移除：动效降级统一由应用开关写入 data-reduce-motion dataset，
+   走上方收紧后的选择器；OS 级偏好仅影响 CrisisInterventionModal 警报音频
+   （见 utils/reduceMotion.ts 的 prefersReducedMotion）。 */
 
 /* Focus states for accessibility */
 button:focus-visible,

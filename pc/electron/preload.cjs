@@ -1,12 +1,29 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+// 沙箱模式说明：
+// - `require('electron')` 在沙箱下被 Electron 白名单允许，仅暴露 contextBridge / ipcRenderer /
+//   webFrame / clipboard 等渲染进程可用 API。本文件只用 contextBridge + ipcRenderer。
+// - 不再 require 任何 Node 内置模块（fs/path/child_process 等），因此 main.cjs 可安全开启 sandbox: true。
+// - process.platform 在沙箱下不可用（process 被剥离），改为通过 IPC 取值（get-platform）。
+
 // 用 Map 存储 handler 引用，修复 removeSyncReceive/removeNotificationSent 引用不匹配 bug
 // 注册时包装成新 handler，移除时用外部 callback 无法匹配 -> 改用 Map 按通道存储
 const handlerMap = new Map();
 
+// 平台标识走 IPC，避免沙箱下访问 process.platform
+let _cachedPlatform = null;
+
 contextBridge.exposeInMainWorld('electronAPI', {
-  platform: process.platform,
-  isElectron: true,
+  // platform/isElectron：保留同步语义兼容现有调用方
+  // isElectron 仍是常量 true；platform 用 IPC 缓存，调用方在首帧可能拿到 null
+  // （实际上 main.cjs 在 app.whenReady 后才创建窗口，IPC 已就绪；为安全起见提供 getPlatform() 异步入口）
+  get isElectron() { return true; },
+  get platform() { return _cachedPlatform; },
+  getPlatform: async () => {
+    if (_cachedPlatform) return _cachedPlatform;
+    _cachedPlatform = await ipcRenderer.invoke('get-platform');
+    return _cachedPlatform;
+  },
   onSetLanguage: (callback) => {
     const handler = (_event, lang) => callback(lang);
     handlerMap.set('set-language', handler);
@@ -141,6 +158,32 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Risk scoring engine
   riskCalculate: (data) => ipcRenderer.invoke('risk:calculate', data),
   riskGetTrend: (dailyScores, days) => ipcRenderer.invoke('risk:getTrend', dailyScores, days),
+
+  // AI 对话陪伴（云 LLM 走主进程代理，渲染层不持有 key）
+  chatSend: (params) => ipcRenderer.invoke('chat:send', params),
+  chatTestConnection: (providerOverride) => ipcRenderer.invoke('chat:testConnection', providerOverride),
+  chatGetProviderConfig: () => ipcRenderer.invoke('chat:getProviderConfig'),
+  chatFallback: (params) => ipcRenderer.invoke('chat:fallback', params),
+  chatGreeting: (params) => ipcRenderer.invoke('chat:greeting', params),
+  onChatChunk: (callback) => {
+    const handler = (_event, data) => callback(data);
+    handlerMap.set('chat:chunk', handler);
+    ipcRenderer.on('chat:chunk', handler);
+    return () => {
+      ipcRenderer.removeListener('chat:chunk', handler);
+      handlerMap.delete('chat:chunk');
+    };
+  },
+  removeChatChunk: () => {
+    const handler = handlerMap.get('chat:chunk');
+    if (handler) {
+      ipcRenderer.removeListener('chat:chunk', handler);
+      handlerMap.delete('chat:chunk');
+    }
+  },
+
+  // Risk notification (主动预警)
+  riskNotify: (params) => ipcRenderer.invoke('risk:notify', params),
 
   // Notifications
   notificationSetReminders: (reminders) => ipcRenderer.invoke('notification:setReminders', reminders),

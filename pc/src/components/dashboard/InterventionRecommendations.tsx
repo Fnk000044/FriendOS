@@ -21,12 +21,12 @@ export default function InterventionRecommendations() {
     const load = async () => {
       try {
         const profile = await db.healthProfiles.orderBy('date').last();
-        const recs = getRecommendations(profile || null);
+        const recs = await getRecommendations(profile || null);
         setRecommendations(recs);
       } catch (err) {
         console.error('[InterventionRecommendations] load error:', err);
         // 查询失败时仍显示默认推荐，避免组件永久隐藏
-        setRecommendations(getRecommendations(null));
+        setRecommendations(await getRecommendations(null));
       }
     };
     load();

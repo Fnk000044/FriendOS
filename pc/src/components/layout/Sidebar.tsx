@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, CheckSquare, BookOpen, Target,
   Brain, BarChart3, Settings, Sparkles, Smartphone,
-  Activity, Heart, ClipboardList, Shield
+  Activity, Heart, ClipboardList, Shield, MessageCircle
 } from 'lucide-react';
 import { useLanguage } from '../../i18n/useLanguage';
 import { useUIStore } from '../../stores/uiStore';
@@ -17,6 +17,7 @@ const navGroups: NavGroup[] = [
     groupKey: 'nav.group_daily',
     items: [
       { to: '/', icon: LayoutDashboard, key: 'nav.dashboard' },
+      { to: '/chat', icon: MessageCircle, key: 'nav.assistant' },
       { to: '/tasks', icon: CheckSquare, key: 'nav.tasks' },
       { to: '/diary', icon: BookOpen, key: 'nav.diary' },
       { to: '/habits', icon: Target, key: 'nav.habits' },

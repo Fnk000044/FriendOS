@@ -7,14 +7,57 @@ const os = require('os');
 const isDev = !app.isPackaged;
 let mainWindow = null;
 
+// ── 结构化日志工具 ────────────────────────────────────────────
+// 主进程错误处理路径统一调用 logError(operation, err, extra?)
+// 输出含 operation / errorType / message 的单行 JSON，便于后续接日志聚合
+// 不引入外部依赖；与现有 console.error 语义兼容（仍写 stderr）
+function logError(operation, err, extra) {
+  const record = {
+    level: 'error',
+    operation,
+    errorType: err && err.name ? err.name : (err && err.constructor ? err.constructor.name : 'Error'),
+    message: err && err.message ? err.message : String(err),
+    stack: err && err.stack ? err.stack : undefined,
+    timestamp: new Date().toISOString(),
+  };
+  if (extra && typeof extra === 'object') {
+    Object.assign(record, extra);
+  }
+  // 单行 JSON，避免换行破坏日志聚合解析
+  try {
+    console.error(JSON.stringify(record));
+  } catch (_) {
+    // 兜底：循环引用或异常时降级为字符串
+    console.error(`[logError:${operation}]`, err);
+  }
+}
+
+// 与 logError 同风格的单行结构化信息日志（level: info，写 stdout）
+// 仅用于记录非敏感的诊断元数据，禁止写入日记原文 / API Key 等敏感内容
+function logInfo(operation, extra) {
+  const record = {
+    level: 'info',
+    operation,
+    timestamp: new Date().toISOString(),
+  };
+  if (extra && typeof extra === 'object') {
+    Object.assign(record, extra);
+  }
+  try {
+    console.log(JSON.stringify(record));
+  } catch (_) {
+    console.log(`[logInfo:${operation}]`);
+  }
+}
+
 process.on('uncaughtException', (error) => {
-  console.error('[Main] Uncaught exception:', error);
+  logError('uncaughtException', error);
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('main-process-error', error.message);
   }
 });
 process.on('unhandledRejection', (reason) => {
-  console.error('[Main] Unhandled rejection:', reason);
+  logError('unhandledRejection', reason instanceof Error ? reason : new Error(String(reason)));
 });
 
 // Resolve native module path from app.asar.unpacked in packaged builds
@@ -129,6 +172,7 @@ function startSyncServer() {
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: true, count: data.items.length }));
           } catch (err) {
+            logError('http:sync-body-parse', err, { url: req.url, method: req.method });
             res.writeHead(400, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Invalid JSON' }));
           }
@@ -153,6 +197,7 @@ function startSyncServer() {
     syncServer.on('error', (err) => {
       syncServer = null;
       serverRunning = false;
+      logError('syncServer.listen', err);
       resolve({ error: err.message });
     });
   });
@@ -210,9 +255,10 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
-      // sandbox: true 会导致 preload.cjs 中的 require() 失败（沙箱限制 Node.js API）
-      // 本项目 preload 使用 CommonJS require 加载模块，需保持 false
-      sandbox: false,
+      // sandbox: true —— preload.cjs 已改写为仅使用 contextBridge + ipcRenderer
+      // （这两个 API 在沙箱模式下可用），不再 require 任何 Node 内置模块，
+      // 因此可以安全开启沙箱，让渲染进程/preload 都运行在受限环境中。
+      sandbox: true,
       webSecurity: true,
       allowRunningInsecureContent: false,
       enableRemoteModule: false,
@@ -264,6 +310,9 @@ function createWindow() {
     callback(false);
   });
 }
+
+// 平台标识：沙箱模式下 preload 不能读 process.platform，由主进程提供
+ipcMain.handle('get-platform', () => process.platform);
 
 ipcMain.handle('open-data-folder', async () => {
   const userDataPath = app.getPath('userData');
@@ -402,7 +451,7 @@ function ensureOnnxLoaded() {
       }
       return session;
     }).catch(err => {
-      console.error('[FriendOS] ❌ ONNX model load error:', err.message);
+      logError('ensureOnnxLoaded', err);
       return null;
     });
   }
@@ -423,11 +472,12 @@ ipcMain.handle('sentiment-analyze', async (_event, text) => {
     // Use enhanced analysis (combines ONNX + keyword)
     return await SentimentService.analyzeEnhanced(text);
   } catch (err) {
-    console.error('[sentiment-analyze] Error:', err);
+    logError('ipc:sentiment-analyze', err);
     // Fallback to keyword analysis
     try {
       return SentimentService.analyze(text);
     } catch (e) {
+      logError('ipc:sentiment-analyze.fallback', e);
       return { level: 'low', score: 0.5, positiveProb: 0.5, negativeProb: 0.5, keywords: [], needCloud: false, method: 'keyword', timestamp: Date.now() };
     }
   }
@@ -438,7 +488,7 @@ ipcMain.handle('sentiment-cloud-analyze', async (_event, text, context) => {
     const { cloudAnalyze } = require('./services/SentimentService.cjs');
     return await cloudAnalyze(text, context);
   } catch (err) {
-    console.error('[sentiment-cloud-analyze] Error:', err);
+    logError('ipc:sentiment-cloud-analyze', err);
     return { crisisLevel: 'low', analysis: '', suggestions: [], error: err.message, timestamp: Date.now() };
   }
 });
@@ -448,7 +498,7 @@ ipcMain.handle('sentiment-set-api-key', async (_event, key) => {
     const { setApiKey } = require('./services/SentimentService.cjs');
     return setApiKey(key);
   } catch (err) {
-    console.error('[sentiment-set-api-key] Error:', err);
+    logError('ipc:sentiment-set-api-key', err);
     return { success: false, error: err.message };
   }
 });
@@ -469,7 +519,7 @@ ipcMain.handle('api-key-get', async (_event, name) => {
     const { getApiKey } = require('./services/ApiKeyStore.cjs');
     return getApiKey(name);
   } catch (err) {
-    console.error('[api-key-get] Error:', err);
+    logError('ipc:api-key-get', err, { keyName: name });
     return '';
   }
 });
@@ -480,7 +530,7 @@ ipcMain.handle('api-key-set', async (_event, name, value) => {
     setApiKey(name, value);
     return { success: true };
   } catch (err) {
-    console.error('[api-key-set] Error:', err);
+    logError('ipc:api-key-set', err, { keyName: name });
     return { success: false, error: err.message };
   }
 });
@@ -505,7 +555,7 @@ ipcMain.handle('sentiment-reset-onnx', async () => {
     console.log('[FriendOS] ONNX state reset for app reset');
     return { success: true };
   } catch (err) {
-    console.error('[sentiment-reset-onnx] Error:', err);
+    logError('ipc:sentiment-reset-onnx', err);
     return { success: false, error: err.message };
   }
 });
@@ -528,10 +578,10 @@ ipcMain.handle('backup-export', async (_event, jsonData) => {
     if (result.canceled || !result.filePath) {
       return { success: false, error: '用户取消了导出', canceled: true };
     }
-    fs.writeFileSync(result.filePath, jsonData, 'utf-8');
+    await fs.promises.writeFile(result.filePath, jsonData, 'utf-8');
     return { success: true, path: result.filePath };
   } catch (err) {
-    console.error('[backup-export] Error:', err);
+    logError('ipc:backup-export', err);
     return { success: false, error: err.message };
   }
 });
@@ -549,39 +599,45 @@ ipcMain.handle('backup-import', async () => {
       return { success: false, error: '用户取消了导入', canceled: true };
     }
     const filePath = result.filePaths[0];
-    const content = fs.readFileSync(filePath, 'utf-8');
+    const content = await fs.promises.readFile(filePath, 'utf-8');
     let data;
     try {
       data = JSON.parse(content);
     } catch (parseErr) {
+      logError('ipc:backup-import.parse', parseErr, { filePath });
       return { success: false, error: '文件格式无效，无法解析 JSON' };
     }
     return { success: true, path: filePath, data };
   } catch (err) {
-    console.error('[backup-import] Error:', err);
+    logError('ipc:backup-import', err);
     return { success: false, error: err.message };
   }
 });
 
 // ── 综合风险评分 IPC Handlers ─────────────────────────────────
 // 储存信息：返回 userData 目录各子目录大小（应用数据/缓存/日志）
+// 异步递归遍历，避免在用户数据目录较大时阻塞主进程事件循环
 ipcMain.handle('get-storage-size', async () => {
   try {
     const fs = require('fs');
+    const fsp = fs.promises;
     const path = require('path');
     const userDataPath = app.getPath('userData');
 
-    const dirSize = (dir) => {
-      if (!fs.existsSync(dir)) return 0;
+    const dirSize = async (dir) => {
       let total = 0;
-      const walk = (d) => {
-        for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
-          const full = path.join(d, entry.name);
-          if (entry.isDirectory()) walk(full);
-          else total += fs.statSync(full).size;
+      let entries;
+      try {
+        entries = await fsp.readdir(dir, { withFileTypes: true });
+      } catch { return 0; } // 目录不存在或无权限
+      await Promise.all(entries.map(async (entry) => {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          total += await dirSize(full);
+        } else {
+          try { total += (await fsp.stat(full)).size; } catch {}
         }
-      };
-      try { walk(dir); } catch {}
+      }));
       return total;
     };
 
@@ -589,18 +645,23 @@ ipcMain.handle('get-storage-size', async () => {
     const appDataDirs = ['IndexedDB', 'Local Storage', 'Preferences', 'Session Storage', 'WebStorage', 'Shared Dictionary'];
     let cache = 0, appData = 0, logs = 0;
 
-    for (const d of cacheDirs) cache += dirSize(path.join(userDataPath, d));
-    for (const d of appDataDirs) appData += dirSize(path.join(userDataPath, d));
+    const [cacheTotal, appDataTotal] = await Promise.all([
+      Promise.all(cacheDirs.map((d) => dirSize(path.join(userDataPath, d)))),
+      Promise.all(appDataDirs.map((d) => dirSize(path.join(userDataPath, d)))),
+    ]);
+    cache = cacheTotal.reduce((a, b) => a + b, 0);
+    appData = appDataTotal.reduce((a, b) => a + b, 0);
 
     // 日志文件（sentiment.log 等）
     try {
       const logFile = path.join(userDataPath, 'sentiment.log');
-      if (fs.existsSync(logFile)) logs += fs.statSync(logFile).size;
+      const stat = await fsp.stat(logFile);
+      logs += stat.size;
     } catch {}
 
     return { total: cache + appData + logs, cache, appData, logs };
   } catch (err) {
-    console.error('[get-storage-size] Error:', err);
+    logError('ipc:get-storage-size', err);
     return { total: 0, cache: 0, appData: 0, logs: 0 };
   }
 });
@@ -627,16 +688,25 @@ ipcMain.handle('clear-cache', async () => {
     }
     return { success: true };
   } catch (err) {
-    console.error('[clear-cache] Error:', err);
+    logError('ipc:clear-cache', err);
     return { success: false, error: err.message };
   }
 });
 
-// Windows Hello 生物识别可用性检查
+// Windows Hello 生物识别可用性检查（结果缓存，避免每次都 spawn PowerShell 阻塞主进程）
+let windowsHelloAvailableCache = null; // null = 未探测, { value, ts } = 已探测
+const WINDOWS_HELLO_CACHE_TTL = 5 * 60 * 1000; // 5 分钟
+
 ipcMain.handle('windows-hello-available', async () => {
   if (process.platform !== 'win32') return { available: false, reason: '仅支持 Windows' };
+  // 缓存命中直接返回
+  if (windowsHelloAvailableCache && Date.now() - windowsHelloAvailableCache.ts < WINDOWS_HELLO_CACHE_TTL) {
+    return windowsHelloAvailableCache.value;
+  }
   try {
-    const { execSync } = require('child_process');
+    const { execFile } = require('child_process');
+    const { promisify } = require('util');
+    const execFileAsync = promisify(execFile);
     // 检查 WinRT UserConsentVerifier 是否可用（即系统是否配置了 Windows Hello）
     const psScript = `
 $assemblies = @('System.Runtime','System.Runtime.InteropServices','Windows.Foundation','Windows.Security.Credentials.UI');
@@ -648,10 +718,14 @@ try {
   Write-Output 'NOT_AVAILABLE'
 }
 `;
-    const result = execSync(`powershell -NoProfile -Command "${psScript.replace(/"/g, '\\"')}"`, { encoding: 'utf8', timeout: 5000 });
-    return { available: result.includes('AVAILABLE') };
+    const { stdout } = await execFileAsync('powershell', ['-NoProfile', '-Command', psScript], { encoding: 'utf8', timeout: 5000, windowsHide: true });
+    const value = { available: stdout.includes('AVAILABLE') };
+    windowsHelloAvailableCache = { value, ts: Date.now() };
+    return value;
   } catch {
-    return { available: false, reason: 'Windows Hello 未配置或不可用' };
+    const value = { available: false, reason: 'Windows Hello 未配置或不可用' };
+    windowsHelloAvailableCache = { value, ts: Date.now() };
+    return value;
   }
 });
 
@@ -686,15 +760,30 @@ Write-Output $res.Value__
 ipcMain.handle('risk:calculate', async (_event, data) => {
   try {
     const { calculateRiskScore } = require('./services/RiskScoringEngine.cjs');
-    return calculateRiskScore(data);
+    const result = calculateRiskScore(data);
+    // 诊断归因记录：仅在触发临床升级或排除规则命中时输出单行结构化日志。
+    // 只落等级/分数/触发原因/排除规则来源计数等元数据，不落日记原文与命中词条
+    const diag = result.diagnostics;
+    if (diag && (diag.escalation.escalated || diag.exclusionsHit.length > 0)) {
+      logInfo('ipc:risk:calculate', {
+        totalScore: result.totalScore,
+        riskLevel: result.riskLevel,
+        escalated: diag.escalation.escalated,
+        escalationReasons: diag.escalation.reasons,
+        crisisFactorCount: diag.escalation.crisisFactorCount,
+        exclusionSources: diag.exclusionsHit.map(e => e.source),
+      });
+    }
+    return result;
   } catch (err) {
-    console.error('[risk:calculate] Error:', err);
+    logError('ipc:risk:calculate', err);
     return {
       totalScore: 0,
       riskLevel: 'low',
       riskLevelInfo: { min: 0, max: 25, label: '低', color: '#22C55E' },
       breakdown: {},
       factors: [],
+      diagnostics: { exclusionsHit: [], escalation: { escalated: false, reasons: [], crisisFactorCount: 0 } },
       summary: '无法计算风险评分',
       timestamp: Date.now(),
       error: err.message,
@@ -707,17 +796,96 @@ ipcMain.handle('risk:getTrend', async (_event, dailyScores, days = 7) => {
     const { calculateRiskTrend } = require('./services/RiskScoringEngine.cjs');
     return calculateRiskTrend(dailyScores, days);
   } catch (err) {
-    console.error('[risk:getTrend] Error:', err);
+    logError('ipc:risk:getTrend', err);
     return { trend: 'stable', change: 0, data: [], average: 0, error: err.message };
   }
 });
 
+// ── AI 对话陪伴 IPC（云 LLM 走主进程代理，渲染层不持有 key）────────
+// 设计：渲染层调 chat:send，主进程用 Node fetch 调云 LLM，流式 chunk 经
+// webContents.send('chat:chunk', {requestId, delta}) 推回渲染层。
+// 渲染层 CSP connect-src 仍为 'self'，主进程 Node fetch 不受 CSP 约束。
+// 失败/无 key/超时 → 返回错误码，渲染层自动切 ChatFallbackEngine 降级。
+ipcMain.handle('chat:send', async (event, { requestId, messages, context, systemPrompt, providerOverride }) => {
+  if (!requestId || typeof requestId !== 'string') {
+    return { error: 'invalid requestId', code: 'LLM_BAD_REQUEST' };
+  }
+  try {
+    const { chat } = require('./services/ChatLLMService.cjs');
+    const win = BrowserWindow.fromWebContents(event.sender);
+    const result = await chat(win, { messages, context, systemPrompt, providerOverride }, requestId);
+    return { ok: true, fullText: result.fullText, provider: result.provider, model: result.model };
+  } catch (err) {
+    logError('ipc:chat:send', err, { requestId });
+    return { ok: false, error: err.message, code: err.code || 'LLM_UNKNOWN' };
+  }
+});
+
+ipcMain.handle('chat:testConnection', async (_event, providerOverride) => {
+  try {
+    const { testConnection } = require('./services/ChatLLMService.cjs');
+    return await testConnection(providerOverride);
+  } catch (err) {
+    logError('ipc:chat:testConnection', err);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('chat:getProviderConfig', async () => {
+  try {
+    const { getProviderConfig } = require('./services/ChatLLMService.cjs');
+    return getProviderConfig();
+  } catch (err) {
+    logError('ipc:chat:getProviderConfig', err);
+    return { provider: 'qwen', hasKey: false, availableProviders: [] };
+  }
+});
+
+ipcMain.handle('chat:fallback', async (_event, { text, emotionLabel }) => {
+  // 渲染层主动请求降级回复（无 key / 超时后用）
+  try {
+    const { respond } = require('./services/ChatFallbackEngine.cjs');
+    return respond(text, emotionLabel);
+  } catch (err) {
+    logError('ipc:chat:fallback', err);
+    return { text: '我在听，能再说清楚一点吗？', branch: 'neutral', isCrisis: false };
+  }
+});
+
+ipcMain.handle('chat:greeting', async (_event, { silentDays, riskRising }) => {
+  try {
+    const { greeting } = require('./services/ChatFallbackEngine.cjs');
+    return greeting({ silentDays, riskRising });
+  } catch (err) {
+    logError('ipc:chat:greeting', err);
+    return { text: '我在呢，想聊聊吗？', branch: 'greeting' };
+  }
+});
+
+// ── 风险预警通知 IPC（0.0.6 主动预警）──────────────────────────
+// 渲染层 DailyCheckScheduler 决策后调此 IPC，由主进程发系统通知 + 推回渲染层。
+ipcMain.handle('risk:notify', async (event, { level, title, body, action }) => {
+  try {
+    const { sendRiskNotification } = require('./services/NotificationService.cjs');
+    const win = BrowserWindow.fromWebContents(event.sender);
+    sendRiskNotification({ level, title, body, action }, win);
+    return { success: true };
+  } catch (err) {
+    logError('ipc:risk:notify', err);
+    return { success: false, error: err.message };
+  }
+});
+
 // 安全：设置 Content Security Policy
+// 注意：历史上 connect-src 白名单了 deepseek/openai/anthropic 三个云 API，
+// 但代码中 SentimentService.cloudAnalyze 已是空实现、ReportAIService 只走规则引擎，
+// 从未真正发起对外 HTTPS 请求。保留死域名会扩大攻击面（恶意脚本可借此外联），
+// 现已清理。如未来重新接入云 LLM，再按需补回。
 app.whenReady().then(() => {
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const csp = isDev
-      ? "default-src 'self' http://localhost:5173; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5173; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://localhost:5173 ws://localhost:5173 https://api.deepseek.com https://api.openai.com https://api.anthropic.com;"
-      : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.deepseek.com https://api.openai.com https://api.anthropic.com;";
+      ? "default-src 'self' http://localhost:5173; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5173; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://localhost:5173 ws://localhost:5173;"
+      : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self';";
     callback({
       responseHeaders: {
         ...details.responseHeaders,
@@ -726,11 +894,11 @@ app.whenReady().then(() => {
     });
   });
 }).catch((err) => {
-  console.error('[FriendOS] CSP setup failed:', err);
+  logError('app:csp-setup', err);
 });
 
 app.whenReady().then(createWindow).catch((err) => {
-  console.error('[FriendOS] Failed to start:', err);
+  logError('app:createWindow', err);
   app.quit();
 });
 

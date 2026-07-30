@@ -2,13 +2,16 @@ import { create } from 'zustand';
 
 export interface Reminder {
   id: string;
-  type: 'diary' | 'habit' | 'custom';
+  type: 'diary' | 'habit' | 'custom' | 'risk_warning' | 'daily_reminder';
   title: string;
   body: string;
   time: string; // HH:MM format
   days: number[]; // 0=Sun, 1=Mon, ..., 6=Sat (empty = every day)
   enabled: boolean;
   lastNotified?: string;
+  // 0.0.6 风险预警通知扩展
+  level?: 'attention' | 'reminder' | 'warning' | 'crisis';
+  action?: string;  // 跳转目标路径
 }
 
 interface NotificationState {

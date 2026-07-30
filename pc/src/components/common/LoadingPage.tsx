@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Brain, CheckCircle, Zap, AlertCircle } from 'lucide-react';
+import { Brain, CheckCircle, Zap, AlertCircle, Loader2 } from 'lucide-react';
+import { shouldReduceMotion } from '../../utils/reduceMotion';
 
 interface LoadingStep {
   id: string;
@@ -99,9 +100,10 @@ export default function LoadingPage({ onComplete }: LoadingPageProps) {
   const getStepIcon = (status: LoadingStep['status']) => {
     switch (status) {
       case 'loading':
-        return (
-          <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        );
+        // 减少动效时用静态图标替代旋转 spinner，避免看起来像"卡住不动"
+        return shouldReduceMotion()
+          ? <Loader2 className="w-5 h-5 text-primary" />
+          : <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />;
       case 'done':
         return <CheckCircle className="w-5 h-5 text-green-500" />;
       case 'error':
@@ -131,7 +133,8 @@ export default function LoadingPage({ onComplete }: LoadingPageProps) {
               className="h-full bg-gradient-to-r from-primary to-primary-light rounded-full"
               style={{
                 width: `${progress}%`,
-                transition: 'width 0.3s ease',
+                // 减少动效时去掉 transition，避免宽度跳变看起来像"卡住后又瞬间跳满"
+                transition: shouldReduceMotion() ? 'none' : 'width 0.3s ease',
               }}
             />
           </div>

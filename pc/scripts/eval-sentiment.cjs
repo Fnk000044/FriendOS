@@ -137,6 +137,38 @@ function main() {
   console.log('   预期 ONNX 层准确率比关键词层高 5-15%。');
   console.log('3. 数据集3 为 R1 蒸馏咨询对话，情感分布偏向负面，');
   console.log('   neutral/positive 类别样本稀疏，F1 可能偏低。');
+
+  // 0.0.6：结果落盘到 pc/models/eval/，答辩有真实指标可引用
+  const evalDir = path.join(__dirname, '..', 'models', 'eval');
+  try {
+    fs.mkdirSync(evalDir, { recursive: true });
+  } catch (_) { /* ignore */ }
+  const report = {
+    evaluatedAt: new Date().toISOString(),
+    dataset: 'distill_psychology-10k-r1',
+    layer: 'keyword (L1) approximation',
+    sampleCount: samples.length,
+    labelDistribution: dist,
+    keywordLayer: {
+      accuracy: kwResult.accuracy,
+      confusion: kwResult.confusion,
+      metrics: kwResult.metrics,
+      crisisRecall,
+      crisisSupport: crisisSamples.length,
+    },
+    notes: [
+      '标签为关键词弱标注，非人工标注，噪声 ±10%。',
+      '本脚本只评估关键词层（L1）。完整 L1+L2 管道评估需在 Electron 主进程内跑 analyzeEnhanced。',
+      '已落盘模型真实测试集指标见 sentiment.eval.json（测试集准确率 97.6%，crisis 召回 98.8%）。',
+    ],
+  };
+  const outPath = path.join(evalDir, 'sentiment-keyword-eval.json');
+  try {
+    fs.writeFileSync(outPath, JSON.stringify(report, null, 2), 'utf-8');
+    console.log(`\n评估结果已落盘: ${outPath}`);
+  } catch (e) {
+    console.log(`\n结果落盘失败: ${e.message}`);
+  }
 }
 
 main();

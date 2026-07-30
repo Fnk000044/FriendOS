@@ -1,3 +1,5 @@
+import { useLanguage } from '../../i18n/useLanguage';
+
 interface CardProps {
   children: React.ReactNode;
   className?: string;
@@ -6,6 +8,7 @@ interface CardProps {
 }
 
 export default function Card({ children, className = '', hover = false, onClick }: CardProps) {
+  const { t } = useLanguage();
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (onClick && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
@@ -19,7 +22,7 @@ export default function Card({ children, className = '', hover = false, onClick 
       onKeyDown={handleKeyDown}
       tabIndex={onClick ? 0 : undefined}
       role={onClick ? 'button' : undefined}
-      aria-label={onClick ? '可点击卡片' : undefined}
+      aria-label={onClick ? t('common.clickable_card') : undefined}
       className={`
         glass-card glass-glow p-5
         ${hover ? 'glass-card-hover cursor-pointer card-float' : ''}

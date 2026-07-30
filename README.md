@@ -1,35 +1,37 @@
 # FriendOS 知己
 
-> **版本** 0.0.4 · 完全离线 · 数据本地存储
+> **版本** 0.0.5 · 本地优先 · 数据本地存储
 
 全功能心理健康个人管理系统 — 基于 Electron + React 的桌面应用。
-把生产力工具（任务 / 习惯 / 日记）与被动心理监测、主动干预工具、AI 助理整合在同一界面，
-所有数据保存在本地 IndexedDB，不依赖任何云服务。
+把生产力工具（任务 / 习惯 / 日记）与 AI 对话陪伴、被动心理监测、主动干预工具整合在同一界面，
+所有用户数据保存在本地 IndexedDB，对话情感分析与风险评分均在本地完成。
+
+> **隐私架构**：云 LLM 对话（可选）通过主进程代理调用，API Key 经 OS 密钥链（DPAPI）加密存储、
+> 不进渲染层、不进日志；渲染层 CSP `connect-src 'self'` 不放宽。未配置时自动使用离线陪伴模式。
 
 ---
 
 ## ✨ 核心特性
 
+### AI 对话陪伴（0.0.5 新增）
+- **对话式陪伴** — "知己"作为温暖、非评判的陪伴助手，3-5 句自然回复，先共情后建议
+- **云 LLM 主进程代理** — 通义千问 / DeepSeek 可切换，API Key 不进渲染层，CSP 不放宽
+- **离线陪伴模式** — 未配置 Key 时自动降级到规则模板引擎（时间感知 + 情绪分支 + 话术组合）
+- **跨会话记忆** — 注入最近对话摘要到上下文，AI 能自然跟进上次提到的事件
+- **主动陪伴** — 每日首次打开主动问候、沉默 3 天后回归关切、结合风险预警主动发起对话
+- **上下文注入** — 近 7 天心情、当前风险等级、最近量表结果、学期阶段、深夜活跃注入 prompt
+- **危机联动** — 对话消息走 ONNX 情感分析，crisis 级立即触发危机干预弹窗，不调 LLM
+
 ### 生产力工具
 - **任务管理** — 优先级（紧急 / 高 / 中 / 低，组内自动排序）、子任务、截止时间、拖拽排序、自动延期、循环任务
 - **习惯追踪** — 每日 / 每周 / 每月频率、连续打卡、**每张卡片的可折叠打卡月历**（支持点击任意历史日期补卡 / 取消）
 - **日记系统** — 日历视图、心情评分（1-5）、天气、标签、引导式写作、情感分析徽标
-- **记忆库** — 从日记 / 任务自动提取记忆候选、AI 分类建议、搜索与整理
+- **记忆库** — 从日记 / 任务自动提取记忆候选、规则分类建议、搜索与整理
 - **快速记录** — 悬浮快捷键一键唤起，快速记录想法 / 任务 / 日记
 - **每日语录** — 内置激励语句库
 
-### AI 助理
-- **本地 LLM 推理** — 完全离线，node-llama-cpp 加载 GGUF 模型
-- **流式输出** — 实时逐字显示回复
-- **5 种语气模式** — 专业 / 友好 / 简洁 / 鼓励 / 心理咨询师
-- **上下文感知** — 自动整合任务、日记、习惯、记忆、对话历史
-- **对话记忆** — 长期记忆摘要，跨会话保持上下文
-- **主动问候** — 基于行为分析主动关心（低落情绪、未写日记、习惯中断等）
-- **危机协议** — 所有 AI 提示词内置危机干预流程
-- **Prompt 注入防御** — Unicode 规范化、零宽字符过滤、模式黑名单、长度限制
-
 ### 心理健康 — 被动监测
-- **三层情感分析** — 关键词预筛 → ONNX 模型（BERT-base-chinese INT8 量化，单模型 4 分类：negative / neutral / positive / crisis，测试集准确率 98%）→ LLM 语义判断
+- **两层情感分析** — 关键词预筛 → ONNX 模型（BERT-base-chinese INT8 量化，单模型 4 分类：negative / neutral / positive / crisis，测试集准确率 97.6%）。本地推理，对话与日记同通道
 - **PANAS 情绪模型** — 正负情感维度
 - **行为模式分析** — 个人基线建立（≥7 天），检测情绪 / 任务 / 习惯 / 日记 / 打字行为偏差
 - **综合风险评分** — 0-100 分，五级风险，五个信号源加权（情绪 / 行为 / 评估 / 对话 / 日记）
@@ -37,27 +39,37 @@
 
 ### 心理健康 — 主动工具
 - **临床量表** — PHQ-9（抑郁）、GAD-7（焦虑）、PSS-10（压力）
-- **CBT 思维记录** — 七步认知重构
-- **呼吸练习** — 4-7-8 呼吸、方块呼吸、腹式呼吸、共振频率呼吸
-- **正念冥想** — 引导式冥想会话
-- **个性化干预建议** — 基于健康档案的规则引擎推荐
-- **风险评估仪表盘** — 复合风险指数、信号源分析、个人基线对比、7/14/30 天趋势
+- **CBT 思维记录** — 七步认知重构，干预前后情绪采集
+- **呼吸练习** — 4-7-8 呼吸、方块呼吸、腹式呼吸、共振频率呼吸，前后情绪评分追踪效果
+- **正念冥想** — 引导式冥想会话，前后情绪评分追踪效果
+- **干预效果统计** — 各干预类型平均提升分、有效率、个人最有效干预 TOP 1（Reports 页）
+- **个性化干预推荐** — 规则基础分 × 0.6 + 历史有效率 × 0.4，数据不足退回纯规则
+- **风险评估仪表盘** — 复合风险指数、信号源分析、个人基线对比、7/14/30 天趋势、**风险时间线**（30 天折线 + 基线带 + 事件锚点）
 
 ### 心理健康 — 危机干预
-- **自动危机检测** — 从日记和对话内容识别危机信号
+- **自动危机检测** — 从日记 / 对话内容识别危机信号
+- **对话危机联动** — 对话消息走 ONNX 情感分析，crisis 级立即弹危机干预弹窗，不调 LLM
 - **含蓄表达识别** — 理解"想消失""撑不下去""我没事"等中文含蓄表达
 - **危机干预弹窗** — 5 秒倒计时防误关，集成中国心理援助热线
 
+### 主动风险预警（0.0.6 新增）
+- **每日健康检查** — 应用启动 + 每天 21:00 自动跑 EarlyWarning + RiskScoring，visibilitychange 补偿
+- **行为洞察卡片** — 连续未写日记 / 深夜活跃 / 任务下降 / 习惯中断 / 情绪低于基线，无异常给正面反馈
+- **分级预警横幅** — 关注（静默）/ 提醒（toast + "和知己聊聊"）/ 警告（模态 + 推荐预约）/ 危机（已有）
+- **预警 → 对话 → 干预链路** — 提醒/警告级通知带"和知己聊聊"按钮，跳转 ChatPage，AI 主动提及预警原因
+
 ### 学生群体适配
-- **学期节奏识别** — 自动判断寒假 / 期中 / 期末 / 考试周等阶段
-- **学业压力感知** — 基于校历的应激水平评估
+- **可配置校历** — 用户设置开学日 / 考试周起止，替代硬编码月份
+- **学期节奏识别** — 自动判断假期 / 开学初 / 期中 / 期末复习 / 考试周 / 考后
+- **应激水平评估** — 考试周前 14 天线性渐进，考试周 ×1.5 学业压力权重喂 RiskScoringEngine
 - **专项心理支持** — 面向中国高校学生的定制化干预策略
 
 ### 数据与报告
-- **日 / 周 / 月报告** — AI 生成分析报告
+- **日 / 周 / 月报告** — 规则引擎 / 云 LLM 双模式（配 key 时 AI 解读，降级走规则，诚实标注生成方式）
 - **健康雷达图** — 六维可视化（情绪 / 压力 / 精力 / 社交 / 睡眠 / 自我关怀），resize 自适应不漂移
 - **多维度综合分析** — 散点图（心情 × 任务完成率，点大小 = 习惯完成率）+ 皮尔逊相关系数（心情↔任务、心情↔习惯、任务↔习惯）
 - **情绪趋势图** — 多维情绪指标时间序列
+- **情绪热力图** — GitHub 风格日历格，最近 12 周心情色阶，点击查看当天详情
 - **情绪预测** — 基于历史数据的情感趋势预测
 
 ### 基础设施
@@ -82,7 +94,7 @@
 | 打包 | electron-builder 26（NSIS 安装包 + afterPack 体积优化） |
 | 路由 | react-router-dom 6.26（HashRouter） |
 | 状态管理 | Zustand 4.5（8 个 store，persist 中间件） |
-| 客户端数据库 | Dexie 4（IndexedDB ORM，20 张表，10 个 schema 版本） |
+| 客户端数据库 | Dexie 4（IndexedDB ORM，21 张表，11 个 schema 版本） |
 | 样式 | Tailwind CSS 3.4（毛玻璃主题 + CSS 变量） |
 | 图表 | Recharts 2.12（雷达 / 散点 / 折线 / 柱状 / 环形） |
 | 图标 | lucide-react |
@@ -96,7 +108,7 @@
 ## 📦 下载与安装
 
 ### 方式一：使用预编译安装包
-1. 在 [Releases](https://github.com/Fnk000044/FriendOS/releases) 页面下载 `FriendOSSetup-0.0.4.exe`
+1. 在 [Releases](https://github.com/Fnk000044/FriendOS/releases) 页面下载 `FriendOSSetup-0.0.5.exe`
 2. 双击运行，选择安装目录
 3. 安装完成后从开始菜单或桌面快捷方式启动
 
@@ -105,7 +117,7 @@
 git clone https://github.com/Fnk000044/FriendOS.git
 cd FriendOS/pc
 npm install
-npm run dist      # 生成 release/FriendOSSetup-0.0.4.exe
+npm run dist      # 生成 release/FriendOSSetup-0.0.5.exe
 ```
 
 打包产物体积（经 afterPack 优化）：
@@ -113,7 +125,7 @@ npm run dist      # 生成 release/FriendOSSetup-0.0.4.exe
 | 产物 | 体积 |
 |---|---|
 | `release/win-unpacked/`（解压版） | ~481 MB |
-| `release/FriendOSSetup-0.0.4.exe`（NSIS 安装包） | ~171 MB |
+| `release/FriendOSSetup-0.0.5.exe`（NSIS 安装包） | ~171 MB |
 
 体积优化措施：
 - 情感模型从 3-model ensemble（296 MB FP32 量化后）改为单 BERT INT8 量化（100 MB），准确率持平（98%）
@@ -230,7 +242,7 @@ FriendOS/
 │   │   │   └── feedback/              # 用户反馈
 │   │   ├── stores/                    # Zustand 状态管理（8 个 store）
 │   │   ├── hooks/                     # React Hooks（16 个）
-│   │   ├── db/                        # Dexie 数据库定义（20 张表）
+│   │   ├── db/                        # Dexie 数据库定义（21 张表）
 │   │   ├── i18n/                      # 国际化（中 / 英）
 │   │   ├── utils/                     # 工具函数（reports / date / sync 等）
 │   │   └── types/                     # TypeScript 类型定义
@@ -252,7 +264,7 @@ FriendOS/
 
 ## 🗄 数据库
 
-基于 Dexie（IndexedDB 封装），当前 schema 版本 **v10**，共 **20 张表**：
+基于 Dexie（IndexedDB 封装），当前 schema 版本 **v11**，共 **21 张表**：
 
 | 分类 | 表 | 说明 |
 |---|---|---|
@@ -302,10 +314,46 @@ npm run test:coverage  # 覆盖率报告
 ```
 
 测试覆盖：
-- 主进程服务：`SentimentService` / `BehaviorAnalyzer` / `RiskScoringEngine`
-- 前端服务：`emotion` 模块
-- 组件：`assessment` 表单
+- 主进程服务：`SentimentService` / `BehaviorAnalyzer` / `RiskScoringEngine` / `ChatFallbackEngine`
+- 前端服务：`emotion` 模块（`EarlyWarningService` / `StudentAdaptationService`）/ `therapy`（`EffectivenessService`）
+- 组件：`assessment` 表单 / `crisis` 干预 / `risk` 图表
 - 工具函数：`utils`
+
+---
+
+## 📝 变更日志
+
+### 0.0.5 — AI 对话陪伴系统
+- 新增"AI 陪伴"对话页面（`/chat`），流式输出，provider 状态徽标
+- 云 LLM 走主进程代理（通义千问 / DeepSeek 可切换），API Key 不进渲染层、CSP 不放宽
+- 离线陪伴模式：规则模板兜底（6 情绪分支 × ≥10 模板，时间感知 + 话术组合）
+- 主动陪伴：每日首次打开主动问候、沉默 3 天后回归关切、跨会话记忆注入
+- 危机联动：对话消息走 ONNX 情感分析，crisis 级立即弹危机干预弹窗，不调 LLM
+- 对话情感写入 `emotionRecords`，激活 RiskScoringEngine chat 通道（原 10% 空置权重）
+- 设置页 LLM 配置区块（provider / API Key / 测试连接）
+- 修 README：删"三层语义 / Qwen3"，改"两层（关键词 + ONNX）+ 云 LLM 对话（可选）"
+
+### 0.0.6 — 主动风险预警 + 干预效果闭环 + 学生适配
+- 新增 `DailyCheckScheduler`：应用启动 + 每天 21:00 自动跑 EarlyWarning + RiskScoring
+- 新增 `BehaviorInsightCard`：自然语言行为洞察，无异常给正面反馈
+- 新增 `RiskBanner`：4 级预警横幅（关注 / 提醒 / 警告 / 危机），"和知己聊聊"按钮跳 ChatPage
+- 新增 `EffectivenessService`：干预前后情绪采集，各类型平均提升分 / 有效率 / 个人 TOP 1
+- `InterventionRecommendationService` 加历史有效率权重（规则 × 0.6 + 有效率 × 0.4）
+- 新增可配置校历：用户设置开学日 / 考试周起止，替代硬编码月份
+- `StudentAdaptationService`：考试周 × 1.5 学业压力权重喂 RiskScoringEngine
+- 统一风险算法口径：RiskScoringEngine 为权威，EmotionAnalysisEngine 限情绪维度
+- 评估脚本结果落盘 `pc/models/eval/*.json`
+
+### 0.0.7 — 可视化 + 报告 AI 化
+- 新增 `RiskTimelineChart`：30 天风险分折线 + 个人基线带（±1σ）+ 事件锚点（日记 / 量表 / 危机 / 对话危机）
+- 新增 `MoodHeatmap`：GitHub 风格情绪热力图，最近 12 周心情色阶
+- `ReportAIService`：配 key 时云 LLM 生成"AI 解读"，降级走规则引擎，诚实标注生成方式
+
+### 0.1.0 — 打磨 + 测试 + 演示
+- 新增 `ChatFallbackEngine` / `StudentAdaptationService` / `EffectivenessService` 单测（42 个测试）
+- 情感分析 debounce（300ms），防止快速连续发送时每次跑 ONNX
+- `seedDemoData` 扩展：添加 AI 对话历史 + 对话情感记录（喂 chat 通道）
+- README 全面更新，CHANGELOG 0.0.5 → 0.1.0
 
 ---
 

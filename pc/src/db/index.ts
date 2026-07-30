@@ -96,6 +96,14 @@ export class FriendOSDatabase extends Dexie {
     this.version(10).stores({
       aiReportCache: '&id, generatedAt',
     });
+
+    // v11: conversations 表新增 sessionId/provider 字段索引（AI 对话陪伴）
+    // messages 内联 ChatMessage 已含 role/content/timestamp；
+    // 新增可选 sessionId（会话隔离）、provider（cloud/fallback 来源标记）便于查询。
+    // 字段向后兼容，旧数据无这些字段不影响读取。
+    this.version(11).stores({
+      conversations: '&id, createdAt, updatedAt, sessionId',
+    });
   }
 }
 

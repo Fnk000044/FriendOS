@@ -6,7 +6,46 @@
  * - Unlocking Mental Health (2025) - 大学生心理健康研究
  * - Predicting College Mental Health (2025) - 学业压力预测
  * - 中国青少年心理健康调查
+ *
+ * 0.0.6 改进：detectSemesterPhase 现优先读用户配置的校历
+ *   （getTermConfig），未配置时回退到硬编码月份。
+ *   新增 getTermPhaseDescription / getAcademicStressMultiplier。
  */
+
+import { formatLocalDate } from '../../utils/date';
+
+// ── 用户可配置校历 ────────────────────────────────────────────
+
+export interface TermConfig {
+  termStart: string;
+  examWeekStart: string;
+  examWeekEnd: string;
+  vacationStart?: string;
+}
+
+const TERM_STORAGE_KEY = 'friendos_term_config';
+
+/**
+ * 读取学期配置（用户设置页配置）
+ */
+export function getTermConfig(): TermConfig | null {
+  try {
+    const raw = localStorage.getItem(TERM_STORAGE_KEY);
+    if (!raw) return null;
+    const cfg = JSON.parse(raw);
+    if (!cfg.termStart || !cfg.examWeekStart || !cfg.examWeekEnd) return null;
+    return cfg;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 保存学期配置
+ */
+export function setTermConfig(cfg: TermConfig): void {
+  localStorage.setItem(TERM_STORAGE_KEY, JSON.stringify(cfg));
+}
 
 // ── 学期节奏识别 ──────────────────────────────────────────────
 
@@ -21,69 +60,114 @@ interface SemesterInfo {
 
 /**
  * 识别当前学期阶段
- * 基于中国高校典型校历
+ * 优先读用户配置的校历，未配置时回退到硬编码中国高校典型校历。
  */
 export function detectSemesterPhase(date: Date = new Date()): SemesterInfo {
+  // 1. 优先读用户配置
+  const cfg = getTermConfig();
+  if (cfg) {
+    return detectFromConfig(cfg, date);
+  }
+
+  // 2. 回退：硬编码月份
+  return detectFromHardcodedMonth(date);
+}
+
+function detectFromConfig(cfg: TermConfig, date: Date): SemesterInfo {
+  const today = formatLocalDate(date);
+
+  if (cfg.vacationStart && today >= cfg.vacationStart) {
+    return { phase: 'vacation', label: '假期', stressLevel: 20, description: '假期休息期，适当放松' };
+  }
+  if (today > cfg.examWeekEnd) {
+    return { phase: 'regular', label: '考后休整', stressLevel: 35, description: '考试结束，调整状态' };
+  }
+  if (today >= cfg.examWeekStart && today <= cfg.examWeekEnd) {
+    return { phase: 'exam_week', label: '期末考试周', stressLevel: 95, description: '高压时期，务必保证睡眠和饮食' };
+  }
+
+  const examStart = new Date(cfg.examWeekStart);
+  const preExamStart = new Date(examStart);
+  preExamStart.setDate(preExamStart.getDate() - 14);
+  const preExamStartStr = formatLocalDate(preExamStart);
+  if (today >= preExamStartStr && today < cfg.examWeekStart) {
+    const daysToExam = Math.max(0, Math.ceil((examStart.getTime() - date.getTime()) / 86400000));
+    const progress = Math.max(0, Math.min(1, 1 - daysToExam / 14));
+    return {
+      phase: 'final',
+      label: '期末复习期',
+      stressLevel: Math.round(60 + progress * 25),
+      description: `距考试还有 ${daysToExam} 天，注意劳逸结合`,
+    };
+  }
+
+  const termStartPlus14 = new Date(cfg.termStart);
+  termStartPlus14.setDate(termStartPlus14.getDate() + 14);
+  if (today >= cfg.termStart && today < formatLocalDate(termStartPlus14)) {
+    return { phase: 'regular', label: '开学初', stressLevel: 45, description: '适应期，逐步调整状态' };
+  }
+
+  return { phase: 'regular', label: '正常学期', stressLevel: 50, description: '正常学习期' };
+}
+
+function detectFromHardcodedMonth(date: Date): SemesterInfo {
   const month = date.getMonth() + 1; // 1-12
   const day = date.getDate();
 
   // 寒假 (1月中-2月底)
   if ((month === 1 && day >= 15) || (month === 2 && day <= 28)) {
-    return {
-      phase: 'vacation',
-      label: '寒假',
-      stressLevel: 20,
-      description: '假期休息期，适当放松',
-    };
+    return { phase: 'vacation', label: '寒假', stressLevel: 20, description: '假期休息期，适当放松' };
   }
 
   // 暑假 (7月-8月)
   if (month === 7 || month === 8) {
-    return {
-      phase: 'vacation',
-      label: '暑假',
-      stressLevel: 15,
-      description: '假期休息期，注意规律作息',
-    };
+    return { phase: 'vacation', label: '暑假', stressLevel: 15, description: '假期休息期，注意规律作息' };
   }
 
   // 期中考试周 (4月中、10月中)
   if ((month === 4 && day >= 10 && day <= 20) || (month === 10 && day >= 10 && day <= 20)) {
-    return {
-      phase: 'midterm',
-      label: '期中考试周',
-      stressLevel: 65,
-      description: '考试期间，注意劳逸结合',
-    };
+    return { phase: 'midterm', label: '期中考试周', stressLevel: 65, description: '考试期间，注意劳逸结合' };
   }
 
   // 期末考试周 (1月上旬、6月下旬-7月上旬)
   if ((month === 1 && day <= 14) || (month === 6 && day >= 20) || (month === 7 && day <= 10)) {
-    return {
-      phase: 'final',
-      label: '期末考试周',
-      stressLevel: 80,
-      description: '高压时期，务必保证睡眠和饮食',
-    };
+    return { phase: 'final', label: '期末考试周', stressLevel: 80, description: '高压时期，务必保证睡眠和饮食' };
   }
 
   // 开学季 (3月初、9月初)
   if ((month === 3 && day <= 15) || (month === 9 && day <= 15)) {
-    return {
-      phase: 'regular',
-      label: '开学季',
-      stressLevel: 45,
-      description: '适应期，逐步调整状态',
-    };
+    return { phase: 'regular', label: '开学季', stressLevel: 45, description: '适应期，逐步调整状态' };
   }
 
   // 正常学期
-  return {
-    phase: 'regular',
-    label: '正常学期',
-    stressLevel: 30,
-    description: '正常学习期',
-  };
+  return { phase: 'regular', label: '正常学期', stressLevel: 30, description: '正常学习期' };
+}
+
+/**
+ * 获取学期阶段描述（供对话上下文与 Dashboard）
+ */
+export function getTermPhaseDescription(date: Date = new Date()) {
+  const info = detectSemesterPhase(date);
+  const cfg = getTermConfig();
+  let daysToExams: number | null = null;
+  if (cfg && (info.phase === 'final' || info.phase === 'regular' || info.phase === 'midterm')) {
+    const examStart = new Date(cfg.examWeekStart);
+    daysToExams = Math.max(0, Math.ceil((examStart.getTime() - date.getTime()) / 86400000));
+  }
+  return { ...info, daysToExams, hasConfig: !!cfg };
+}
+
+/**
+ * 考试周学业压力权重倍数（供 RiskScoringEngine 使用）
+ */
+export function getAcademicStressMultiplier(date: Date = new Date()): number {
+  const { phase } = detectSemesterPhase(date);
+  switch (phase) {
+    case 'exam_week': return 1.5;
+    case 'final': return 1.2;
+    case 'vacation': return 0.8;
+    default: return 1.0;
+  }
 }
 
 /**

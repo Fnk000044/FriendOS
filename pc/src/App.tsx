@@ -20,6 +20,7 @@ import OnboardingTour from './components/common/OnboardingTour';
 import { useAppLockStore } from './stores/appLockStore';
 // 首屏 Dashboard 保持 eager 加载，其余路由懒加载以减小首屏体积
 import DashboardPage from './pages/DashboardPage';
+const ChatPage = lazy(() => import('./pages/ChatPage'));
 const TasksPage = lazy(() => import('./pages/TasksPage'));
 const DiaryPage = lazy(() => import('./pages/DiaryPage'));
 const DiaryEditor = lazy(() => import('./components/diary/DiaryEditor'));
@@ -171,6 +172,7 @@ export default function App() {
         <Routes>
           <Route element={<AppLayout />}>
             <Route index element={<PageErrorBoundary><DashboardPage /></PageErrorBoundary>} />
+            <Route path="chat" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><ChatPage /></Suspense></PageErrorBoundary>} />
             <Route path="tasks" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><TasksPage /></Suspense></PageErrorBoundary>} />
             <Route path="diary" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><DiaryPage /></Suspense></PageErrorBoundary>} />
             <Route path="diary/new" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><DiaryEditor /></Suspense></PageErrorBoundary>} />

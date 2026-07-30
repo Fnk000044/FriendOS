@@ -72,3 +72,6 @@ version
 
 # Claude Code
 .zcode/
+.qoder/
+.deveco/
+.mimocode/

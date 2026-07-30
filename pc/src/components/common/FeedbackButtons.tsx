@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import { saveFeedback } from '../../services/FeedbackService';
+import { useLanguage } from '../../i18n/useLanguage';
 
 interface FeedbackButtonsProps {
   type: 'sentiment' | 'ai_response' | 'recommendation';
@@ -17,6 +18,7 @@ export default function FeedbackButtons({
   targetId,
   compact = false,
 }: FeedbackButtonsProps) {
+  const { t } = useLanguage();
   const [submitted, setSubmitted] = useState(false);
 
   const handleFeedback = async (feedback: 'accurate' | 'inaccurate') => {
@@ -28,7 +30,7 @@ export default function FeedbackButtons({
     return (
       <span className="text-xs text-emerald-600 flex items-center gap-1">
         <ThumbsUp className="w-3 h-3" />
-        感谢反馈
+        {t('common.feedback_thanks')}
       </span>
     );
   }
@@ -39,14 +41,14 @@ export default function FeedbackButtons({
         <button
           onClick={() => handleFeedback('accurate')}
           className="p-1 rounded hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 transition-colors cursor-pointer"
-          title="准确"
+          title={t('common.feedback_accurate')}
         >
           <ThumbsUp className="w-3 h-3" />
         </button>
         <button
           onClick={() => handleFeedback('inaccurate')}
           className="p-1 rounded hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
-          title="不准确"
+          title={t('common.feedback_inaccurate')}
         >
           <ThumbsDown className="w-3 h-3" />
         </button>
@@ -56,20 +58,20 @@ export default function FeedbackButtons({
 
   return (
     <div className="flex items-center gap-2 text-xs">
-      <span className="text-text-muted">分析准确吗？</span>
+      <span className="text-text-muted">{t('common.feedback_ask')}</span>
       <button
         onClick={() => handleFeedback('accurate')}
         className="flex items-center gap-1 px-2 py-1 rounded-full hover:bg-emerald-50 text-emerald-600 transition-colors cursor-pointer"
       >
         <ThumbsUp className="w-3 h-3" />
-        准确
+        {t('common.feedback_accurate')}
       </button>
       <button
         onClick={() => handleFeedback('inaccurate')}
         className="flex items-center gap-1 px-2 py-1 rounded-full hover:bg-red-50 text-red-500 transition-colors cursor-pointer"
       >
         <ThumbsDown className="w-3 h-3" />
-        不准
+        {t('common.feedback_inaccurate')}
       </button>
     </div>
   );
