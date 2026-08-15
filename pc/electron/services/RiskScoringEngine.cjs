@@ -358,6 +358,7 @@ function calculateDiaryScore(diaries) {
 // ── 主要导出函数 ──────────────────────────────────────────────
 
 /**
+<<<<<<< HEAD
  * 归一化并校验个性化参数（防御渲染层传入越界值）。
  * 冻结通道：assessment（PHQ-9/GAD-7/PSS-10/C-SSRS 临床金标准）、chat（历史通道）λ 恒为 1。
  * 危机单向锁：个性化仅在 low~high 区间移动，不参与临床升级判定。
@@ -406,6 +407,8 @@ function levelFromScore(score) {
 }
 
 /**
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
  * 计算综合风险评分
  * @param {object} data - 各信号源数据
  * @param {Array} data.emotionRecords - 情绪记录
@@ -413,16 +416,23 @@ function levelFromScore(score) {
  * @param {Array} data.assessments - 评估量表结果
  * @param {Array} data.conversationSummaries - 聊天摘要
  * @param {Array} data.diaries - 日记
+<<<<<<< HEAD
  * @param {object} [personalization] - 用户风险个性化校准层
  * @returns {object} 综合风险评估结果
  */
 function calculateRiskScore(data, personalization) {
+=======
+ * @returns {object} 综合风险评估结果
+ */
+function calculateRiskScore(data) {
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   const emotionResult = calculateEmotionScore(data.emotionRecords || []);
   const behaviorResult = calculateBehaviorScore(data.behaviorData || {});
   const assessmentResult = calculateAssessmentScore(data.assessments || []);
   const chatResult = calculateChatScore(data.conversationSummaries || []);
   const diaryResult = calculateDiaryScore(data.diaries || []);
 
+<<<<<<< HEAD
   const rawScores = {
     emotion: emotionResult.score,
     behavior: behaviorResult.score,
@@ -439,6 +449,17 @@ function calculateRiskScore(data, personalization) {
     rawScores.chat * WEIGHTS.chat +
     rawScores.diary * WEIGHTS.diary;
   const baselineTotalScore = Math.round(Math.min(100, Math.max(0, baselineWeighted)));
+=======
+  // 加权计算总分
+  const weightedScore =
+    emotionResult.score * WEIGHTS.emotion +
+    behaviorResult.score * WEIGHTS.behavior +
+    assessmentResult.score * WEIGHTS.assessment +
+    chatResult.score * WEIGHTS.chat +
+    diaryResult.score * WEIGHTS.diary;
+
+  const totalScore = Math.round(Math.min(100, Math.max(0, weightedScore)));
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   // 收集所有因素（提前计算，供临床升级逻辑使用）
   const allFactors = [
@@ -450,10 +471,17 @@ function calculateRiskScore(data, personalization) {
   ].sort((a, b) => b.weight - a.weight);
 
   // ── 临床升级（safety net，参考 C-SSRS 急性风险判定）──────────────
+<<<<<<< HEAD
   // 触发条件（任一满足即 critical），全部基于未个性化基线分数：
   //   1. baselineTotalScore >= 91（原始阈值，保留）
   //   2. C-SSRS Q3/Q4/Q5 任一阳性（伴意图/计划/行为 → 临床急性风险）
   //   3. baselineTotalScore >= 76（已达 high）且 >= 2 个危机信号源（多通道危机收敛）
+=======
+  // 触发条件（任一满足即 critical）:
+  //   1. totalScore >= 91（原始阈值，保留）
+  //   2. C-SSRS Q3/Q4/Q5 任一阳性（伴意图/计划/行为 → 临床急性风险）
+  //   3. totalScore >= 76（已达 high）且 >= 2 个危机信号源（多通道危机收敛）
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   const cssrs = (data.assessments || []).find(a => a.type === 'CSSRS');
   const cssrsAcute = cssrs && (cssrs.scores || []).slice(2, 5).some(s => s >= 1);
   const crisisFactorCount = allFactors.filter(f =>
@@ -462,6 +490,7 @@ function calculateRiskScore(data, personalization) {
 
   // 升级触发原因（可归因诊断：记录哪条规则把等级推到 critical）
   const escalationReasons = [];
+<<<<<<< HEAD
   if (baselineTotalScore >= 91) escalationReasons.push('score_threshold');
   if (cssrsAcute) escalationReasons.push('cssrs_acute');
   if (baselineTotalScore >= 76 && crisisFactorCount >= 2) escalationReasons.push('multi_channel_crisis');
@@ -511,6 +540,22 @@ function calculateRiskScore(data, personalization) {
       weight: WEIGHTS[k],
       factor: Math.round(factors[k] * 100) / 100,
     };
+=======
+  if (totalScore >= 91) escalationReasons.push('score_threshold');
+  if (cssrsAcute) escalationReasons.push('cssrs_acute');
+  if (totalScore >= 76 && crisisFactorCount >= 2) escalationReasons.push('multi_channel_crisis');
+
+  // 确定风险等级
+  let riskLevel = 'low';
+  if (escalationReasons.length > 0) {
+    riskLevel = 'critical';
+  } else if (totalScore >= 76) {
+    riskLevel = 'high';
+  } else if (totalScore >= 51) {
+    riskLevel = 'medium';
+  } else if (totalScore >= 26) {
+    riskLevel = 'medium_low';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   }
 
   // 生成摘要
@@ -527,10 +572,22 @@ function calculateRiskScore(data, personalization) {
 
   return {
     totalScore,
+<<<<<<< HEAD
     baselineScore: baselineTotalScore,
     riskLevel,
     riskLevelInfo: RISK_LEVELS[riskLevel],
     breakdown,
+=======
+    riskLevel,
+    riskLevelInfo: RISK_LEVELS[riskLevel],
+    breakdown: {
+      emotion: { score: Math.round(emotionResult.score), weight: WEIGHTS.emotion },
+      behavior: { score: Math.round(behaviorResult.score), weight: WEIGHTS.behavior },
+      assessment: { score: Math.round(assessmentResult.score), weight: WEIGHTS.assessment },
+      chat: { score: Math.round(chatResult.score), weight: WEIGHTS.chat },
+      diary: { score: Math.round(diaryResult.score), weight: WEIGHTS.diary },
+    },
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     factors: allFactors.slice(0, 10), // 最多返回10个因素
     // 可归因诊断：命中的排除规则（rule 为词表静态词条，非日记原文）与升级触发原因
     diagnostics: {
@@ -541,6 +598,7 @@ function calculateRiskScore(data, personalization) {
         crisisFactorCount,
       },
     },
+<<<<<<< HEAD
     // 个性化校准元数据（UI 透明展示「已按你的反馈微调」+ 免责）
     calibration: {
       applied,
@@ -557,6 +615,8 @@ function calculateRiskScore(data, personalization) {
         ? `已根据你的 ${per.sampleCount} 次风险反馈微调（个性化仅在中低风险区间生效，危机判定不受影响）`
         : '样本不足，使用通用模型（危机判定始终基于基线分数）',
     },
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     summary,
     timestamp: Date.now(),
   };

@@ -1,5 +1,6 @@
 import { useCallback, useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+<<<<<<< HEAD
 import { Download, Upload, Database, FolderOpen, AlertTriangle, Sparkles, Trash2 } from 'lucide-react';
 import { db } from '../../db';
 import { useLanguage } from '../../i18n/useLanguage';
@@ -10,6 +11,16 @@ import { seedDemoData, clearDemoData } from '../../utils/seedDemoData';
 import Card from '../common/Card';
 import Button from '../common/Button';
 import ConfirmDialog from '../common/ConfirmDialog';
+=======
+import { Download, Upload, Database, FolderOpen, AlertTriangle, Sparkles } from 'lucide-react';
+import { db } from '../../db';
+import { useLanguage } from '../../i18n/useLanguage';
+import { useNotificationStore } from '../../stores/notificationStore';
+import { getToday } from '../../utils/date';
+import { seedDemoData } from '../../utils/seedDemoData';
+import Card from '../common/Card';
+import Button from '../common/Button';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 import StorageInfo from './StorageInfo';
 import { useBackup } from '../../hooks/useBackup';
 
@@ -18,6 +29,7 @@ interface DataSettingsProps {
   onExportingChange?: (exporting: boolean) => void;
 }
 
+<<<<<<< HEAD
 /** P2-8：统一确认弹窗状态（替代 window.confirm 阻塞式原生弹窗） */
 interface PendingConfirm {
   title: string;
@@ -25,6 +37,8 @@ interface PendingConfirm {
   action: () => void | Promise<void>;
 }
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 /**
  * 数据管理设置卡片：导入/导出/重置/演示数据/存储信息/自动备份
  *
@@ -34,16 +48,20 @@ interface PendingConfirm {
 export default function DataSettings({ onExportingChange }: DataSettingsProps) {
   const { t, lang } = useLanguage();
   const { exporting, handleExport, handleImport } = useBackup();
+<<<<<<< HEAD
   const [storagePath, setStoragePath] = useState<string | null>(null);
   const [migrating, setMigrating] = useState(false);
   const [migrateResult, setMigrateResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [confirm, setConfirm] = useState<PendingConfirm | null>(null);
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   // 把 exporting 状态透传给父级（用于禁用自动备份按钮）
   useEffect(() => {
     onExportingChange?.(exporting);
   }, [exporting, onExportingChange]);
 
+<<<<<<< HEAD
   // 读取当前存储位置
   useEffect(() => {
     window.electronAPI?.storageGetLocation?.().then((loc) => {
@@ -84,10 +102,13 @@ export default function DataSettings({ onExportingChange }: DataSettingsProps) {
     }
   }, [migrating, t]);
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   const handleOpenFolder = useCallback(() => {
     window.electronAPI?.openDataFolder();
   }, []);
 
+<<<<<<< HEAD
   const handleReset = useCallback(() => {
     setConfirm({
       title: t('common.confirm_title'),
@@ -156,6 +177,46 @@ export default function DataSettings({ onExportingChange }: DataSettingsProps) {
         }
       },
     });
+=======
+  const handleReset = useCallback(async () => {
+    if (!window.confirm(t('settings.reset_confirm'))) return;
+    // 设置重置标记（不以 friendos_ 开头，不会被下面的过滤器清除）
+    localStorage.setItem('system_reset_flag', '1');
+    await db.delete();
+    // 清除所有 FriendOS 相关的 localStorage key（含 theme/appearance/lang 等偏好）
+    const friendosKeys = Object.keys(localStorage).filter(key =>
+      key.startsWith('friendos_') || key.startsWith('lifeos_') || key.startsWith('use_')
+    );
+    friendosKeys.forEach(key => localStorage.removeItem(key));
+    // 重置 stores 状态
+    useNotificationStore.getState().reset();
+    useLanguage.getState().reset();
+    // 重置主进程 ONNX 状态（清除缓存的加载结果）
+    try {
+      await window.electronAPI?.sentimentResetOnnx();
+    } catch { /* non-critical */ }
+    // 真正重启 Electron 应用：主进程退出并重新拉起，确保 ONNX session、
+    // nativeImage 句柄等主进程状态全部清空，恢复纯净初始态
+    toast.success('已恢复初始化，正在重启…');
+    setTimeout(async () => {
+      if (window.electronAPI?.relaunch) {
+        await window.electronAPI.relaunch();
+      } else {
+        window.location.reload();
+      }
+    }, 600);
+  }, [t]);
+
+  const handleSeedDemo = useCallback(async () => {
+    if (!window.confirm(t('settings.demo_data_confirm'))) return;
+    const result = await seedDemoData();
+    if (result.success) {
+      toast.success(t('settings.demo_data_success'));
+      window.location.reload();
+    } else {
+      toast.error(t('settings.demo_data_fail'));
+    }
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   }, [t]);
 
   // ── 自动备份 ──────────────────────────────────────────────
@@ -221,6 +282,7 @@ export default function DataSettings({ onExportingChange }: DataSettingsProps) {
 
   return (
     <>
+<<<<<<< HEAD
       {/* 统一确认弹窗（P2-8：替换 4 处 window.confirm） */}
       <ConfirmDialog
         open={confirm !== null}
@@ -234,6 +296,8 @@ export default function DataSettings({ onExportingChange }: DataSettingsProps) {
         message={confirm?.message ?? ''}
       />
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       {/* 数据管理 */}
       <Card>
         <h3 className="text-sm font-semibold text-text-primary mb-1">{t('settings.data_mgmt')}</h3>
@@ -265,6 +329,7 @@ export default function DataSettings({ onExportingChange }: DataSettingsProps) {
         </div>
         {/* 显示实际占用大小 + 清理缓存按钮 */}
         <StorageInfo />
+<<<<<<< HEAD
         <div className="flex flex-wrap gap-2 mt-3">
           {window.electronAPI && (
             <Button variant="secondary" size="sm" onClick={handleOpenFolder}>
@@ -287,6 +352,13 @@ export default function DataSettings({ onExportingChange }: DataSettingsProps) {
         )}
         {migrateResult && (
           <p className={`text-xs mt-2 ${migrateResult.ok ? 'text-green-500' : 'text-red-500'}`}>{migrateResult.msg}</p>
+=======
+        {window.electronAPI && (
+          <Button variant="secondary" size="sm" className="mt-3" onClick={handleOpenFolder}>
+            <FolderOpen className="w-4 h-4" />
+            {t('settings.open_folder')}
+          </Button>
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
         )}
       </Card>
 
@@ -297,6 +369,7 @@ export default function DataSettings({ onExportingChange }: DataSettingsProps) {
           {t('settings.demo_data')}
         </h3>
         <p className="text-xs text-text-muted mb-3">{t('settings.demo_data_desc')}</p>
+<<<<<<< HEAD
         <div className="flex gap-3">
           <Button variant="secondary" onClick={handleSeedDemo}>
             <Sparkles className="w-4 h-4" />
@@ -307,6 +380,12 @@ export default function DataSettings({ onExportingChange }: DataSettingsProps) {
             {t('settings.demo_data_clear_btn')}
           </Button>
         </div>
+=======
+        <Button variant="secondary" onClick={handleSeedDemo}>
+          <Sparkles className="w-4 h-4" />
+          {t('settings.demo_data_btn')}
+        </Button>
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       </Card>
 
       {/* 自动备份 */}

@@ -18,9 +18,12 @@
     "build/**/*"
   ],
   "afterPack": "./build/after-pack.cjs",
+<<<<<<< HEAD
   "toolsets": {
     "winCodeSign": "1.1.0"
   },
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   "win": {
     "icon": "build/custom-icon.ico",
     "target": [
@@ -33,7 +36,11 @@
         "arch": ["x64"]
       }
     ],
+<<<<<<< HEAD
     "signAndEditExecutable": false
+=======
+    "signAndEditExecutable": true
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   },
   "nsis": {
     "oneClick": false,

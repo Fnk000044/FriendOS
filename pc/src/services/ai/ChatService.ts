@@ -5,7 +5,10 @@ import { useCrisisStore } from '../../stores/crisisStore';
 import { SYSTEM_PROMPT } from './prompts/system';
 import { getDaysAgo, getToday, getNow } from '../../utils/date';
 import { debounce } from '../../utils/debounce';
+<<<<<<< HEAD
 import { CRISIS_RESPONSE_TEXT } from '../../utils/constants';
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 /**
  * ChatService — 渲染层对话编排
@@ -23,6 +26,7 @@ import { CRISIS_RESPONSE_TEXT } from '../../utils/constants';
 
 const API = typeof window !== 'undefined' ? window.electronAPI : undefined;
 
+<<<<<<< HEAD
 // 模块级单例防抖（修复审计 P2-5：此前每次 sendMessage 都 new 一个 debounce，
 // 300ms 延迟恒定且"防抖"从不跨调用生效；改为共享实例后才真正合并连续调用）
 const analyzeDebounced = debounce(
@@ -30,6 +34,8 @@ const analyzeDebounced = debounce(
   300
 );
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 // 每会话每 10 轮生成一次摘要
 const SUMMARY_EVERY_ROUNDS = 10;
 
@@ -142,9 +148,19 @@ export async function sendMessage(text: string): Promise<void> {
   store.addMessage(userMsg);
 
   // 1. 情感分析（与日记同通道，ONNX）
+<<<<<<< HEAD
   // 模块级 debounce 防止快速连续发送时每次都跑 ONNX 推理
   let sentiment: SentimentResult | null = null;
   try {
+=======
+  // debounce 防止用户快速连续发送时每次都跑 ONNX 推理
+  let sentiment: SentimentResult | null = null;
+  try {
+    const analyzeDebounced = debounce(
+      (text: string) => API.sentimentAnalyze(text),
+      300
+    );
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     sentiment = await analyzeDebounced(text);
   } catch (e) {
     console.error('[ChatService] sentimentAnalyze error:', e);
@@ -163,7 +179,11 @@ export async function sendMessage(text: string): Promise<void> {
     const crisisReply: ChatMessageState = {
       id: genId(),
       role: 'assistant',
+<<<<<<< HEAD
       content: CRISIS_RESPONSE_TEXT,
+=======
+      content: '我注意到你现在可能很难受。我想先确认一件事——你现在安全吗？如果你正在经历很痛苦的时刻，可以拨打全国心理援助热线 400-161-9995，那里有人 24 小时愿意听你说。你不是一个人。',
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       timestamp: Date.now(),
       method: 'fallback',
       emotionLabel,
@@ -201,6 +221,7 @@ export async function sendMessage(text: string): Promise<void> {
     .slice(-20)
     .map(m => ({ role: m.role, content: m.content, timestamp: m.timestamp }));
 
+<<<<<<< HEAD
   // ★ 无 Key 短路（P0-1）：先查 provider 配置，未配置 Key 直接走本地模板对话，
   // 不发起云调用（避免决赛无 Key/断网时 30s 超时等待）。
   // 注意：主进程 chat:getProviderConfig 在出错时也返回 { hasKey: false }，
@@ -237,6 +258,8 @@ export async function sendMessage(text: string): Promise<void> {
     return;
   }
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   // 流式 chunk 监听
   let chunkUnsub: (() => void) | null = null;
   try {
@@ -262,6 +285,7 @@ export async function sendMessage(text: string): Promise<void> {
       });
       useChatStore.getState().setProviderStatus('cloud');
     } else {
+<<<<<<< HEAD
       // 5. 降级：云失败/无 key/超时 → ChatFallbackEngine（传 session + 回写增量）
       const fb = await API.chatFallback({
         text,
@@ -272,6 +296,10 @@ export async function sendMessage(text: string): Promise<void> {
         session: useChatStore.getState().session,
       });
       if (fb.sessionDelta) useChatStore.getState().updateSession(fb.sessionDelta);
+=======
+      // 5. 降级：云失败/无 key/超时 → ChatFallbackEngine
+      const fb = await API.chatFallback({ text, emotionLabel });
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       useChatStore.getState().finalizeLast({
         content: fb.text,
         method: 'fallback',
@@ -284,6 +312,7 @@ export async function sendMessage(text: string): Promise<void> {
       }
     }
   } catch (e: any) {
+<<<<<<< HEAD
     // 兜底降级（同样传 session + 回写）
     try {
       const fb = await API.chatFallback({
@@ -295,6 +324,11 @@ export async function sendMessage(text: string): Promise<void> {
         session: useChatStore.getState().session,
       });
       if (fb.sessionDelta) useChatStore.getState().updateSession(fb.sessionDelta);
+=======
+    // 兜底降级
+    try {
+      const fb = await API.chatFallback({ text, emotionLabel });
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       useChatStore.getState().finalizeLast({
         content: fb.text,
         method: 'fallback',
@@ -429,6 +463,7 @@ export async function loadSession(sessionId: string) {
 }
 
 /**
+<<<<<<< HEAD
  * 拉取历史会话概要列表（按更新时间倒序）
  */
 export async function listSessions() {
@@ -485,6 +520,8 @@ export async function switchSession(sessionId: string) {
 }
 
 /**
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
  * 计算距上次对话天数（用于沉默感知）
  */
 export async function getSilentDays(): Promise<number> {

@@ -789,6 +789,7 @@ describe('RiskScoringEngine', () => {
       });
     });
   });
+<<<<<<< HEAD
 
   // ── 本地个性化校准层（危机单向锁定）─────────────────────────
   describe('calculateRiskScore 个性化校准层', () => {
@@ -873,4 +874,6 @@ describe('RiskScoringEngine', () => {
       expect(r.totalScore).toBe(r.baselineScore);
     });
   });
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 });

@@ -1,7 +1,11 @@
 {
   "name": "FriendOS",
   "private": true,
+<<<<<<< HEAD
   "version": "0.0.6",
+=======
+  "version": "0.0.5",
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   "author": "FriendOS User",
   "description": "全功能个人管理系统",
   "type": "module",
@@ -23,6 +27,7 @@
     "icon": "node scripts/generate-ico.cjs",
     "eval:sentiment": "node scripts/eval-sentiment.cjs",
     "eval:risk": "node scripts/eval-risk.cjs",
+<<<<<<< HEAD
     "eval:external": "node scripts/external_validation.cjs",
     "eval:onnx-external": "node scripts/eval-onnx-external.cjs",
     "eval:onnx-external2": "node scripts/eval-onnx-external-v2.cjs",
@@ -30,6 +35,11 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "docs:smoke": "echo 见 docs/offline_smoke_test.md（打包版离线冒烟清单）"
+=======
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   },
   "build": {
     "appId": "com.friendos.app",

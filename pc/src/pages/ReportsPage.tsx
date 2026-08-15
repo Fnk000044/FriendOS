@@ -1,8 +1,14 @@
+<<<<<<< HEAD
 import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Brain, TrendingUp, TrendingDown, Lightbulb, Target, FileDown } from 'lucide-react';
+=======
+import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { Brain, TrendingUp, TrendingDown, Minus, Lightbulb, Target } from 'lucide-react';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 import ReportHeader from '../components/reports/ReportHeader';
 import StatCard from '../components/reports/StatCard';
 import TaskChart from '../components/reports/TaskChart';
@@ -10,18 +16,28 @@ import MoodChart from '../components/reports/MoodChart';
 import HabitChart from '../components/reports/HabitChart';
 import CorrelationChart from '../components/reports/CorrelationChart';
 import HealthRadar from '../components/emotion/HealthRadar';
+<<<<<<< HEAD
+=======
+import EmotionTrend from '../components/emotion/EmotionTrend';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 import WeeklyReportCard from '../components/reports/WeeklyReportCard';
 import InterventionEffectivenessCard from '../components/reports/InterventionEffectivenessCard';
 import { useLanguage } from '../i18n/useLanguage';
 import { generateReport, type ReportData } from '../utils/reports';
 import { generateAIReport, type AIReport } from '../services/ai/ReportAIService';
+<<<<<<< HEAD
 import { buildReportHtml } from '../utils/reportPdf';
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 import { db } from '../db';
 import type { EmotionRecord } from '../db/models';
 
 export default function ReportsPage() {
   const { t, lang } = useLanguage();
+<<<<<<< HEAD
   const navigate = useNavigate();
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   const [report, setReport] = useState<ReportData | null>(null);
   const [aiReport, setAiReport] = useState<AIReport | null>(null);
   const [emotionRecords, setEmotionRecords] = useState<EmotionRecord[]>([]);
@@ -29,12 +45,18 @@ export default function ReportsPage() {
     mood: 0, stress: 0, energy: 0, social: 0, sleep: 0, selfCare: 0,
   });
   const [loading, setLoading] = useState(false);
+<<<<<<< HEAD
   const [range, setRange] = useState<[string, string] | null>(null);
   const [exporting, setExporting] = useState(false);
 
   const handleRangeChange = async (start: string, end: string) => {
     setLoading(true);
     setRange([start, end]);
+=======
+
+  const handleRangeChange = async (start: string, end: string) => {
+    setLoading(true);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
     const [data, ai, emotions, healthProfile] = await Promise.all([
       generateReport(start, end),
@@ -52,6 +74,7 @@ export default function ReportsPage() {
     setLoading(false);
   };
 
+<<<<<<< HEAD
   // 导出心理报告 PDF（HTML 由渲染层构建，主进程渲染 A4 并保存）
   const handleExportPdf = useCallback(async () => {
     if (!report || !range) {
@@ -88,6 +111,8 @@ export default function ReportsPage() {
     }
   }, [report, range, aiReport, healthDimensions, lang, t]);
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   useEffect(() => {
     // 默认范围：近 7 天（与 EmotionPage 一致），避免当天无情绪记录时图表全空白
     const today = format(new Date(), 'yyyy-MM-dd');
@@ -101,6 +126,7 @@ export default function ReportsPage() {
     ? <TrendingUp className="w-4 h-4 text-success" />
     : aiReport?.highlights.trend === 'declining'
     ? <TrendingDown className="w-4 h-4 text-danger" />
+<<<<<<< HEAD
     : null; // 趋势平稳时不显示图标（避免"标题—"的视觉误读）
 
   return (
@@ -122,6 +148,15 @@ export default function ReportsPage() {
           )}
           <ReportHeader onRangeChange={handleRangeChange} />
         </div>
+=======
+    : <Minus className="w-4 h-4 text-text-muted" />;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <p className="text-text-muted">{t('report.title')}</p>
+        <ReportHeader onRangeChange={handleRangeChange} />
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       </div>
 
       {!report && !loading ? (
@@ -197,6 +232,7 @@ export default function ReportsPage() {
               </div>
             )}
 
+<<<<<<< HEAD
             {/* 健康雷达（心理健康画像）——保留；情绪趋势已移至情绪分析页，避免重复（PRD v3 P0-7） */}
             <div className="glass-card rounded-xl p-5">
               <h2 className="font-semibold text-text-primary mb-1">{t('report.health_radar')}</h2>
@@ -211,6 +247,25 @@ export default function ReportsPage() {
                 </button>
               </p>
               <HealthRadar dimensions={healthDimensions} hasData={emotionRecords.length > 0} />
+=======
+            {/* Health Radar + Emotion Trend */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="glass-card rounded-xl p-5">
+                <h2 className="font-semibold text-text-primary mb-4">{t('report.health_radar')}</h2>
+                <HealthRadar dimensions={healthDimensions} hasData={emotionRecords.length > 0} />
+              </div>
+
+              <div className="glass-card rounded-xl p-5">
+                <h2 className="font-semibold text-text-primary mb-4">{t('report.emotion_trend')}</h2>
+                {emotionRecords.length > 0 ? (
+                  <EmotionTrend records={emotionRecords} days={30} />
+                ) : (
+                  <div className="h-48 flex items-center justify-center text-text-muted">
+                    <p className="text-sm">{t('report.no_emotion_data')}</p>
+                  </div>
+                )}
+              </div>
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
             </div>
 
             {/* Weekly Report */}

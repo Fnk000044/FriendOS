@@ -130,9 +130,15 @@
   --bg-card-solid: #1E293B;
   --bg-sidebar: rgba(30, 41, 59, 0.75);
   --bg-hover: rgba(51, 65, 85, 0.8);
+<<<<<<< HEAD
   --glass-border: rgba(255, 255, 255, 0.12);
   --glass-border-gradient: linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.06));
   --border-input: #64748B;
+=======
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-gradient: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04));
+  --border-input: #475569;
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   --glass-glow: inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(255, 255, 255, 0.02);
 
   --text-primary: #F1F5F9;
@@ -242,6 +248,7 @@ html {
   scroll-behavior: auto !important;
 }
 
+<<<<<<< HEAD
 /* 减少动效：全局微交互降级（hover 不位移、按下不缩放、入场瞬时、时间线不错峰） */
 [data-reduce-motion="true"] .glass-card-hover,
 [data-reduce-motion="true"] .glass-card-accent,
@@ -264,6 +271,8 @@ html {
   opacity: 1 !important;
 }
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 /* Slider 通用样式（覆盖原生 range thumb） */
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -469,6 +478,7 @@ input[type="range"]::-moz-range-thumb {
     border-radius: var(--radius-card);
   }
   .glass-card-hover {
+<<<<<<< HEAD
     /* 只动画 transform / box-shadow / border-color / background，避免 layout 抖动 */
     transition: transform var(--transition-fast), box-shadow var(--transition-fast),
       border-color var(--transition-fast), background var(--transition-fast);
@@ -477,6 +487,13 @@ input[type="range"]::-moz-range-thumb {
   .glass-card-hover:hover {
     box-shadow: var(--shadow-card-hover);
     transform: translateY(-2px) scale(1.005);
+=======
+    transition: all var(--transition-smooth);
+  }
+  .glass-card-hover:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     border-color: rgba(20, 184, 166, 0.15);
     background: rgba(255, 255, 255, 0.78);
   }
@@ -568,12 +585,15 @@ input[type="range"]::-moz-range-thumb {
   from { opacity: 1; }
   to { opacity: 0; }
 }
+<<<<<<< HEAD
 /* 任务打勾动效：对勾从 0.6 倍淡入到 1 倍 */
 @keyframes check-pop {
   0% { opacity: 0; transform: scale(0.6); }
   60% { opacity: 1; transform: scale(1.08); }
   100% { opacity: 1; transform: scale(1); }
 }
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 /* ══ 流式输出闪烁光标（定义见上方，此处不重复） ══ */
 
@@ -715,6 +735,7 @@ select:focus-visible {
   border-radius: var(--radius-button);
 }
 
+<<<<<<< HEAD
 /* ══ 全局微交互（P0 动画打磨：只动画 transform/opacity，150-250ms ease-out）══
    统一走 data-reduce-motion 降级（见下方 reduce-motion 块），新代码不直调 matchMedia。 */
 
@@ -758,6 +779,8 @@ select:focus-visible {
 .timeline-stagger > *:nth-child(7) { animation-delay: 240ms; }
 .timeline-stagger > *:nth-child(8) { animation-delay: 280ms; }
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 /* Cursor pointer for clickable elements */
 button,
 [role="button"],

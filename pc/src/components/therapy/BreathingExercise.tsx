@@ -3,7 +3,10 @@ import { Play, Pause, RotateCcw, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db } from '../../db';
 import { getToday } from '../../utils/date';
+<<<<<<< HEAD
 import InterventionFeedback from '../common/InterventionFeedback';
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 type BreathingPattern = '478' | 'box' | 'simple' | 'resonance';
 
@@ -190,9 +193,12 @@ export default function BreathingExercise({ onComplete }: BreathingExerciseProps
             情绪强度从 {moodBefore} 降低到 {moodAfter}，降低了 {moodBefore - moodAfter} 点！
           </p>
         )}
+<<<<<<< HEAD
         <div className="mt-4 flex justify-center">
           <InterventionFeedback interventionType="breathing" />
         </div>
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
         <button
           onClick={handleReset}
           className="mt-4 px-6 py-2 bg-primary text-white rounded-btn hover:opacity-90 transition-opacity cursor-pointer"

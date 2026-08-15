@@ -85,7 +85,11 @@ export default function StatusBar() {
       case '/sync':
         return '数据同步';
       case '/assistant':
+<<<<<<< HEAD
         return '知己助理';
+=======
+        return 'AI 助理';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       default:
         return '知己 - 你的心理健康助手';
     }

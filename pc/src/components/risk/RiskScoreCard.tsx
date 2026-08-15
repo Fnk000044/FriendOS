@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useCallback, useState } from 'react';
 import { AlertTriangle, ListTree, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '../../i18n/useLanguage';
@@ -6,6 +7,12 @@ import RiskCalibrationFeedback from '../common/RiskCalibrationFeedback';
 import type { RiskLevel } from '../../db/models';
 import EvidenceChainView from './EvidenceChainView';
 import { buildEvidenceChain, type HasDataMap, type RiskResultLike } from '../../utils/evidenceChain';
+=======
+import { AlertTriangle } from 'lucide-react';
+import { useLanguage } from '../../i18n/useLanguage';
+import AnimatedNumber from '../common/AnimatedNumber';
+import type { RiskLevel } from '../../db/models';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 // 风险等级配色（与父页 RISK_COLORS 等价，避免 prop drilling 重复传一份对象）
 const RISK_COLORS: Record<RiskLevel, { bg: string; text: string; border: string }> = {
@@ -17,6 +24,7 @@ const RISK_COLORS: Record<RiskLevel, { bg: string; text: string; border: string 
 };
 
 interface RiskScoreCardProps {
+<<<<<<< HEAD
   riskResult: RiskResultLike & {
     riskLevel: RiskLevel;
     riskLevelInfo: { min: number; max: number; label: string; color: string };
@@ -30,10 +38,19 @@ interface RiskScoreCardProps {
   };
   /** 各信号源是否有数据（决定证据链 no_data 判定；缺省按有数据） */
   hasData?: HasDataMap;
+=======
+  riskResult: {
+    totalScore: number;
+    riskLevel: RiskLevel;
+    riskLevelInfo: { min: number; max: number; label: string; color: string };
+    summary: string;
+  };
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 }
 
 const LEVEL_ORDER: RiskLevel[] = ['low', 'medium_low', 'medium', 'high', 'critical'];
 
+<<<<<<< HEAD
 export default function RiskScoreCard({ riskResult, hasData }: RiskScoreCardProps) {
   const { t } = useLanguage();
   const [chainOpen, setChainOpen] = useState(false);
@@ -58,13 +75,23 @@ export default function RiskScoreCard({ riskResult, hasData }: RiskScoreCardProp
 
   const hasBreakdown = !!riskResult.breakdown;
 
+=======
+export default function RiskScoreCard({ riskResult }: RiskScoreCardProps) {
+  const { t } = useLanguage();
+  const currentLevelIdx = LEVEL_ORDER.indexOf(riskResult.riskLevel);
+
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   return (
     <div
       className={`rounded-2xl p-6 border relative overflow-hidden ${RISK_COLORS[riskResult.riskLevel].border}`}
       style={{
+<<<<<<< HEAD
         // 不透明背景：保证指数在任何图表/底纹上清晰可读（用户反馈）
         background: 'var(--bg-card-solid)',
         boxShadow: `inset 0 4px 0 0 ${riskResult.riskLevelInfo.color}`,
+=======
+        background: `linear-gradient(135deg, ${RISK_COLORS[riskResult.riskLevel].bg.replace(/bg-/g, '').replace(/-50/g, '/15').replace(/-100/g, '/25')}, transparent)`,
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       }}
     >
       {/* 顶部 5 格风险等级条（critical 闪烁 pulseGlow） */}
@@ -118,6 +145,7 @@ export default function RiskScoreCard({ riskResult, hasData }: RiskScoreCardProp
           </div>
         </div>
       </div>
+<<<<<<< HEAD
       <p className="text-sm text-text-secondary mt-4 p-3 rounded-lg" style={{ background: 'var(--bg-hover)' }}>
         {riskResult.summary}
       </p>
@@ -164,6 +192,21 @@ export default function RiskScoreCard({ riskResult, hasData }: RiskScoreCardProp
       )}
 
       {chainOpen && <EvidenceChainView open chain={chain} onClose={() => setChainOpen(false)} />}
+=======
+      <p className="text-sm text-text-secondary mt-4 p-3 bg-white/50 dark:bg-white/5 rounded-lg">
+        {riskResult.summary}
+      </p>
+      {/* 行动指引：高风险时醒目提示热线 */}
+      {(riskResult.riskLevel === 'high' || riskResult.riskLevel === 'critical') && (
+        <div className="mt-3 p-3 rounded-lg border border-red-300 dark:border-red-700 bg-red-50/80 dark:bg-red-900/30 flex items-start gap-2 fade-in-up">
+          <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 shrink-0" aria-hidden="true" />
+          <div className="text-sm">
+            <p className="font-medium text-red-700 dark:text-red-300">{t('risk.seek_help_title')}</p>
+            <p className="text-red-600 dark:text-red-400 mt-0.5">{t('risk.hotline_label')}：<span className="font-semibold">400-161-9995</span></p>
+          </div>
+        </div>
+      )}
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     </div>
   );
 }

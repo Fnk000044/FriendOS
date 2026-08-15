@@ -50,6 +50,7 @@ function logInfo(operation, extra) {
   }
 }
 
+<<<<<<< HEAD
 // ── 主进程致命错误处理（P2-12 加固）───────────────────────────
 // 原则：uncaughtException 之后主进程处于未定义状态，不应无限"带病运行"。
 // - 首次异常：记录 + 标记降级状态 + 通知渲染层（用户可感知）
@@ -116,6 +117,16 @@ process.on('unhandledRejection', (reason) => {
   const error = reason instanceof Error ? reason : new Error(String(reason));
   logError('unhandledRejection', error);
   markDegraded(error);
+=======
+process.on('uncaughtException', (error) => {
+  logError('uncaughtException', error);
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('main-process-error', error.message);
+  }
+});
+process.on('unhandledRejection', (reason) => {
+  logError('unhandledRejection', reason instanceof Error ? reason : new Error(String(reason)));
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 });
 
 // Resolve native module path from app.asar.unpacked in packaged builds
@@ -377,6 +388,7 @@ ipcMain.handle('open-data-folder', async () => {
   await shell.openPath(userDataPath);
 });
 
+<<<<<<< HEAD
 // ── 自定义存储位置（PRD v3 P1-16） ───────────────────────────
 // 配置文件存放在"默认 userData"下（应用首次启动时的位置），
 // 启动早期 applyCustomStorageLocation() 读取并重定向 userData。
@@ -516,6 +528,8 @@ ipcMain.handle('storage:migrate', async (_event, targetDir) => {
   }
 });
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 // Sync server IPC handlers
 ipcMain.handle('start-sync-server', async () => {
   return await startSyncServer();
@@ -658,7 +672,11 @@ function ensureOnnxLoaded() {
 // 本地大模型（Qwen3）已移除：SentimentService 第 3 层语义判定不再注入 localModelComplete，
 // qwenAnalyze 将返回 null，analyzeEnhanced 自动降级为 L1 关键词 + L2 ONNX 两层判定。
 
+<<<<<<< HEAD
 ipcMain.handle('sentiment-analyze', async (_event, text, calibration) => {
+=======
+ipcMain.handle('sentiment-analyze', async (_event, text) => {
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   try {
     // 参数校验：限制文本长度，防止超长输入拖慢分析
     if (typeof text !== 'string' || text.length > 10000) {
@@ -666,13 +684,22 @@ ipcMain.handle('sentiment-analyze', async (_event, text, calibration) => {
     }
     // 确保 ONNX 模型已加载（首次调用时延迟加载）
     await ensureOnnxLoaded();
+<<<<<<< HEAD
     // Use enhanced analysis (combines ONNX + keyword)，透传用户情感先验校准（危机通道冻结）
     return await SentimentService.analyzeEnhanced(text, calibration);
+=======
+    // Use enhanced analysis (combines ONNX + keyword)
+    return await SentimentService.analyzeEnhanced(text);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   } catch (err) {
     logError('ipc:sentiment-analyze', err);
     // Fallback to keyword analysis
     try {
+<<<<<<< HEAD
       return SentimentService.analyze(text, calibration);
+=======
+      return SentimentService.analyze(text);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     } catch (e) {
       logError('ipc:sentiment-analyze.fallback', e);
       return { level: 'low', score: 0.5, positiveProb: 0.5, negativeProb: 0.5, keywords: [], needCloud: false, method: 'keyword', timestamp: Date.now() };
@@ -743,12 +770,20 @@ ipcMain.handle('sentiment-get-model-status', async () => {
   }
 });
 
+<<<<<<< HEAD
 // 恢复初始化时重置 ONNX 状态（异步：等待 in-flight 加载并释放原生 session）
+=======
+// 恢复初始化时重置 ONNX 状态
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 ipcMain.handle('sentiment-reset-onnx', async () => {
   try {
     onnxLoadPromise = null;
     const { resetOnnxState } = require('./services/SentimentService.cjs');
+<<<<<<< HEAD
     await resetOnnxState();
+=======
+    resetOnnxState();
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     console.log('[FriendOS] ONNX state reset for app reset');
     return { success: true };
   } catch (err) {
@@ -811,6 +846,7 @@ ipcMain.handle('backup-import', async () => {
   }
 });
 
+<<<<<<< HEAD
 // ── 心理报告导出 PDF ─────────────────────────────────
 // 渲染层构建完整报告 HTML（用户内容已转义），主进程用隐藏窗口渲染为 A4 PDF。
 ipcMain.handle('report-export-pdf', async (_event, payload) => {
@@ -862,6 +898,8 @@ ipcMain.handle('report-export-pdf', async (_event, payload) => {
   }
 });
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 // ── 综合风险评分 IPC Handlers ─────────────────────────────────
 // 储存信息：返回 userData 目录各子目录大小（应用数据/缓存/日志）
 // 异步递归遍历，避免在用户数据目录较大时阻塞主进程事件循环
@@ -872,22 +910,33 @@ ipcMain.handle('get-storage-size', async () => {
     const path = require('path');
     const userDataPath = app.getPath('userData');
 
+<<<<<<< HEAD
     // 递归深度与单层条目上限（修复审计 P2-2：原实现无界递归，目录异常大时耗时失控）
     const MAX_DEPTH = 4;
     const MAX_ENTRIES_PER_DIR = 5000;
 
     const dirSize = async (dir, depth = 0) => {
       if (depth > MAX_DEPTH) return 0;
+=======
+    const dirSize = async (dir) => {
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       let total = 0;
       let entries;
       try {
         entries = await fsp.readdir(dir, { withFileTypes: true });
       } catch { return 0; } // 目录不存在或无权限
+<<<<<<< HEAD
       const limited = entries.slice(0, MAX_ENTRIES_PER_DIR);
       await Promise.all(limited.map(async (entry) => {
         const full = path.join(dir, entry.name);
         if (entry.isDirectory()) {
           total += await dirSize(full, depth + 1);
+=======
+      await Promise.all(entries.map(async (entry) => {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          total += await dirSize(full);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
         } else {
           try { total += (await fsp.stat(full)).size; } catch {}
         }
@@ -947,12 +996,83 @@ ipcMain.handle('clear-cache', async () => {
   }
 });
 
+<<<<<<< HEAD
 // Windows Hello 可用性检查已随 windows-hello-verify 一并移除（PRD v3 P0-9）
 ipcMain.handle('risk:calculate', async (_event, data) => {
   try {
     const { calculateRiskScore } = require('./services/RiskScoringEngine.cjs');
     // personalization 由渲染层按需附带（已解密纯数值校准层），透传给引擎
     const result = calculateRiskScore(data, data && data.personalization);
+=======
+// Windows Hello 生物识别可用性检查（结果缓存，避免每次都 spawn PowerShell 阻塞主进程）
+let windowsHelloAvailableCache = null; // null = 未探测, { value, ts } = 已探测
+const WINDOWS_HELLO_CACHE_TTL = 5 * 60 * 1000; // 5 分钟
+
+ipcMain.handle('windows-hello-available', async () => {
+  if (process.platform !== 'win32') return { available: false, reason: '仅支持 Windows' };
+  // 缓存命中直接返回
+  if (windowsHelloAvailableCache && Date.now() - windowsHelloAvailableCache.ts < WINDOWS_HELLO_CACHE_TTL) {
+    return windowsHelloAvailableCache.value;
+  }
+  try {
+    const { execFile } = require('child_process');
+    const { promisify } = require('util');
+    const execFileAsync = promisify(execFile);
+    // 检查 WinRT UserConsentVerifier 是否可用（即系统是否配置了 Windows Hello）
+    const psScript = `
+$assemblies = @('System.Runtime','System.Runtime.InteropServices','Windows.Foundation','Windows.Security.Credentials.UI');
+try {
+  [Windows.Security.Credentials.UI.UserConsentVerifier,Windows.Security.Credentials.UI,ContentType=WindowsRuntime] | Out-Null
+  $verifier = [Windows.Security.Credentials.UI.UserConsentVerifier]::RequestVerificationAsync('')
+  Write-Output 'AVAILABLE'
+} catch {
+  Write-Output 'NOT_AVAILABLE'
+}
+`;
+    const { stdout } = await execFileAsync('powershell', ['-NoProfile', '-Command', psScript], { encoding: 'utf8', timeout: 5000, windowsHide: true });
+    const value = { available: stdout.includes('AVAILABLE') };
+    windowsHelloAvailableCache = { value, ts: Date.now() };
+    return value;
+  } catch {
+    const value = { available: false, reason: 'Windows Hello 未配置或不可用' };
+    windowsHelloAvailableCache = { value, ts: Date.now() };
+    return value;
+  }
+});
+
+// Windows Hello 验证（人脸/PIN）
+ipcMain.handle('windows-hello-verify', async () => {
+  if (process.platform !== 'win32') return { success: false, error: '仅支持 Windows' };
+  try {
+    const { exec } = require('child_process');
+    const { promisify } = require('util');
+    const execAsync = promisify(exec);
+
+    // 调用 WinRT UserConsentVerifier.RequestVerificationAsync
+    // 返回值 0=Verified, 1=DeviceNotPresent, 2=NotConfiguredForUser, 3=DisabledByPolicy, 4=UserCanceled
+    const psScript = `
+[Windows.Security.Credentials.UI.UserConsentVerifier,Windows.Security.Credentials.UI,ContentType=WindowsRuntime] | Out-Null
+[Windows.Foundation.IAsyncOperation[Windows.Security.Credentials.UI.UserConsentVerificationResult],Windows.Foundation,ContentType=WindowsRuntime] | Out-Null
+$op = [Windows.Security.Credentials.UI.UserConsentVerifier]::RequestVerificationAsync('使用 Windows Hello 解锁 FriendOS')
+$res = ($op.AsTask()).Result
+Write-Output $res.Value__
+`;
+    const { stdout } = await execAsync(`powershell -NoProfile -Command "${psScript.replace(/"/g, '\\"')}"`, { encoding: 'utf8', timeout: 60000 });
+    const code = parseInt(stdout.trim(), 10);
+    // 0 = Verified
+    if (code === 0) return { success: true };
+    const errors = { 1: '未检测到生物识别设备', 2: 'Windows Hello 未配置', 3: '被组策略禁用', 4: '用户取消' };
+    return { success: false, error: errors[code] || '验证失败' };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('risk:calculate', async (_event, data) => {
+  try {
+    const { calculateRiskScore } = require('./services/RiskScoringEngine.cjs');
+    const result = calculateRiskScore(data);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     // 诊断归因记录：仅在触发临床升级或排除规则命中时输出单行结构化日志。
     // 只落等级/分数/触发原因/排除规则来源计数等元数据，不落日记原文与命中词条
     const diag = result.diagnostics;
@@ -1002,6 +1122,7 @@ ipcMain.handle('chat:send', async (event, { requestId, messages, context, system
   if (!requestId || typeof requestId !== 'string') {
     return { error: 'invalid requestId', code: 'LLM_BAD_REQUEST' };
   }
+<<<<<<< HEAD
   // 入口校验（修复审计 P1-5）：限制 messages 形状与总文本量，防止超长内容打爆云请求
   try {
     if (!Array.isArray(messages) || messages.length > 40) {
@@ -1024,6 +1145,8 @@ ipcMain.handle('chat:send', async (event, { requestId, messages, context, system
     logError('ipc:chat:send.validate', err, { requestId });
     return { ok: false, error: '请求校验失败', code: 'LLM_BAD_REQUEST' };
   }
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   try {
     const { chat } = require('./services/ChatLLMService.cjs');
     const win = BrowserWindow.fromWebContents(event.sender);
@@ -1055,6 +1178,7 @@ ipcMain.handle('chat:getProviderConfig', async () => {
   }
 });
 
+<<<<<<< HEAD
 ipcMain.handle('chat:fallback', async (_event, params) => {
   // 渲染层主动请求降级回复（无 key / 超时后用）
   // params: { text, emotionLabel?, negativeProb?, positiveProb?, crisisProb?, session?, now? }
@@ -1069,6 +1193,16 @@ ipcMain.handle('chat:fallback', async (_event, params) => {
   } catch (err) {
     logError('ipc:chat:fallback', err);
     return { text: '我在听，能再说清楚一点吗？', branch: 'neutral', isCrisis: false, sessionDelta: undefined };
+=======
+ipcMain.handle('chat:fallback', async (_event, { text, emotionLabel }) => {
+  // 渲染层主动请求降级回复（无 key / 超时后用）
+  try {
+    const { respond } = require('./services/ChatFallbackEngine.cjs');
+    return respond(text, emotionLabel);
+  } catch (err) {
+    logError('ipc:chat:fallback', err);
+    return { text: '我在听，能再说清楚一点吗？', branch: 'neutral', isCrisis: false };
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   }
 });
 
@@ -1082,6 +1216,7 @@ ipcMain.handle('chat:greeting', async (_event, { silentDays, riskRising }) => {
   }
 });
 
+<<<<<<< HEAD
 // ── 启动自检 IPC（P0-2）──────────────────────────────────────
 // 渲染层 DiagnosticsPanel 挂载时调用；不泄露 API Key 本体。
 ipcMain.handle('diagnostics:check', async (_event, params) => {
@@ -1128,6 +1263,8 @@ ipcMain.handle('prediction:getTrend', async (_event, input) => {
   }
 });
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 // ── 风险预警通知 IPC（0.0.6 主动预警）──────────────────────────
 // 渲染层 DailyCheckScheduler 决策后调此 IPC，由主进程发系统通知 + 推回渲染层。
 ipcMain.handle('risk:notify', async (event, { level, title, body, action }) => {
@@ -1148,8 +1285,11 @@ ipcMain.handle('risk:notify', async (event, { level, title, body, action }) => {
 // 从未真正发起对外 HTTPS 请求。保留死域名会扩大攻击面（恶意脚本可借此外联），
 // 现已清理。如未来重新接入云 LLM，再按需补回。
 app.whenReady().then(() => {
+<<<<<<< HEAD
   // 应用自定义存储位置（必须在 createWindow 之前，IndexedDB 初始化依赖 userData）
   applyCustomStorageLocation();
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const csp = isDev
       ? "default-src 'self' http://localhost:5173; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5173; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://localhost:5173 ws://localhost:5173;"

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Send, Sparkles, Wifi, WifiOff, MessageCircle, Activity, Hash, Plus, History, ChevronDown, Trash2, Lightbulb } from 'lucide-react';
@@ -6,10 +7,19 @@ import { sendMessage, sendGreeting, getSilentDays, buildContext, listSessions, n
 import { searchKnowledge } from '../services/knowledge/psychKnowledge';
 import { useLanguage } from '../i18n/useLanguage';
 import type { TranslationKey } from '../i18n/translations';
+=======
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Send, Sparkles, Wifi, WifiOff, MessageCircle } from 'lucide-react';
+import { useChatStore, type ChatMessageState } from '../stores/chatStore';
+import { sendMessage, sendGreeting, getSilentDays, buildContext } from '../services/ai/ChatService';
+import { useLanguage } from '../i18n/useLanguage';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 import { shouldReduceMotion } from '../utils/reduceMotion';
 import MessageBubble from '../components/chat/MessageBubble';
 import TypingIndicator from '../components/chat/TypingIndicator';
 import QuickReplySuggestions from '../components/chat/QuickReplySuggestions';
+<<<<<<< HEAD
 import ConfirmDialog from '../components/common/ConfirmDialog';
 
 // 会话情绪 → i18n key
@@ -49,10 +59,18 @@ export default function ChatPage() {
   const [showHistory, setShowHistory] = useState(false);
   // P2-8：window.confirm → ConfirmDialog（删除会话）
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+=======
+
+export default function ChatPage() {
+  const navigate = useNavigate();
+  const { t } = useLanguage();
+  const [input, setInput] = useState('');
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   const messages = useChatStore((s) => s.messages);
   const isStreaming = useChatStore((s) => s.isStreaming);
   const providerStatus = useChatStore((s) => s.providerStatus);
   const hasGreetedToday = useChatStore((s) => s.hasGreetedToday);
+<<<<<<< HEAD
   const session = useChatStore((s) => s.session);
   const sessions = useChatStore((s) => s.sessions);
   const currentSessionId = useChatStore((s) => s.currentSessionId);
@@ -60,6 +78,11 @@ export default function ChatPage() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const greetingChecked = useRef(false);
   const historyRef = useRef<HTMLDivElement>(null);
+=======
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const greetingChecked = useRef(false);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   // 自动滚底
   useEffect(() => {
@@ -68,6 +91,7 @@ export default function ChatPage() {
     }
   }, [messages]);
 
+<<<<<<< HEAD
   // 加载历史会话列表
   useEffect(() => {
     listSessions();
@@ -92,6 +116,8 @@ export default function ChatPage() {
     return () => document.removeEventListener('mousedown', onClick);
   }, [showHistory]);
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   // 主动问候：首次打开 / 沉默后回归
   useEffect(() => {
     if (greetingChecked.current) return;
@@ -116,6 +142,7 @@ export default function ChatPage() {
     setInput('');
     if (inputRef.current) inputRef.current.style.height = 'auto';
     await sendMessage(text);
+<<<<<<< HEAD
     // 兜底恢复焦点（部分浏览器在受控组件清空后失焦）
     requestAnimationFrame(() => inputRef.current?.focus());
   }, [input, isStreaming]);
@@ -142,6 +169,10 @@ export default function ChatPage() {
     await deleteSession(id);
   }, [pendingDeleteId]);
 
+=======
+  }, [input, isStreaming]);
+
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -159,6 +190,7 @@ export default function ChatPage() {
 
   const isOffline = providerStatus === 'fallback' || providerStatus === 'error';
   const reduce = shouldReduceMotion();
+<<<<<<< HEAD
   const groups = groupSessions(sessions, t);
   const currentTitle = sessions.find((s) => s.id === currentSessionId)?.title || t('chat.new_conversation');
 
@@ -170,6 +202,8 @@ export default function ChatPage() {
     const matches = searchKnowledge(lastUser.content, 1);
     return matches.length > 0 ? matches[0] : null;
   }, [messages, isStreaming]);
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   return (
     <div className="flex flex-col h-full" style={{ height: 'calc(100vh - var(--header-height) - 32px)' }}>
@@ -196,6 +230,7 @@ export default function ChatPage() {
             </p>
           </div>
         </div>
+<<<<<<< HEAD
         <div className="flex items-center gap-2">
           {/* 新对话 */}
           <button
@@ -295,6 +330,10 @@ export default function ChatPage() {
         </div>
       )}
 
+=======
+      </div>
+
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {messages.length === 0 && (
@@ -312,6 +351,7 @@ export default function ChatPage() {
         {messages.length > 0 && messages[messages.length - 1].role === 'assistant' && !isStreaming && (
           <QuickReplySuggestions onNavigate={(path) => navigate(path)} />
         )}
+<<<<<<< HEAD
         {knowledgeMatch && messages[messages.length - 1].role === 'assistant' && !isStreaming && (
           <div className="pl-9">
             <button
@@ -325,6 +365,8 @@ export default function ChatPage() {
             </button>
           </div>
         )}
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       </div>
 
       {/* Input */}
@@ -359,6 +401,7 @@ export default function ChatPage() {
           {t('chat.disclaimer')}
         </p>
       </div>
+<<<<<<< HEAD
 
       {/* P2-8：删除会话确认弹窗 */}
       <ConfirmDialog
@@ -368,6 +411,8 @@ export default function ChatPage() {
         title={t('common.delete_confirm_title')}
         message={t('chat.delete_confirm')}
       />
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     </div>
   );
 }

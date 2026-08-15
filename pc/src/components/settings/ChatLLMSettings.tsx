@@ -4,17 +4,27 @@ import Card from '../common/Card';
 import { useLanguage } from '../../i18n/useLanguage';
 
 /**
+<<<<<<< HEAD
  * 对话 LLM 配置区块（PRD v3 P1-17：仅 DeepSeek + 模型名自填；P1-18：API 有效 → 自检同步更新）
  * - API Key 输入（走 apiKeySet('chat_llm', ...)，DPAPI 加密）
  * - 模型名自填（apiKeySet('chat_llm_model', ...)，默认 deepseek-chat）
  * - 测试连接；保存/测试成功后派发 friendos:diag-refresh 事件，自检面板即时更新
+=======
+ * AI 对话 LLM 配置区块
+ * - provider 选择（通义千问 / DeepSeek）
+ * - API Key 输入（走 apiKeySet('chat_llm', ...)，DPAPI 加密）
+ * - 测试连接
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
  * - 未配置时使用离线陪伴模式
  */
 export default function ChatLLMSettings() {
   const { t } = useLanguage();
   const [config, setConfig] = useState<ChatProviderConfig | null>(null);
   const [keyInput, setKeyInput] = useState('');
+<<<<<<< HEAD
   const [modelInput, setModelInput] = useState('');
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   const [showKey, setShowKey] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; latency?: number; model?: string; error?: string } | null>(null);
@@ -23,10 +33,14 @@ export default function ChatLLMSettings() {
   const loadConfig = useCallback(async () => {
     try {
       const cfg = await window.electronAPI?.chatGetProviderConfig();
+<<<<<<< HEAD
       if (cfg) {
         setConfig(cfg);
         setModelInput(cfg.model || 'deepseek-chat');
       }
+=======
+      if (cfg) setConfig(cfg);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     } catch (e) {
       console.error('[ChatLLMSettings] loadConfig error:', e);
     }
@@ -36,10 +50,21 @@ export default function ChatLLMSettings() {
     loadConfig();
   }, [loadConfig]);
 
+<<<<<<< HEAD
   /** 通知自检面板刷新（保存/测试成功后同步更新 API Key 状态） */
   const notifyDiagRefresh = useCallback(() => {
     window.dispatchEvent(new CustomEvent('friendos:diag-refresh'));
   }, []);
+=======
+  const handleProviderChange = async (provider: string) => {
+    try {
+      await window.electronAPI?.apiKeySet('chat_llm_provider', provider);
+      await loadConfig();
+    } catch (e) {
+      console.error('[ChatLLMSettings] provider change error:', e);
+    }
+  };
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   const handleSaveKey = async () => {
     if (!keyInput.trim()) return;
@@ -49,7 +74,10 @@ export default function ChatLLMSettings() {
       setKeyInput('');
       await loadConfig();
       setTestResult(null);
+<<<<<<< HEAD
       notifyDiagRefresh();
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     } catch (e) {
       console.error('[ChatLLMSettings] save key error:', e);
     } finally {
@@ -57,6 +85,7 @@ export default function ChatLLMSettings() {
     }
   };
 
+<<<<<<< HEAD
   const handleSaveModel = async () => {
     const model = modelInput.trim() || 'deepseek-chat';
     try {
@@ -68,6 +97,8 @@ export default function ChatLLMSettings() {
     }
   };
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   const handleTest = async () => {
     setTesting(true);
     setTestResult(null);
@@ -75,7 +106,10 @@ export default function ChatLLMSettings() {
       const result = await window.electronAPI?.chatTestConnection();
       if (result?.success) {
         setTestResult({ ok: true, latency: result.latency, model: result.model });
+<<<<<<< HEAD
         notifyDiagRefresh();
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       } else {
         setTestResult({ ok: false, error: result?.error || 'unknown' });
       }
@@ -96,11 +130,16 @@ export default function ChatLLMSettings() {
       </h3>
       <p className="text-xs text-text-muted mb-4">{t('chat.settings_desc')}</p>
 
+<<<<<<< HEAD
       {/* Provider（仅 DeepSeek，展示状态） */}
+=======
+      {/* Provider 选择 */}
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       <label className="block text-xs font-medium text-text-secondary mb-1.5">
         {t('chat.provider')}
       </label>
       <div className="flex gap-2 mb-4">
+<<<<<<< HEAD
         <span className="px-3 py-1.5 text-xs rounded-btn border border-primary bg-primary/10 text-primary font-medium">
           DeepSeek
         </span>
@@ -127,6 +166,24 @@ export default function ChatLLMSettings() {
         >
           {t('chat.save_model')}
         </button>
+=======
+        {config?.availableProviders?.map((p) => (
+          <button
+            key={p.key}
+            type="button"
+            onClick={() => handleProviderChange(p.key)}
+            className={`px-3 py-1.5 text-xs rounded-btn border transition-all ${
+              config.provider === p.key
+                ? 'border-primary bg-primary/10 text-primary font-medium'
+                : 'text-text-muted'
+            }`}
+            style={config.provider === p.key ? undefined : { borderColor: 'var(--glass-border)' }}
+            aria-pressed={config.provider === p.key}
+          >
+            {p.name}
+          </button>
+        ))}
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       </div>
 
       {/* API Key */}

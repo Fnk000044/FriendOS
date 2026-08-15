@@ -52,8 +52,18 @@ const STREAM_TIMEOUT_MS = 30_000; // 30 秒无 chunk → abort
 const MAX_HISTORY_ROUNDS = 10;    // 最近 10 轮原文
 
 // Provider 配置表（OpenAI 兼容 /v1/chat/completions）
+<<<<<<< HEAD
 // PRD v3 P1-17：仅保留 DeepSeek，模型名由用户在设置页自填（存 ApiKeyStore 'chat_llm_model'）
 const PROVIDERS = {
+=======
+const PROVIDERS = {
+  qwen: {
+    name: '通义千问',
+    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+    model: 'qwen-plus',
+    authHeader: (key) => `Bearer ${key}`,
+  },
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   deepseek: {
     name: 'DeepSeek',
     baseUrl: 'https://api.deepseek.com/v1/chat/completions',
@@ -63,6 +73,7 @@ const PROVIDERS = {
 };
 
 /**
+<<<<<<< HEAD
  * 选择 provider：固定 deepseek（唯一），模型名支持用户自填
  */
 function resolveProvider(override) {
@@ -79,6 +90,13 @@ function resolveProvider(override) {
     model: customModel || p.model,
     authHeader: p.authHeader,
   };
+=======
+ * 选择 provider：优先用 override，否则用已配置的默认 provider（存 ApiKeyStore 'chat_llm_provider'）
+ */
+function resolveProvider(override) {
+  const providerKey = override || getApiKeyStore().getApiKey('chat_llm_provider') || 'qwen';
+  return PROVIDERS[providerKey] ? { key: providerKey, ...PROVIDERS[providerKey] } : null;
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 }
 
 /**
@@ -104,6 +122,7 @@ function buildContextBlock(context) {
 }
 
 /**
+<<<<<<< HEAD
  * 单条消息内容长度上限（字符）。超出部分截断，防止超长粘贴导致超大请求。
  */
 const MAX_MESSAGE_CHARS = 2000;
@@ -116,13 +135,23 @@ const MAX_MESSAGE_CHARS = 2000;
 function composeMessages({ systemPrompt, messages, context }) {
   let sys = (systemPrompt || '') + buildContextBlock(context);
   if (sys.length > MAX_MESSAGE_CHARS) sys = sys.slice(0, MAX_MESSAGE_CHARS);
+=======
+ * 拼最终 messages 数组：system（含上下文） + 历史（截断）+ 最新 user
+ */
+function composeMessages({ systemPrompt, messages, context }) {
+  const sys = (systemPrompt || '') + buildContextBlock(context);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   const result = [];
   if (sys) result.push({ role: 'system', content: sys });
   // 截断历史：保留最近 MAX_HISTORY_ROUNDS*2 条（user+assistant 成对）
   const trimmed = messages.slice(-MAX_HISTORY_ROUNDS * 2);
   for (const m of trimmed) {
+<<<<<<< HEAD
     const content = typeof m.content === 'string' ? m.content : String(m.content ?? '');
     result.push({ role: m.role, content: content.slice(0, MAX_MESSAGE_CHARS) });
+=======
+    result.push({ role: m.role, content: m.content });
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   }
   return result;
 }
@@ -285,6 +314,7 @@ async function testConnection(providerOverride) {
  * 获取当前 provider 配置（不泄露 key）
  */
 function getProviderConfig() {
+<<<<<<< HEAD
   const hasKey = !!getApiKeyStore().getApiKey('chat_llm');
   const customModel = getApiKeyStore().getApiKey('chat_llm_model');
   const p = PROVIDERS.deepseek;
@@ -292,11 +322,21 @@ function getProviderConfig() {
     provider: 'deepseek',
     providerName: p.name,
     model: customModel || p.model,
+=======
+  const providerKey = getApiKeyStore().getApiKey('chat_llm_provider') || 'qwen';
+  const hasKey = !!getApiKeyStore().getApiKey('chat_llm');
+  const p = PROVIDERS[providerKey] || PROVIDERS.qwen;
+  return {
+    provider: providerKey,
+    providerName: p.name,
+    model: p.model,
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     hasKey,
     availableProviders: Object.keys(PROVIDERS).map(k => ({ key: k, name: PROVIDERS[k].name })),
   };
 }
 
+<<<<<<< HEAD
 /**
  * 是否有可用的 chat LLM API Key（供自检与渲染层短路判断；不泄露 key 本体）
  * @returns {boolean}
@@ -309,10 +349,15 @@ function hasUsableKey() {
   }
 }
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 module.exports = {
   chat,
   testConnection,
   getProviderConfig,
+<<<<<<< HEAD
   hasUsableKey,
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   PROVIDERS,
 };

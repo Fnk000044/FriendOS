@@ -1,4 +1,5 @@
 /**
+<<<<<<< HEAD
  * Chat Fallback Engine — 情感感知多轮对话状态机（离线陪伴模式，云 LLM 不可用时降级）
  *
  * 设计要求（评委现场可能无网，降级模式 = 他们看到的全部）：
@@ -13,6 +14,18 @@
  * - 危机恒走固定回复（热线 + 安全确认 + 不替代专业医疗），不允许模板随机化绕过
  *
  * 兼容旧签名：respond(text, emotionLabel, now) —— 渲染层旧调用自动识别。
+=======
+ * Chat Fallback Engine — 离线陪伴模式（云 LLM 不可用时降级）
+ *
+ * 设计要求（评委现场可能无网，降级模式 = 他们看到的全部）：
+ * - 每情绪分支 ≥10 条模板，回复 = 开场×共情×追问/建议 组合，避免连续两条雷同。
+ * - 危机类不随机，固定返回安全确认 + 400-161-9995 热线 + 触发危机流程。
+ * - 时间感知：早/午/晚/深夜不同开场。
+ * - 不假装是 AI，自称"知己"。
+ *
+ * 输入：用户消息文本 + 当前情绪标签 + 时间
+ * 输出：{ text, branch, isCrisis }
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
  */
 
 const { CRISIS_KEYWORDS, CRISIS_EXCLUSIONS, NEGATION_WORDS } = require('./crisisKeywords.cjs');
@@ -34,9 +47,18 @@ const GREETINGS = {
   lateNight: ['这么晚了还没睡，', '夜深了，', '这个点还在，'],
 };
 
+<<<<<<< HEAD
 // ── 情绪分支模板（每分支 ≥10 条共情 + 追问）───────────────────
 const BRANCHES = {
   low: {
+=======
+// ── 情绪分支模板 ─────────────────────────────────────────────
+// 每分支 ≥10 条共情句 + 追问/建议，组合后单分支可达数百种
+
+const BRANCHES = {
+  low: {
+    // 低落
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     empathies: [
       '听到你说这些，我能感受到你有些低落。',
       '听起来你最近有些提不起劲，这种感觉很真实。',
@@ -58,6 +80,10 @@ const BRANCHES = {
     ],
   },
   anxiety: {
+<<<<<<< HEAD
+=======
+    // 焦虑
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     empathies: [
       '焦虑的时候，心里像绷着一根弦，确实很难受。',
       '听出来你有些紧张，这种紧绷感是真实的。',
@@ -79,6 +105,10 @@ const BRANCHES = {
     ],
   },
   lonely: {
+<<<<<<< HEAD
+=======
+    // 孤独
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     empathies: [
       '孤独感有时候比想象中更沉，谢谢你愿意告诉我。',
       '即使身边有人，也可能会觉得孤单，这很正常。',
@@ -100,6 +130,10 @@ const BRANCHES = {
     ],
   },
   stress: {
+<<<<<<< HEAD
+=======
+    // 压力
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     empathies: [
       '听出来你扛着不少东西，辛苦了。',
       '压力大到一定程度，会让人觉得转不动，这是真的。',
@@ -121,6 +155,10 @@ const BRANCHES = {
     ],
   },
   neutral: {
+<<<<<<< HEAD
+=======
+    // 中性/平静
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     empathies: [
       '听到你了，今天状态看起来还算平稳。',
       '嗯，我在听，你继续。',
@@ -142,6 +180,10 @@ const BRANCHES = {
     ],
   },
   positive: {
+<<<<<<< HEAD
+=======
+    // 积极
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     empathies: [
       '听到你这样说，我也为你高兴。',
       '这种状态真好，要好好接住它。',
@@ -164,6 +206,7 @@ const BRANCHES = {
   },
 };
 
+<<<<<<< HEAD
 // ── 情感强度分级（负面时叠加，强/中/轻 共情开场）──────────────
 const INTENSITY_TIERS = {
   strong: [
@@ -188,11 +231,23 @@ const INTENSITY_TIERS = {
 function detectCrisis(text) {
   if (!text) return false;
   const lower = text;
+=======
+// ── 危机检测（与关键词层一致，但此处只做兜底识别，最终判定由 ONNX 完成）──
+
+function detectCrisis(text) {
+  if (!text) return false;
+  const lower = text;
+  // 排除成语/网络误报
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   for (const ex of CRISIS_EXCLUSIONS) {
     if (lower.includes(ex)) return false;
   }
   for (const kw of CRISIS_KEYWORDS) {
     if (lower.includes(kw)) {
+<<<<<<< HEAD
+=======
+      // 检查否定窗口（前 5 字符）
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       const idx = lower.indexOf(kw);
       const window = lower.slice(Math.max(0, idx - 5), idx);
       const negated = NEGATION_WORDS.some(n => window.includes(n));
@@ -202,6 +257,7 @@ function detectCrisis(text) {
   return false;
 }
 
+<<<<<<< HEAD
 // 危机恒走固定回复（热线 + 安全确认 + 不替代专业医疗）
 const CRISIS_RESPONSE =
   '我注意到你现在可能很难受。我想先确认一件事——你现在安全吗？' +
@@ -287,6 +343,12 @@ function buildSessionDelta(state, text, label, usedTemplateKeys) {
 }
 
 // ── 简单情感分支判断（降级模式内部用；真正情感判定走 sentimentAnalyze IPC）──
+=======
+const CRISIS_RESPONSE = '我注意到你现在可能很难受。我想先确认一件事——你现在安全吗？如果你正在经历很痛苦的时刻，可以拨打全国心理援助热线 400-161-9995，那里有人 24 小时愿意听你说。你不是一个人。';
+
+// ── 简单情感分支判断（降级模式内部用，与 ONNX 无关；真正的情感判定走 sentimentAnalyze IPC）──
+
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 function guessBranch(text, emotionLabel) {
   if (emotionLabel === 'crisis') return 'crisis';
   if (emotionLabel === 'negative') {
@@ -300,6 +362,7 @@ function guessBranch(text, emotionLabel) {
   return 'neutral';
 }
 
+<<<<<<< HEAD
 /**
  * 组合回复（纯函数；session 可选）
  * @param {string} text
@@ -326,12 +389,37 @@ function respond(text, opts, legacyNow) {
   if (detectCrisis(text) || emotionLabel === 'crisis') {
     const delta = buildSessionDelta(session, text, 'crisis', []);
     return { text: CRISIS_RESPONSE, branch: 'crisis', isCrisis: true, sessionDelta: delta };
+=======
+// ── 组合回复 ─────────────────────────────────────────────────
+
+// 简易去重：记录最近一次回复，避免连续雷同
+let _lastText = '';
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+/**
+ * 生成降级回复
+ * @param {string} text 用户消息
+ * @param {string} [emotionLabel] 情感标签 negative/neutral/positive/crisis（来自 sentimentAnalyze）
+ * @param {Date} [now]
+ * @returns {{text: string, branch: string, isCrisis: boolean}}
+ */
+function respond(text, emotionLabel, now) {
+  now = now || new Date();
+
+  // 危机优先：固定回复，不随机
+  if (detectCrisis(text) || emotionLabel === 'crisis') {
+    return { text: CRISIS_RESPONSE, branch: 'crisis', isCrisis: true };
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   }
 
   const tod = getTimeOfDay(now);
   const branch = guessBranch(text, emotionLabel);
   const templates = BRANCHES[branch] || BRANCHES.neutral;
 
+<<<<<<< HEAD
   // 情感强度分级（负面时叠加）
   const negativeProb = typeof o.negativeProb === 'number' ? o.negativeProb : (emotionLabel === 'negative' ? 0.6 : 0);
   const intensityKey =
@@ -391,14 +479,35 @@ function respond(text, opts, legacyNow) {
   const sessionDelta = buildSessionDelta(session, text, emotionLabel || 'neutral', usedThisRound);
 
   return { text: reply, branch, isCrisis: false, sessionDelta };
+=======
+  let attempt = 0;
+  let reply = '';
+  while (attempt < 3) {
+    const greeting = pick(GREETINGS[tod]);
+    const empathy = pick(templates.empathies);
+    const followup = pick(templates.followups);
+    reply = `${greeting}${empathy} ${followup}`;
+    if (reply !== _lastText) break;
+    attempt++;
+  }
+  _lastText = reply;
+
+  return { text: reply, branch, isCrisis: false };
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 }
 
 /**
  * 主动问候（每天首次打开 / 沉默后回归）
  * @param {object} opts
+<<<<<<< HEAD
  * @param {number} [opts.silentDays]
  * @param {boolean} [opts.riskRising]
  * @param {Date|string} [opts.now]
+=======
+ * @param {number} [opts.silentDays] 距上次对话天数
+ * @param {boolean} [opts.riskRising] 期间风险是否上升
+ * @param {Date} [now]
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
  */
 function greeting(opts, now) {
   now = now || new Date();
@@ -425,8 +534,11 @@ module.exports = {
   respond,
   greeting,
   detectCrisis,
+<<<<<<< HEAD
   extractTopics,
   buildSessionDelta,
   stateStage,
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   CRISIS_RESPONSE,
 };

@@ -36,6 +36,7 @@ interface SentimentResult {
   score: number;
   positiveProb: number;
   negativeProb: number;
+<<<<<<< HEAD
   neutralProb?: number;
   crisisProb?: number;
   /** 主导 4 分类标签（供情感纠错 F1 使用） */
@@ -45,6 +46,12 @@ interface SentimentResult {
   method: 'keyword' | 'onnx';
   /** 是否应用了用户先验校准 */
   calibrated?: boolean;
+=======
+  crisisProb?: number;
+  keywords: string[];
+  needCloud: boolean;
+  method: 'keyword' | 'onnx';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   error?: string;
   timestamp: number;
 }
@@ -146,6 +153,7 @@ interface ChatFallbackResult {
   text: string;
   branch: string;
   isCrisis: boolean;
+<<<<<<< HEAD
   /** 会话状态增量（渲染层合并回 chatStore.session） */
   sessionDelta?: ChatSessionDelta;
 }
@@ -264,6 +272,8 @@ interface EvidenceChain {
   disclaimer: string;
   /** 方法说明文档路径（docs/risk_methodology.md） */
   methodRef: string;
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 }
 
 interface ChatGreetingResult {
@@ -271,6 +281,7 @@ interface ChatGreetingResult {
   branch: string;
 }
 
+<<<<<<< HEAD
 // ── 本地自进化校准类型（渲染层 ↔ 主进程契约）────────────────
 /** 情感先验校准（crisis 通道冻结，不在此结构；crisisFeedback 为方案A个人化误报样本） */
 interface SentimentCalibration {
@@ -296,6 +307,8 @@ interface ForecastCalibration {
   sampleCount: number;
 }
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 interface ElectronAPI {
   // 沙箱模式下 platform 走异步 IPC 缓存；isElectron 仍是常量
   // 旧的同步 platform 属性保留（首帧可能为 null），新增 getPlatform() 异步入口
@@ -308,11 +321,14 @@ interface ElectronAPI {
   onShowAbout: (callback: () => void) => void;
   openDataFolder: () => Promise<void>;
 
+<<<<<<< HEAD
   // 自定义存储位置（PRD v3 P1-16）
   storageGetLocation: () => Promise<{ current: string; custom: boolean }>;
   storageSelectLocation: () => Promise<{ canceled: boolean; path?: string; error?: string }>;
   storageMigrate: (targetDir: string) => Promise<{ success: boolean; restartRequired?: boolean; error?: string }>;
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   // Sync server
   onSyncReceive: (callback: (items: SyncPayloadItem[]) => void) => () => void;
   onSyncStatusChanged: (callback: (status: SyncServerStatus) => void) => () => void;
@@ -336,15 +352,24 @@ interface ElectronAPI {
   relaunch: () => Promise<void>;
 
   // Sentiment analysis
+<<<<<<< HEAD
   sentimentAnalyze: (text: string, calibration?: SentimentCalibration) => Promise<SentimentResult>;
+=======
+  sentimentAnalyze: (text: string) => Promise<SentimentResult>;
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   sentimentCloudAnalyze: (text: string, context?: { mood?: string | number; date?: string; tags?: string[] }) => Promise<CloudAnalysisResult>;
   sentimentSetApiKey: (apiKey: string) => Promise<{ success: boolean }>;
   sentimentGetModelStatus: () => Promise<{ onnxLoaded: boolean; onnxAvailable: boolean; method: string }>;
   sentimentResetOnnx: () => Promise<{ success: boolean; error?: string }>;
 
   // Emotion analysis engine
+<<<<<<< HEAD
   emotionAnalyzeDiary: (diary: { id?: string; date: string; content: string; mood: number; createdAt?: string }, calibration?: SentimentCalibration) => Promise<EmotionAnalysisResult | null>;
   emotionAnalyzeConversation: (messages: Array<{ role: string; content: string }>, calibration?: SentimentCalibration) => Promise<EmotionAnalysisResult | null>;
+=======
+  emotionAnalyzeDiary: (diary: { id?: string; date: string; content: string; mood: number; createdAt?: string }) => Promise<EmotionAnalysisResult | null>;
+  emotionAnalyzeConversation: (messages: Array<{ role: string; content: string }>) => Promise<EmotionAnalysisResult | null>;
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   emotionCalculateHealthIndex: (params: EmotionHealthIndexParams) => Promise<number>;
   emotionCalculateRiskLevel: (factors: RiskFactors) => Promise<string>;
   emotionGenerateInsights: (profile: { emotionalHealthIndex: number; dimensions: Record<string, number>; riskLevel: string }) => Promise<string[]>;
@@ -354,20 +379,32 @@ interface ElectronAPI {
   behaviorAnalyzeDaily: (record: any, context?: any, baseline?: any) => Promise<{ anomalies: any[]; riskFactors: any[] }>;
   behaviorAnalyzeTrends: (records: any[]) => Promise<any>;
   behaviorGenerateSummary: (trends: any) => Promise<string>;
+<<<<<<< HEAD
   /** 计算个人基线（≥7 天数据，返回基线对象或 null） */
   behaviorCalculateBaseline: (records: any[]) => Promise<any>;
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   // Backup / restore
   backupExport: (json: string) => Promise<{ success: boolean; path?: string; canceled?: boolean; error?: string }>;
   backupImport: () => Promise<{ success: boolean; data?: any; canceled?: boolean; error?: string }>;
+<<<<<<< HEAD
   /** 心理报告导出 PDF：渲染层传 HTML（用户内容需转义），主进程生成 A4 PDF 并保存 */
   reportExportPdf: (payload: { html: string; defaultName?: string }) => Promise<{ success: boolean; path?: string; canceled?: boolean; error?: string }>;
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   // Storage info + cache cleanup
   getStorageSize: () => Promise<{ total: number; cache: number; appData: number; logs: number }>;
   clearCache: () => Promise<{ success: boolean; error?: string }>;
 
+<<<<<<< HEAD
   // Windows Hello 已移除（PRD v3 P0-9：不再弹系统凭据/PIN）
+=======
+  // Windows Hello biometric unlock
+  windowsHelloAvailable: () => Promise<{ available: boolean; reason?: string }>;
+  windowsHelloVerify: () => Promise<{ success: boolean; error?: string }>;
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   // External apps
   openExternal: (path: string) => Promise<{ success: boolean; error?: string }>;
@@ -396,7 +433,10 @@ interface ElectronAPI {
     assessments: any[];
     conversationSummaries: any[];
     diaries: any[];
+<<<<<<< HEAD
     personalization?: RiskPersonalization;
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   }) => Promise<any>;
 
   // AI 对话陪伴（云 LLM 走主进程代理，渲染层不持有 key）
@@ -409,6 +449,7 @@ interface ElectronAPI {
   }) => Promise<ChatSendResult>;
   chatTestConnection: (providerOverride?: string) => Promise<{ success: boolean; latency?: number; model?: string; provider?: string; error?: string }>;
   chatGetProviderConfig: () => Promise<ChatProviderConfig>;
+<<<<<<< HEAD
   chatFallback: (params: {
     text: string;
     emotionLabel?: string;
@@ -418,10 +459,14 @@ interface ElectronAPI {
     session?: ChatSessionState;
     now?: string;
   }) => Promise<ChatFallbackResult>;
+=======
+  chatFallback: (params: { text: string; emotionLabel?: string }) => Promise<ChatFallbackResult>;
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   chatGreeting: (params: { silentDays?: number; riskRising?: boolean }) => Promise<ChatGreetingResult>;
   onChatChunk: (callback: (chunk: ChatChunk) => void) => () => void;
   removeChatChunk: () => void;
 
+<<<<<<< HEAD
   // 启动自检
   diagnosticsCheck: (params: { demoMode: boolean }) => Promise<DiagnosticsResult>;
 
@@ -431,6 +476,8 @@ interface ElectronAPI {
   // 风险趋势预测（P2-2 统计学习，method/note 如实返回）
   predictionGetTrend: (input: RiskPredictionInput & { forecastCalibration?: ForecastCalibration }) => Promise<RiskPredictionResult>;
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   // 主动风险预警
   riskNotify: (params: {
     level: 'attention' | 'reminder' | 'warning' | 'crisis';

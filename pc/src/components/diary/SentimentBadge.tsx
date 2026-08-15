@@ -1,5 +1,9 @@
 import { AlertTriangle, Smile, Meh, Frown, Lightbulb, Heart, X, Siren } from 'lucide-react';
+<<<<<<< HEAD
 import SentimentCorrection from '../common/SentimentCorrection';
+=======
+import FeedbackButtons from '../common/FeedbackButtons';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 interface SentimentResult {
   level: 'low' | 'medium' | 'high' | 'crisis';
@@ -7,8 +11,11 @@ interface SentimentResult {
   positiveProb: number;
   negativeProb: number;
   crisisProb?: number;
+<<<<<<< HEAD
   neutralProb?: number;
   predictedClass?: 'negative' | 'neutral' | 'positive' | 'crisis';
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   keywords: string[];
   needCloud: boolean;
   timestamp: number;
@@ -19,7 +26,10 @@ interface SentimentBadgeProps {
   result: SentimentResult;
   onShowDetail?: () => void;
   diaryContent?: string;
+<<<<<<< HEAD
   refId?: string;
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 }
 
 interface SentimentDisplay {
@@ -89,10 +99,16 @@ function getSentimentDisplay(negativeProb: number, crisisLevel: string): Sentime
   };
 }
 
+<<<<<<< HEAD
 export default function SentimentBadge({ result, onShowDetail, refId }: SentimentBadgeProps) {
   const display = getSentimentDisplay(result.negativeProb, result.level);
   const { Icon } = display;
   const isCrisis = result.level === 'crisis' || result.level === 'high';
+=======
+export default function SentimentBadge({ result, onShowDetail, diaryContent }: SentimentBadgeProps) {
+  const display = getSentimentDisplay(result.negativeProb, result.level);
+  const { Icon } = display;
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   return (
     <div className="flex items-center gap-2">
@@ -108,11 +124,22 @@ export default function SentimentBadge({ result, onShowDetail, refId }: Sentimen
           </span>
         )}
       </div>
+<<<<<<< HEAD
       <SentimentCorrection
         predictedClass={result.predictedClass}
         crisis={isCrisis}
         refId={refId}
       />
+=======
+      {diaryContent && (
+        <FeedbackButtons
+          type="sentiment"
+          text={diaryContent.slice(0, 200)}
+          predicted={display.label}
+          compact
+        />
+      )}
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     </div>
   );
 }

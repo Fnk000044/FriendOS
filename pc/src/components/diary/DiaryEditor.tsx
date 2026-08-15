@@ -2,12 +2,20 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import toast from 'react-hot-toast';
+<<<<<<< HEAD
 import { ArrowLeft, Trash2, Sparkles, X } from 'lucide-react';
+=======
+import { ArrowLeft, Trash2, Sparkles } from 'lucide-react';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 import { db } from '../../db';
 import { useDiary } from '../../hooks/useDiary';
 import MoodSelector from './MoodSelector';
 import WeatherSelector from './WeatherSelector';
 import Button from '../common/Button';
+<<<<<<< HEAD
+=======
+import TagInput from '../common/TagInput';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 import { useLanguage } from '../../i18n/useLanguage';
 import SentimentBadge, { CloudAnalysisBanner } from './SentimentBadge';
 import type { SentimentResult, CloudAnalysisResult } from '../../hooks/useSentiment';
@@ -16,11 +24,14 @@ import GuidedJournal, { JOURNAL_TEMPLATES, type JournalTemplate, GuidedJournalWi
 import EmotionPicker from './EmotionPicker';
 import { useTypingTracker, useDateParam } from '../../hooks/useTypingTracker';
 import { useDiarySaveEffects } from '../../hooks/useDiarySaveEffects';
+<<<<<<< HEAD
 import { computeSentimentCalibration } from '../../services/selfevolution/SelfEvolutionService';
 import ConfirmDialog from '../common/ConfirmDialog';
 
 // 日记常用标签（一行可选 chips）
 const DIARY_PRESET_TAGS = ['心情', '生活', '健康', '工作', '学习', '家庭', '朋友', '运动', '阅读', '睡眠'];
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 /**
  * DiaryEditor —— 日记编辑器
@@ -60,7 +71,10 @@ export default function DiaryEditor() {
   const [showEmotionPicker, setShowEmotionPicker] = useState(false);
   const [weather, setWeather] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+<<<<<<< HEAD
   const [customTagValue, setCustomTagValue] = useState('');
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   const [sentimentResult, setSentimentResult] = useState<SentimentResult | null>(null);
   const [cloudResult, setCloudResult] = useState<CloudAnalysisResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -68,8 +82,11 @@ export default function DiaryEditor() {
   const [selectedTemplate, setSelectedTemplate] = useState<string>('free');
   const [showTemplates, setShowTemplates] = useState(false);
   const [wizardTemplate, setWizardTemplate] = useState<JournalTemplate | null>(null);
+<<<<<<< HEAD
   // P2-8：删除日记的确认弹窗
   const [confirmDelete, setConfirmDelete] = useState(false);
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   const showCrisis = useCrisisStore((s) => s.show);
 
   const { typingSessionRef, handleKeyDown, updateTotalChars, calculateTypingMetrics } = useTypingTracker();
@@ -127,12 +144,17 @@ export default function DiaryEditor() {
   };
 
   // Analyze sentiment when content changes (仅分析，不写数据库)
+<<<<<<< HEAD
   // 修复审计 P1-6：旧实现 cleanup 只清定时器，in-flight 的旧请求返回后
   // 会覆盖新内容的分析结果。这里用递增序号守卫，只接受最新一次请求。
   const sentimentSeqRef = useRef(0);
   useEffect(() => {
     if (!content.trim() || content.length < 10) {
       sentimentSeqRef.current++;
+=======
+  useEffect(() => {
+    if (!content.trim() || content.length < 10) {
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       setSentimentResult(null);
       setCloudResult(null);
       return;
@@ -142,6 +164,7 @@ export default function DiaryEditor() {
       const api = window.electronAPI;
       if (!api?.sentimentAnalyze) return;
 
+<<<<<<< HEAD
       const seq = ++sentimentSeqRef.current;
       setAnalyzing(true);
       const startTime = Date.now();
@@ -149,6 +172,12 @@ export default function DiaryEditor() {
         const calibration = await computeSentimentCalibration();
         const result = await api.sentimentAnalyze(content, calibration);
         if (seq !== sentimentSeqRef.current) return; // 旧请求，丢弃
+=======
+      setAnalyzing(true);
+      const startTime = Date.now();
+      try {
+        const result = await api.sentimentAnalyze(content);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
         // Ensure loading animation shows for at least 600ms
         const elapsed = Date.now() - startTime;
@@ -166,15 +195,22 @@ export default function DiaryEditor() {
 
         if (result?.needCloud && api?.sentimentCloudAnalyze) {
           const cloud = await api.sentimentCloudAnalyze(content, { mood });
+<<<<<<< HEAD
           if (seq !== sentimentSeqRef.current) return; // 云结果同样只接受最新
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
           setCloudResult(cloud);
         }
       } catch (err) {
         console.error('[DiaryEditor] Sentiment analysis error:', err);
       } finally {
+<<<<<<< HEAD
         if (seq === sentimentSeqRef.current) {
           setAnalyzing(false);
         }
+=======
+        setAnalyzing(false);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       }
     }, 1500); // Debounce 1.5s
 
@@ -361,7 +397,11 @@ export default function DiaryEditor() {
               </div>
             </div>
           ) : sentimentResult ? (
+<<<<<<< HEAD
             <SentimentBadge result={sentimentResult} refId={id} />
+=======
+            <SentimentBadge result={sentimentResult} diaryContent={content} />
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
           ) : (
             <div className="flex items-center gap-2 px-1 py-1">
               <span className="w-2 h-2 rounded-full bg-slate-300" />
@@ -384,6 +424,7 @@ export default function DiaryEditor() {
             <span className="text-xs text-text-muted shrink-0">{t('diary.weather')}</span>
             <WeatherSelector value={weather} onChange={setWeather} />
           </div>
+<<<<<<< HEAD
           {/* 标签区：常用标签可选 + 自定义输入，单行布局 */}
           <div className="flex-1 min-w-[200px] flex items-center gap-1.5 flex-wrap">
             <span className="text-xs text-text-muted shrink-0">{t('diary.tags')}</span>
@@ -437,13 +478,26 @@ export default function DiaryEditor() {
                 </button>
               </span>
             ))}
+=======
+          <div className="flex-1 min-w-[160px]">
+            <TagInput tags={tags} onChange={setTags} placeholder={t('diary.tags_placeholder')} />
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
           </div>
         </div>
 
         <div className="flex justify-between gap-2 pt-2">
           <div>
             {id && (
+<<<<<<< HEAD
               <Button variant="danger" onClick={() => setConfirmDelete(true)}>
+=======
+              <Button variant="danger" onClick={async () => {
+                if (window.confirm(t('common.delete_confirm'))) {
+                  await deleteEntry(id);
+                  navigate('/diary');
+                }
+              }}>
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
                 <Trash2 className="w-4 h-4" />
                 {t('common.delete')}
               </Button>
@@ -457,6 +511,7 @@ export default function DiaryEditor() {
           </div>
         </div>
       </div>
+<<<<<<< HEAD
 
       {/* P2-8：window.confirm → ConfirmDialog（删除日记需确认） */}
       <ConfirmDialog
@@ -472,6 +527,8 @@ export default function DiaryEditor() {
         title={t('common.delete_confirm_title')}
         message={t('common.delete_confirm')}
       />
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     </div>
   );
 }

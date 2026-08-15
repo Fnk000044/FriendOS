@@ -98,7 +98,11 @@ export default function WeeklyReportCard({ onSummaryStream }: WeeklyReportCardPr
           {loading ? (
             <>
               <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+<<<<<<< HEAD
               分析中
+=======
+              AI 分析中
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
             </>
           ) : report ? '重新生成' : '生成报告'}
         </button>
@@ -106,7 +110,11 @@ export default function WeeklyReportCard({ onSummaryStream }: WeeklyReportCardPr
 
       {!report && !loading && (
         <p className="text-sm text-slate-400 text-center py-8">
+<<<<<<< HEAD
           点击"生成报告"生成本周心理健康分析（基于规则统计）
+=======
+          点击"生成报告"让 AI 分析本周心理健康数据
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
         </p>
       )}
 

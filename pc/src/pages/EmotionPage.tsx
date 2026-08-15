@@ -18,8 +18,11 @@ export default function EmotionPage() {
   const navigate = useNavigate();
   const [selectedDays, setSelectedDays] = useState(7);
   const [healthProfile, setHealthProfile] = useState<HealthProfile | null>(null);
+<<<<<<< HEAD
   // P2-9：画像生成期间显示骨架屏，避免雷达图闪现全 0 值
   const [profileLoading, setProfileLoading] = useState(true);
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   const thirtyDaysAgo = useMemo(() => getDaysAgo(30), []);
 
   // Get emotion records (shared date constant)
@@ -43,6 +46,7 @@ export default function EmotionPage() {
   // 优化：只在数据变化时才重新生成，避免每次挂载都写DB
   useEffect(() => {
     const loadProfile = async () => {
+<<<<<<< HEAD
       setProfileLoading(true);
       try {
         const today = getToday();
@@ -74,6 +78,31 @@ export default function EmotionPage() {
         console.warn('[EmotionPage] loadProfile failed:', err);
       } finally {
         setProfileLoading(false);
+=======
+      const today = getToday();
+      const profile = await db.healthProfiles.orderBy('date').last();
+
+      if (profile && profile.date === today) {
+        // 今天的profile已存在，直接使用
+        setHealthProfile(profile);
+      } else if (profile) {
+        // profile存在但不是今天的，检查是否需要更新
+        const lastUpdate = new Date(profile.createdAt).getTime();
+        const hoursSinceUpdate = (Date.now() - lastUpdate) / (1000 * 60 * 60);
+
+        if (hoursSinceUpdate < 4) {
+          // 4小时内已更新，暂时使用旧的
+          setHealthProfile(profile);
+        } else {
+          // 超过4小时，重新生成
+          const generated = await generateHealthProfile();
+          setHealthProfile(generated);
+        }
+      } else {
+        // No profile yet - generate one from available data
+        const generated = await generateHealthProfile();
+        setHealthProfile(generated);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       }
     };
     loadProfile();
@@ -236,7 +265,11 @@ export default function EmotionPage() {
         {/* Health Radar */}
         <div className="glass-card rounded-xl p-5 shadow-sm">
           <h2 className="font-semibold text-text-primary mb-4">心理健康画像</h2>
+<<<<<<< HEAD
           {profileLoading ? <CardSkeleton lines={5} /> : <HealthRadar dimensions={dimensions} hasData={hasData} />}
+=======
+          <HealthRadar dimensions={dimensions} hasData={hasData} />
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
         </div>
       </div>
 

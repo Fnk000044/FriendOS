@@ -1,7 +1,11 @@
 import Button from '../common/Button';
 
 interface AssessmentResultProps {
+<<<<<<< HEAD
   type: 'PHQ9' | 'GAD7' | 'PSS10' | 'CSSRS' | 'ISI7' | 'CDRISC10';
+=======
+  type: 'PHQ9' | 'GAD7' | 'PSS10' | 'CSSRS';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   scores: number[];
   totalScore: number;
   level: string;
@@ -36,6 +40,7 @@ const CSSRS_LEVELS: Record<string, { label: string; color: string; description: 
   critical: { label: '危机', color: '#DC2626', description: '检出自杀意念伴意图/计划', suggestion: '检出严重自杀风险（伴意图或计划），请立即联系信任的人或拨打心理援助热线：400-161-9995，或前往最近的精神卫生中心。' },
 };
 
+<<<<<<< HEAD
 const ISI7_LEVELS: Record<string, { label: string; color: string; description: string; suggestion: string }> = {
   none: { label: '无临床显著失眠', color: '#10B981', description: '总分 0-7 分', suggestion: '当前无明显失眠问题，继续保持规律作息。' },
   subclinical: { label: '亚临床失眠', color: '#F59E0B', description: '总分 8-14 分', suggestion: '存在轻度睡眠困扰，建议固定作息时间、睡前一小时减少屏幕使用。' },
@@ -49,6 +54,8 @@ const CDRISC_LEVELS: Record<string, { label: string; color: string; description:
   high: { label: '良好', color: '#10B981', description: '总分 30-40 分', suggestion: '心理韧性良好，继续保持积极应对方式与健康生活习惯。' },
 };
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 function getLevel(type: string, score: number, levelStr?: string) {
   if (type === 'PHQ9') {
     if (score <= 4) return PHQ9_LEVELS.minimal;
@@ -66,6 +73,7 @@ function getLevel(type: string, score: number, levelStr?: string) {
     if (levelStr === 'critical') return CSSRS_LEVELS.critical;
     if (levelStr === 'high') return CSSRS_LEVELS.high;
     return CSSRS_LEVELS.low;
+<<<<<<< HEAD
   } else if (type === 'ISI7') {
     if (score <= 7) return ISI7_LEVELS.none;
     if (score <= 14) return ISI7_LEVELS.subclinical;
@@ -75,6 +83,8 @@ function getLevel(type: string, score: number, levelStr?: string) {
     if (score <= 22) return CDRISC_LEVELS.low;
     if (score <= 29) return CDRISC_LEVELS.moderate;
     return CDRISC_LEVELS.high;
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   } else {
     if (score <= 13) return PSS10_LEVELS.low;
     if (score <= 26) return PSS10_LEVELS.moderate;
@@ -84,7 +94,11 @@ function getLevel(type: string, score: number, levelStr?: string) {
 
 export default function AssessmentResult({ type, scores, totalScore, level: levelStr, onClose, onRetake }: AssessmentResultProps) {
   const level = getLevel(type, totalScore, levelStr);
+<<<<<<< HEAD
   const typeName = type === 'PHQ9' ? 'PHQ-9 抑郁筛查' : type === 'GAD7' ? 'GAD-7 焦虑筛查' : type === 'CSSRS' ? 'C-SSRS 自杀风险筛查' : type === 'PSS10' ? 'PSS-10 压力评估' : type === 'ISI7' ? 'ISI-7 失眠严重程度' : 'CD-RISC-10 心理韧性';
+=======
+  const typeName = type === 'PHQ9' ? 'PHQ-9 抑郁筛查' : type === 'GAD7' ? 'GAD-7 焦虑筛查' : type === 'CSSRS' ? 'C-SSRS 自杀风险筛查' : 'PSS-10 压力评估';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   return (
     <div className="space-y-6">

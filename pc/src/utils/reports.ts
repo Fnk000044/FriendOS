@@ -117,9 +117,13 @@ export async function generateReport(startDate: string, endDate: string): Promis
       tasksCompleted,
       tasksTotal,
       mood: diary?.mood ?? record?.moodAvg ?? null,
+<<<<<<< HEAD
       // 习惯率：当天有打卡记录才算数（>0），无记录为 -1（不参与统计），
       // 修复"0 打卡天拉低周期平均 / 环图今日显示 0%"的数据不一致（PRD v3 P0-5）
       habitsRate: habitsTotal > 0 && dayLogs.length > 0 ? habitsChecked / habitsTotal : -1,
+=======
+      habitsRate: habitsTotal > 0 ? habitsChecked / habitsTotal : (record?.habitsCompletionRate || 0),
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       diaryWordCount,
       sentimentScore: emotionByDate.get(dateStr) ?? null,
       habitsChecked,
@@ -137,7 +141,11 @@ export async function generateReport(startDate: string, endDate: string): Promis
     ? Math.round((moodValues.reduce((a, b) => a + b, 0) / moodValues.length) * 10) / 10
     : null;
 
+<<<<<<< HEAD
   const habitsRateValues = chartData.filter((d) => d.habitsRate > 0);
+=======
+  const habitsRateValues = chartData.filter((d) => d.habitsRate >= 0);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   const habitsCompletionRate = habitsRateValues.length > 0
     ? habitsRateValues.reduce((sum, d) => sum + d.habitsRate, 0) / habitsRateValues.length
     : 0;

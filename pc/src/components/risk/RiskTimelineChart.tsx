@@ -155,6 +155,7 @@ export default function RiskTimelineChart({ days = 30 }: Props) {
   // 图例
   const legendItems = Object.entries(EVENT_LABELS) as [TimelineEvent['type'], string][];
 
+<<<<<<< HEAD
   // 自动解读：最近一段风险分趋势（线性斜率）
   const autoSummary = useMemo(() => {
     const pts = data.filter((p) => p.score != null).map((p) => p.score as number);
@@ -184,6 +185,11 @@ export default function RiskTimelineChart({ days = 30 }: Props) {
       <p className="text-[11px] text-text-muted mb-3">
         X 轴=日期 · Y 轴=综合风险分（0-100，越高风险越大）· 红色折线=每日风险分 · 绿色虚线=个人基线均值 · 半透明绿带=基线±1σ · 圆点=事件锚点（日记/量表/危机）
       </p>
+=======
+  return (
+    <div className="glass-card rounded-2xl p-6">
+      <h3 className="text-lg font-semibold text-text-primary mb-4">风险时间线</h3>
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 10, right: 10, bottom: 5, left: 0 }}>
@@ -284,6 +290,7 @@ export default function RiskTimelineChart({ days = 30 }: Props) {
           个人基线
         </span>
       </div>
+<<<<<<< HEAD
 
       {/* 自动解读 */}
       {summaryText && (
@@ -291,6 +298,8 @@ export default function RiskTimelineChart({ days = 30 }: Props) {
           💡 {summaryText}
         </p>
       )}
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     </div>
   );
 }

@@ -12,9 +12,12 @@ import AppearanceSettings from '../components/settings/AppearanceSettings';
 import DataSettings from '../components/settings/DataSettings';
 import ChatLLMSettings from '../components/settings/ChatLLMSettings';
 import TermSettings from '../components/settings/TermSettings';
+<<<<<<< HEAD
 import DiagnosticsPanel from '../components/settings/DiagnosticsPanel';
 import PrivacyPanel from '../components/settings/PrivacyPanel';
 import { resetCalibration } from '../services/selfevolution/SelfEvolutionService';
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 /**
  * SettingsPage —— 设置主页面
@@ -36,6 +39,7 @@ export default function SettingsPage() {
   const resetShortcuts = useShortcutStore((s) => s.resetAll);
   const [recording, setRecording] = useState<ShortcutAction | null>(null);
   const recordingRef = useRef<ShortcutAction | null>(null);
+<<<<<<< HEAD
   const [calibReset, setCalibReset] = useState(false);
 
   const handleResetCalibration = async () => {
@@ -43,6 +47,8 @@ export default function SettingsPage() {
     setCalibReset(true);
     setTimeout(() => setCalibReset(false), 2500);
   };
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   // Keyboard shortcut recording
   useEffect(() => {
@@ -95,6 +101,7 @@ export default function SettingsPage() {
     <div className="space-y-6 max-w-2xl">
       <p className="text-text-muted">{t('settings.title')}</p>
 
+<<<<<<< HEAD
       {/* 启动自检面板（四态卡片 + 演示模式入口，设置页常驻可再次打开） */}
       <DiagnosticsPanel />
 
@@ -115,6 +122,8 @@ export default function SettingsPage() {
         </div>
       </Card>
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       {/* 数据管理 / 存储 / 演示数据 / 自动备份（一并交给 DataSettings） */}
       <DataSettings onExportingChange={noop} />
 

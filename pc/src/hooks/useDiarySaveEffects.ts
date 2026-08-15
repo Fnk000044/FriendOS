@@ -3,7 +3,10 @@ import { db } from '../db';
 import type { SentimentResult } from './useSentiment';
 import type { TypingMetrics } from './useTypingTracker';
 import type { RiskLevel } from '../db/models';
+<<<<<<< HEAD
 import { calculateSocialScore } from '../utils/socialScore';
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 /**
  * 日记保存副作用 hook
@@ -36,10 +39,23 @@ export function useDiarySaveEffects() {
     // 保存情感记录到数据库（仅在保存日记时写入，避免每 1.5s 重复写入）
     if (sentimentResult) {
       try {
+<<<<<<< HEAD
         // 社交分数本地计算（P2-1 修复：原实现为取 socialScore 再跑一次
         // emotionAnalyzeDiary IPC → 内部重复一次 ONNX 推理；现与主进程
         // EmotionAnalysisEngine.calculateSocialScore 同算法纯本地完成）
         const socialScore = calculateSocialScore(content);
+=======
+        // 计算社交分数（从日记文本中提取社交关键词）
+        let socialScore = 0;
+        try {
+          const socialResult = await window.electronAPI?.emotionAnalyzeDiary?.({
+            content, date, mood,
+          });
+          socialScore = socialResult?.socialScore ?? 0;
+        } catch {
+          // 社交分数计算失败不影响保存
+        }
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
         await db.emotionRecords.put({
           id: `diary-${diaryId || date}`,

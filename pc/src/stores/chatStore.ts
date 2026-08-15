@@ -13,6 +13,7 @@ export interface ChatMessageState {
   streaming?: boolean;
 }
 
+<<<<<<< HEAD
 // 情感感知多轮对话：会话状态（与 electron.d.ts 的 ChatSessionState 保持一致）
 export interface ChatSessionState {
   turnCount: number;
@@ -71,12 +72,20 @@ interface ChatState {
   currentSessionId: string | null;
   /** 历史会话概要列表（id/title/updatedAt），按更新时间倒序 */
   sessions: ChatSessionSummary[];
+=======
+interface ChatState {
+  messages: ChatMessageState[];
+  currentSessionId: string | null;
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   isStreaming: boolean;
   providerStatus: ChatProviderStatus;
   errorMessage: string | null;
   hasGreetedToday: boolean;
+<<<<<<< HEAD
   /** 情感感知多轮对话会话状态（渲染层权威，随 chatFallback 传入/回传） */
   session: ChatSessionState;
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   setMessages: (msgs: ChatMessageState[]) => void;
   addMessage: (msg: ChatMessageState) => void;
@@ -84,6 +93,7 @@ interface ChatState {
   finalizeLast: (patch?: Partial<ChatMessageState>) => void;
   clearMessages: () => void;
   setSessionId: (id: string | null) => void;
+<<<<<<< HEAD
   setSessions: (list: ChatSessionSummary[]) => void;
   setStreaming: (v: boolean) => void;
   setProviderStatus: (s: ChatProviderStatus, err?: string | null) => void;
@@ -92,6 +102,11 @@ interface ChatState {
   updateSession: (delta: ChatSessionDelta) => void;
   /** 重置会话（clearMessages 同时调用） */
   resetSession: () => void;
+=======
+  setStreaming: (v: boolean) => void;
+  setProviderStatus: (s: ChatProviderStatus, err?: string | null) => void;
+  setHasGreetedToday: (v: boolean) => void;
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 }
 
 // FIFO: 内存上限 200 条，超出截断（旧消息已落库）
@@ -104,12 +119,18 @@ function genId() {
 export const useChatStore = create<ChatState>((set) => ({
   messages: [],
   currentSessionId: null,
+<<<<<<< HEAD
   sessions: [],
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   isStreaming: false,
   providerStatus: 'fallback',
   errorMessage: null,
   hasGreetedToday: false,
+<<<<<<< HEAD
   session: createEmptySession(),
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   setMessages: (msgs) =>
     set({ messages: msgs.slice(-MAX_MESSAGES) }),
@@ -139,6 +160,7 @@ export const useChatStore = create<ChatState>((set) => ({
       return { messages: msgs };
     }),
 
+<<<<<<< HEAD
   clearMessages: () => set({ messages: [], errorMessage: null, session: createEmptySession() }),
   setSessionId: (id) => set({ currentSessionId: id }),
   setSessions: (list) => set({ sessions: list }),
@@ -147,6 +169,13 @@ export const useChatStore = create<ChatState>((set) => ({
   setHasGreetedToday: (v) => set({ hasGreetedToday: v }),
   updateSession: (delta) => set((s) => ({ session: mergeSessionDelta(s.session, delta) })),
   resetSession: () => set({ session: createEmptySession() }),
+=======
+  clearMessages: () => set({ messages: [], errorMessage: null }),
+  setSessionId: (id) => set({ currentSessionId: id }),
+  setStreaming: (v) => set({ isStreaming: v }),
+  setProviderStatus: (s, err = null) => set({ providerStatus: s, errorMessage: err }),
+  setHasGreetedToday: (v) => set({ hasGreetedToday: v }),
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 }));
 
 export { genId };

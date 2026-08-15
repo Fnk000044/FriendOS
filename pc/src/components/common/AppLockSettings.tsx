@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState } from 'react';
 import { Lock, Unlock, Eye, EyeOff } from 'lucide-react';
 import { useAppLockStore } from '../../stores/appLockStore';
@@ -9,6 +10,13 @@ import Button from './Button';
  * PRD v3 P0-9：移除 Windows Hello（人脸/PIN）解锁选项——
  * 不再调用系统凭据验证，锁屏/自检不再弹出 Windows PIN 弹窗。
  */
+=======
+import { useState, useEffect } from 'react';
+import { Lock, Unlock, Eye, EyeOff, Fingerprint } from 'lucide-react';
+import { useAppLockStore } from '../../stores/appLockStore';
+import Button from './Button';
+
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 export default function AppLockSettings() {
   const { enabled, passwordHash, setEnabled, setPassword } = useAppLockStore();
   const [showSetPassword, setShowSetPassword] = useState(false);
@@ -16,6 +24,24 @@ export default function AppLockSettings() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+<<<<<<< HEAD
+=======
+  // Windows Hello 支持状态
+  const [helloAvailable, setHelloAvailable] = useState(false);
+  const [helloEnabled, setHelloEnabled] = useState(false);
+
+  useEffect(() => {
+    // 检查 Windows Hello 是否可用（仅在 Electron 环境）
+    if (!window.electronAPI?.windowsHelloAvailable) return;
+    window.electronAPI.windowsHelloAvailable().then((r) => {
+      setHelloAvailable(r.available);
+      // 从 localStorage 恢复用户偏好
+      if (r.available) {
+        setHelloEnabled(localStorage.getItem('friendos_hello_unlock') === 'true');
+      }
+    }).catch(() => {});
+  }, []);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   const handleToggle = () => {
     if (!enabled && !passwordHash) {
@@ -51,6 +77,15 @@ export default function AppLockSettings() {
     setError('');
   };
 
+<<<<<<< HEAD
+=======
+  const handleToggleHello = () => {
+    const next = !helloEnabled;
+    setHelloEnabled(next);
+    localStorage.setItem('friendos_hello_unlock', String(next));
+  };
+
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -76,6 +111,35 @@ export default function AppLockSettings() {
         </button>
       </div>
 
+<<<<<<< HEAD
+=======
+      {/* Windows Hello 解锁选项（仅在可用且应用锁已启用时显示） */}
+      {helloAvailable && enabled && (
+        <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--bg-hover)' }}>
+          <div className="flex items-center gap-2">
+            <Fingerprint className="w-4 h-4 text-primary" />
+            <div>
+              <span className="text-sm text-text-secondary">Windows Hello 解锁</span>
+              <p className="text-xs text-text-muted">使用人脸/PIN 快速解锁</p>
+            </div>
+          </div>
+          <button
+            onClick={handleToggleHello}
+            className={`relative w-11 h-6 rounded-full transition-colors ${
+              helloEnabled ? 'bg-primary' : 'bg-slate-300'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full shadow transition-transform ${
+                helloEnabled ? 'translate-x-5' : 'translate-x-0'
+              }`}
+              style={{ background: 'var(--bg-card-solid)' }}
+            />
+          </button>
+        </div>
+      )}
+
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       {/* Password setup */}
       {showSetPassword && (
         <div className="space-y-3 p-3 rounded-lg" style={{ background: 'var(--bg-hover)' }}>

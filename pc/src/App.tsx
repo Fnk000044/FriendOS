@@ -30,6 +30,7 @@ const EmotionPage = lazy(() => import('./pages/EmotionPage'));
 const TherapyPage = lazy(() => import('./pages/TherapyPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+<<<<<<< HEAD
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 const SyncPage = lazy(() => import('./pages/SyncPage'));
 const AssessmentPage = lazy(() => import('./pages/AssessmentPage'));
@@ -37,6 +38,11 @@ const RiskDashboardPage = lazy(() => import('./pages/RiskDashboardPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const SafetyPlanPage = lazy(() => import('./pages/SafetyPlanPage'));
 const KnowledgePage = lazy(() => import('./pages/KnowledgePage'));
+=======
+const SyncPage = lazy(() => import('./pages/SyncPage'));
+const AssessmentPage = lazy(() => import('./pages/AssessmentPage'));
+const RiskDashboardPage = lazy(() => import('./pages/RiskDashboardPage'));
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 function PageErrorBoundary({ children }: { children: React.ReactNode }) {
   return <ErrorBoundary>{children}</ErrorBoundary>;
@@ -187,6 +193,7 @@ export default function App() {
             <Route path="therapy" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><TherapyPage /></Suspense></PageErrorBoundary>} />
             <Route path="reports" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><ReportsPage /></Suspense></PageErrorBoundary>} />
             <Route path="settings" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><SettingsPage /></Suspense></PageErrorBoundary>} />
+<<<<<<< HEAD
             <Route path="about" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><AboutPage /></Suspense></PageErrorBoundary>} />
             <Route path="sync" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><SyncPage /></Suspense></PageErrorBoundary>} />
             <Route path="assessment" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><AssessmentPage /></Suspense></PageErrorBoundary>} />
@@ -194,6 +201,11 @@ export default function App() {
             <Route path="privacy" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><PrivacyPolicyPage /></Suspense></PageErrorBoundary>} />
             <Route path="safety-plan" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><SafetyPlanPage /></Suspense></PageErrorBoundary>} />
             <Route path="knowledge" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><KnowledgePage /></Suspense></PageErrorBoundary>} />
+=======
+            <Route path="sync" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><SyncPage /></Suspense></PageErrorBoundary>} />
+            <Route path="assessment" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><AssessmentPage /></Suspense></PageErrorBoundary>} />
+            <Route path="risk" element={<PageErrorBoundary><Suspense fallback={<LoadingSpinner />}><RiskDashboardPage /></Suspense></PageErrorBoundary>} />
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

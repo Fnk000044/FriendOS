@@ -24,13 +24,18 @@ function setLocalModelComplete(fn) {
 const moduleState = {
   apiKey: null,
   onnxSession: null,
+<<<<<<< HEAD
   onnxLoadPromise: null,
+=======
+  onnxLoading: false,
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   vocabMap: null,
   vocabLoaded: false,
   vocabSet: null,
 };
 
 // ── 重置 ONNX 状态（恢复初始化时调用）────────────────────────────
+<<<<<<< HEAD
 // 异步化 + 释放原生资源（修复审计 P1-4：旧实现只置空引用不 release，
 // 导致每次重置泄漏一块原生内存；且不等待 in-flight 加载，"重置后模型复活"）。
 async function resetOnnxState() {
@@ -46,6 +51,11 @@ async function resetOnnxState() {
   }
   moduleState.onnxSession = null;
   moduleState.onnxLoadPromise = null;
+=======
+function resetOnnxState() {
+  moduleState.onnxSession = null;
+  moduleState.onnxLoading = false;
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   moduleState.vocabMap = null;
   moduleState.vocabLoaded = false;
   moduleState.vocabSet = null;
@@ -53,10 +63,14 @@ async function resetOnnxState() {
 }
 
 // ── 危机关键词（统一从 crisisKeywords.cjs 引用，避免三处重复定义不同步）────
+<<<<<<< HEAD
 const { CRISIS_KEYWORDS, STRONG_CRISIS_PHRASES, NEGATION_WORDS, CRISIS_EXCLUSIONS, NEGATIVE_KEYWORDS } = require('./crisisKeywords.cjs');
 
 // 危机等级决策（方案A 双确认 + 个人化误报降级，纯函数可单测）
 const { decideCrisisLevel } = require('./crisisDecision.cjs');
+=======
+const { CRISIS_KEYWORDS, NEGATION_WORDS, CRISIS_EXCLUSIONS, NEGATIVE_KEYWORDS } = require('./crisisKeywords.cjs');
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 // ── 情感词（SentimentService 专有，非危机关键词）─────────────────
 const POSITIVE_WORDS = new Set([
@@ -82,7 +96,11 @@ const NEGATIVE_WORDS = new Set([
 // ── 第1层：关键词预筛 ──────────────────────────────────────────
 function keywordScan(text) {
   if (!text || typeof text !== 'string') {
+<<<<<<< HEAD
     return { hasCrisis: false, crisisKeywords: [], strongPhrases: [], negativeWords: [], positiveWords: [], negativeProb: 0.5 };
+=======
+    return { hasCrisis: false, crisisKeywords: [], negativeWords: [], positiveWords: [], negativeProb: 0.5 };
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   }
 
   const cleanText = text.replace(/[，。！？、；：""''（）【】《》\s,.!?;:()\[\]{}<>]/g, '');
@@ -106,6 +124,7 @@ function keywordScan(text) {
     }
   }
 
+<<<<<<< HEAD
   // 检测语义强词（方案A 双确认用；同样走否定窗口 + 排除模式）
   const matchedStrong = [];
   for (const phrase of STRONG_CRISIS_PHRASES) {
@@ -123,6 +142,11 @@ function keywordScan(text) {
   if (isExcluded) {
     matchedCrisis.length = 0;
     matchedStrong.length = 0;
+=======
+  // 如果命中排除模式，清空危机关键词
+  if (isExcluded) {
+    matchedCrisis.length = 0;
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   }
 
   // 统计情感词
@@ -153,13 +177,17 @@ function keywordScan(text) {
   return {
     hasCrisis: matchedCrisis.length > 0,
     crisisKeywords: matchedCrisis,
+<<<<<<< HEAD
     strongPhrases: matchedStrong.slice(0, 5),
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     negativeWords: matchedNegative.slice(0, 5),
     positiveWords: matchedPositive.slice(0, 5),
     negativeProb: Math.round(negativeProb * 100) / 100,
   };
 }
 
+<<<<<<< HEAD
 // ── 校准层工具（用户先验偏移，crisis 通道冻结）──────────────────
 function toNum(v, fallback) {
   const n = Number(v);
@@ -204,6 +232,10 @@ function applyCalibration(logitsArray, calibration) {
 
 // ── 第2层：ONNX 情感分析 ────────────────────────────────────────
 async function analyzeWithONNX(text, calibration) {
+=======
+// ── 第2层：ONNX 情感分析 ────────────────────────────────────────
+async function analyzeWithONNX(text) {
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   if (!moduleState.onnxSession) return null;
 
   try {
@@ -220,10 +252,14 @@ async function analyzeWithONNX(text, calibration) {
 
     const logits = results.logits.data;
     const logitsArray = Array.from(logits);
+<<<<<<< HEAD
     // 未校准概率（危机判定专用，任何反馈不可改变）
     const rawProbs = softmax(logitsArray);
     // 校准概率（先验偏移 + 温度，供情感等级/置信度展示）
     const probs = applyCalibration(logitsArray, calibration);
+=======
+    const probs = softmax(logitsArray);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
     const maxProb = Math.max(...probs);
 
@@ -245,11 +281,17 @@ async function analyzeWithONNX(text, calibration) {
       negativeProb: Math.round(probs[0] * 100) / 100,
       neutralProb: Math.round(probs[1] * 100) / 100,
       positiveProb: Math.round(probs[2] * 100) / 100,
+<<<<<<< HEAD
       // crisisProb 始终返回未校准概率（危机通道冻结）
       crisisProb: Math.round(rawProbs[3] * 100) / 100,
       confidence: maxProb,
       method,
       calibrated: Boolean(calibration && toNum(calibration.sampleCount, 0) > 0),
+=======
+      crisisProb: Math.round(probs[3] * 100) / 100,
+      confidence: maxProb,
+      method,
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     };
   } catch (err) {
     console.error('[SentimentService] ONNX error:', err);
@@ -334,14 +376,23 @@ async function qwenAnalyze(text, context = {}) {
 }
 
 // ── 主分析函数 ──────────────────────────────────────────────────
+<<<<<<< HEAD
 async function analyzeEnhanced(text, calibration) {
+=======
+async function analyzeEnhanced(text) {
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   const timestamp = Date.now();
 
   // 第1层：关键词预筛（含否定词排除）
   const scan = keywordScan(text);
 
+<<<<<<< HEAD
   // 第2层：ONNX 4 分类情感分析（透传用户先验校准，危机通道冻结）
   const onnx = await analyzeWithONNX(text, calibration);
+=======
+  // 第2层：ONNX 4 分类情感分析
+  const onnx = await analyzeWithONNX(text);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   // 融合 ONNX + 关键词层 negativeProb（分层置信度策略）
   // - onnx 高置信（>=0.85）：以 ONNX 为主
@@ -361,6 +412,7 @@ async function analyzeEnhanced(text, calibration) {
     negativeProb = Math.round((scan.negativeProb * 0.6 + onnx.negativeProb * 0.4) * 100) / 100;
   }
 
+<<<<<<< HEAD
   // 危机等级决策（方案A 双确认，见 crisisDecision.cjs）：
   // - crisis（弹窗）= ONNX crisis 概率 >= 0.5 且（L1 危机词 或 语义强词表）
   // - ONNX 单路危机（无语义佐证）→ high（风险卡+热线，不弹全屏）
@@ -384,6 +436,33 @@ async function analyzeEnhanced(text, calibration) {
     method = decision.method || 'keyword';
     downgradedByUser = decision.downgradedByUser;
     crisisSignal = decision.crisisSignal;
+=======
+  // 两级确认：关键词 → ONNX crisis 概率
+  // 等级映射（4 分类 crisis 单独成级，最高优先级）：
+  // - crisisProb >= 0.5 → 'crisis'（ONNX 明确判定为危机）
+  // - scan.hasCrisis && crisisProb > 0.3 → 'high'（关键词+ONNX 双重确认）
+  // - scan.hasCrisis → 'medium'（仅关键词命中）
+  // - negativeProb > 0.7 → 'medium'（严重负面情绪）
+  // - 否则 → 'low'
+  let level = 'low';
+  let crisisLevel = 0;
+  let method = 'keyword';
+
+  if (crisisProb >= 0.5) {
+    // ONNX 直接判定为危机类，最高优先级
+    level = 'crisis';
+    crisisLevel = 3;
+    method = onnx ? 'onnx' : 'keyword';
+  } else if (scan.hasCrisis && crisisProb > 0.3) {
+    // Level 2 确认：关键词 + ONNX crisis 概率双重确认
+    level = 'high';
+    crisisLevel = 2;
+    method = 'onnx';
+  } else if (scan.hasCrisis) {
+    // Level 1：仅关键词命中（含已从排除列表移除的"想死了"/"想去死"），标记 medium（疑似）
+    level = 'medium';
+    crisisLevel = 1;
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   } else if (negativeProb > 0.7) {
     level = 'medium';
     method = onnx ? 'onnx' : 'keyword';
@@ -391,6 +470,7 @@ async function analyzeEnhanced(text, calibration) {
 
   const keywords = [...new Set([...scan.crisisKeywords, ...scan.negativeWords, ...scan.positiveWords])].slice(0, 5);
 
+<<<<<<< HEAD
   // neutralProb：ONNX 输出校准后的 neutral；无 ONNX 时由 1 - 其余概率回退
   const neutralProb = onnx
     ? onnx.neutralProb
@@ -401,10 +481,13 @@ async function analyzeEnhanced(text, calibration) {
   // 主导 4 分类标签（供渲染层情感纠错 F1 使用；crisis 用未校准概率参与 argmax）
   const predictedClass = predictClass(negativeProb, neutralProb, positiveProb, crisisProb);
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   return {
     level,
     crisisLevel,
     score: Math.round((1 - negativeProb) * 100) / 100,
+<<<<<<< HEAD
     positiveProb,
     negativeProb: Math.round(negativeProb * 100) / 100,
     neutralProb: Math.round(neutralProb * 100) / 100,
@@ -418,11 +501,20 @@ async function analyzeEnhanced(text, calibration) {
     crisisSignal,
     // 个人化降级标记（用户历史误报反馈把 crisis 压为 high）
     downgradedByUser,
+=======
+    positiveProb: onnx ? onnx.positiveProb : Math.round((1 - negativeProb) * 100) / 100,
+    negativeProb: Math.round(negativeProb * 100) / 100,
+    crisisProb: Math.round(crisisProb * 100) / 100,
+    keywords,
+    needCloud: level === 'high' || level === 'crisis',
+    method,
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     qwenAnalysis: '',
     timestamp,
   };
 }
 
+<<<<<<< HEAD
 /**
  * 主导 4 分类标签（negative/neutral/positive/crisis）。
  * 优先级：crisis 若为 argmax 则 crisis；否则取三类中概率最大者。
@@ -446,6 +538,13 @@ function predictClass(negativeProb, neutralProb, positiveProb, crisisProb) {
 async function analyze(text, calibration) {
   try {
     const result = await analyzeEnhanced(text, calibration);
+=======
+// ── 简化分析（向后兼容）─────────────────────────────────────────
+// 统一调用 analyzeEnhanced 后做等级映射，避免与增强版判定不一致
+async function analyze(text) {
+  try {
+    const result = await analyzeEnhanced(text);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     return result;
   } catch (err) {
     console.warn('[SentimentService] analyzeEnhanced failed, fallback to keyword-only:', err.message);
@@ -464,13 +563,17 @@ async function analyze(text, calibration) {
     }
 
     const keywords = [...new Set([...scan.crisisKeywords, ...scan.negativeWords, ...scan.positiveWords])].slice(0, 5);
+<<<<<<< HEAD
     const positiveProb = Math.round((1 - negativeProb) * 100) / 100;
     const neutralProb = Math.max(0, Math.round((1 - negativeProb - positiveProb) * 100) / 100);
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
     return {
       level,
       crisisLevel,
       score: Math.round((1 - negativeProb) * 100) / 100,
+<<<<<<< HEAD
       positiveProb,
       negativeProb: Math.round(negativeProb * 100) / 100,
       neutralProb,
@@ -480,6 +583,14 @@ async function analyze(text, calibration) {
       needCloud: level === 'high' || level === 'crisis',
       method: 'keyword',
       calibrated: false,
+=======
+      positiveProb: Math.round((1 - negativeProb) * 100) / 100,
+      negativeProb: Math.round(negativeProb * 100) / 100,
+      crisisProb: 0,
+      keywords,
+      needCloud: level === 'high' || level === 'crisis',
+      method: 'keyword',
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       timestamp: Date.now(),
     };
   }
@@ -568,6 +679,7 @@ function loadVocab() {
 
 async function tryLoadOnnxModel() {
   if (moduleState.onnxSession) return moduleState.onnxSession;
+<<<<<<< HEAD
   if (moduleState.onnxLoadPromise) return moduleState.onnxLoadPromise;
 
   // 共享 in-flight Promise（修复审计 P1-4：旧实现用 onnxLoading 标志位 +
@@ -597,6 +709,38 @@ async function tryLoadOnnxModel() {
   })();
 
   return moduleState.onnxLoadPromise;
+=======
+  if (moduleState.onnxLoading) {
+    const start = Date.now();
+    while (moduleState.onnxLoading && Date.now() - start < 30000) {
+      await new Promise(r => setTimeout(r, 100));
+    }
+    return moduleState.onnxSession;
+  }
+
+  moduleState.onnxLoading = true;
+  try {
+    const ort = require(getOrtModulePath());
+
+    const modelPath = path.join(getSentimentModelDir(), 'sentiment.onnx');
+
+    if (!FS.existsSync(modelPath)) {
+      logToFile(`ONNX model not found: ${modelPath}`);
+      moduleState.onnxLoading = false;
+      return null;
+    }
+
+    moduleState.onnxSession = await ort.InferenceSession.create(modelPath);
+    loadVocab();
+    logToFile('ONNX model loaded');
+    moduleState.onnxLoading = false;
+    return moduleState.onnxSession;
+  } catch (err) {
+    logToFile(`ONNX load error: ${err.message}`);
+    moduleState.onnxLoading = false;
+    return null;
+  }
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 }
 
 function isOnnxAvailable() {

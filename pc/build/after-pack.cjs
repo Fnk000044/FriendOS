@@ -26,6 +26,7 @@ function rmrf(p) {
   const size = stat.isDirectory()
     ? totalSizeDir(p)
     : stat.size;
+<<<<<<< HEAD
   try {
     fs.rmSync(p, { recursive: true, force: true });
     return size;
@@ -34,6 +35,10 @@ function rmrf(p) {
     console.warn(`  [after-pack] 跳过删除 ${p}: ${e.message}`);
     return 0;
   }
+=======
+  fs.rmSync(p, { recursive: true, force: true });
+  return size;
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 }
 
 function totalSizeDir(dir) {
@@ -111,6 +116,7 @@ module.exports = async function (context) {
     if (s) { saved += s; console.log(`  [after-pack] removed ${path.basename(p)}: ${fmtSize(s)}`); }
   }
 
+<<<<<<< HEAD
   // ── 5) exe 资源注入（图标 + 版本信息）───────────────────────
   // 背景：electron-builder 的 rcedit 由 Go 版 app-builder.exe 执行，
   // 该二进制会自行下载 winCodeSign 2.6.0 的 7z 并在解压时创建符号链接，
@@ -142,5 +148,7 @@ module.exports = async function (context) {
     console.warn('  [after-pack] 跳过 rcedit：rcedit/图标/目标 exe 缺失');
   }
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   console.log(`[after-pack] total saved: ${fmtSize(saved)}`);
 };

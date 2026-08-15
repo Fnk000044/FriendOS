@@ -79,6 +79,7 @@ if (typeof (document as any).execCommand !== 'function') {
   onChatChunk: vi.fn().mockReturnValue(() => {}),
   removeChatChunk: vi.fn(),
   riskNotify: vi.fn().mockResolvedValue({ success: true }),
+<<<<<<< HEAD
   // 与真实 main.cjs 返回结构对齐：diagnostics.escalation 必须存在，
   // 否则组件解构 diagnostics.escalation.escalated 会崩（修复审计 P2-10）
   riskCalculate: vi.fn().mockResolvedValue({
@@ -109,4 +110,7 @@ if (typeof (document as any).execCommand !== 'function') {
     note: '样本不足，采用启发式回退（详见 docs/risk_methodology.md）',
   }),
   behaviorCalculateBaseline: vi.fn().mockResolvedValue(null),
+=======
+  riskCalculate: vi.fn().mockResolvedValue({ totalScore: 30, riskLevel: 'medium_low', diagnostics: {} }),
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 };

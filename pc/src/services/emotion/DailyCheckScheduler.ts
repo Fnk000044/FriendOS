@@ -184,7 +184,27 @@ export async function runDailyCheck(): Promise<DailyCheckResult> {
     console.error('[DailyCheckScheduler] runDailyCheck error:', e);
   }
 
+<<<<<<< HEAD
   // 5. 推送通知（非 attention 级才推系统通知）
+=======
+  // 5. 写 dailyRecords
+  try {
+    await db.dailyRecords.put({
+      id: today_daily_id(),
+      date: getToday(),
+      tasksCompleted: 0,
+      tasksTotal: 0,
+      diaryWritten: false,
+      habitsCompleted: 0,
+      habitsTotal: 0,
+      habitsCompletionRate: 0,
+      wordCount: 0,
+      createdAt: getNow(),
+    });
+  } catch { /* ignore */ }
+
+  // 6. 推送通知（非 attention 级才推系统通知）
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   if (result.alert && result.alert.level !== 'attention' && API) {
     try {
       await API.riskNotify({
@@ -201,6 +221,13 @@ export async function runDailyCheck(): Promise<DailyCheckResult> {
   return result;
 }
 
+<<<<<<< HEAD
+=======
+function today_daily_id() {
+  return `daily_${getToday()}`;
+}
+
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 /**
  * 根据预警+风险分+洞察决策通知等级
  */
@@ -258,6 +285,7 @@ function decideAlert(result: DailyCheckResult): RiskAlert | null {
 let schedulerTimer: ReturnType<typeof setInterval> | null = null;
 let lastCheckDate = '';
 
+<<<<<<< HEAD
 // 检查结果缓存 + 订阅（修复审计 P1-2：此前调度器跑出的结果被 .catch(console.error)
 // 丢弃，RiskBanner/BehaviorInsightCard 从启动起永远是空态。现在结果发布给所有订阅者。）
 type DailyCheckListener = (result: DailyCheckResult) => void;
@@ -297,11 +325,18 @@ let startCount = 0;
 
 export function startScheduler() {
   startCount += 1;
+=======
+export function startScheduler() {
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   if (schedulerTimer) return;
 
   // 启动时立即跑一次（延迟 3s，避免阻塞首屏）
   setTimeout(() => {
+<<<<<<< HEAD
     runAndPublish();
+=======
+    runDailyCheck().catch(console.error);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     lastCheckDate = getToday();
   }, 3000);
 
@@ -311,7 +346,11 @@ export function startScheduler() {
     const today = getToday();
     if (now.getHours() >= DAILY_CHECK_HOUR && lastCheckDate !== today) {
       lastCheckDate = today;
+<<<<<<< HEAD
       runAndPublish();
+=======
+      runDailyCheck().catch(console.error);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     }
   }, CHECK_INTERVAL_MS);
 
@@ -322,8 +361,11 @@ export function startScheduler() {
 }
 
 export function stopScheduler() {
+<<<<<<< HEAD
   startCount = Math.max(0, startCount - 1);
   if (startCount > 0) return;
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   if (schedulerTimer) {
     clearInterval(schedulerTimer);
     schedulerTimer = null;
@@ -339,7 +381,11 @@ function onVisibilityChange() {
     const today = getToday();
     if (now.getHours() >= DAILY_CHECK_HOUR && lastCheckDate !== today) {
       lastCheckDate = today;
+<<<<<<< HEAD
       runAndPublish();
+=======
+      runDailyCheck().catch(console.error);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     }
   }
 }

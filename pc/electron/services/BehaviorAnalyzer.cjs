@@ -359,7 +359,10 @@ function analyzeBehaviorTrends(records) {
       averageHabitRate: null,
       moodVolatility: 0,
       lateNightRatio: 0,
+<<<<<<< HEAD
       baseline: null,
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     };
   }
 
@@ -434,6 +437,7 @@ function analyzeBehaviorTrends(records) {
   ).length;
   const lateNightRatio = records.length > 0 ? lateNightCount / records.length : 0;
 
+<<<<<<< HEAD
   // 个人基线摘要（P2-1 透传：渲染层展示"个人基线 vs 当前"用）
   // 数据充足（≥7 天）时由 calculatePersonalBaseline 计算，否则为 null
   let baseline = null;
@@ -451,6 +455,8 @@ function analyzeBehaviorTrends(records) {
     }
   }
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   return {
     consecutiveNoDiary,
     consecutiveLowMood,
@@ -461,7 +467,10 @@ function analyzeBehaviorTrends(records) {
     averageHabitRate: averageHabitRate ? Math.round(averageHabitRate * 100) / 100 : null,
     moodVolatility,
     lateNightRatio: Math.round(lateNightRatio * 100) / 100,
+<<<<<<< HEAD
     baseline,
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   };
 }
 

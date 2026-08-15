@@ -35,10 +35,13 @@ interface ReportData {
   worstDay: string | null;
   taskAvgRate: number;
   lateNightCount: number;
+<<<<<<< HEAD
   /** 习惯完成率（0-1） */
   habitAvgRate: number;
   /** 平均睡眠时长（小时，来自行为记录 activeHours 推断，可空） */
   sleepAvgHours: number | null;
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 }
 
 /**
@@ -91,6 +94,7 @@ function generateWithRules(data: ReportData): AIReport {
     insights.push('任务完成率偏低，可能需要调整目标或时间管理。');
   }
 
+<<<<<<< HEAD
   if (data.habitAvgRate >= 0.8) {
     insights.push('习惯打卡很稳定，坚持得很好，这是心理健康的护城河。');
   } else if (data.habitAvgRate > 0 && data.habitAvgRate < 0.5) {
@@ -101,6 +105,8 @@ function generateWithRules(data: ReportData): AIReport {
     insights.push('平均睡眠不足 6 小时，睡眠不足会显著影响情绪调节。');
   }
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   // Suggestions
   const suggestions: string[] = [];
 
@@ -121,6 +127,7 @@ function generateWithRules(data: ReportData): AIReport {
     suggestions.push('注意作息规律，尽量避免深夜活动。');
   }
 
+<<<<<<< HEAD
   if (data.habitAvgRate > 0 && data.habitAvgRate < 0.5) {
     suggestions.push('把习惯目标拆小：从"每天运动"改成"每周运动 3 次，每次 10 分钟"。');
   }
@@ -129,6 +136,8 @@ function generateWithRules(data: ReportData): AIReport {
     suggestions.push('今晚提前 30 分钟上床，睡前 1 小时不看屏幕。');
   }
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   if (suggestions.length === 0) {
     suggestions.push('保持当前的良好状态，继续规律生活。');
     suggestions.push('尝试新的放松方式，如正念冥想或轻度运动。');
@@ -213,6 +222,7 @@ async function gatherReportData(startDate: string, endDate: string): Promise<Rep
     ? taskBehaviors.reduce((sum, b) => sum + b.tasksCompleted / b.tasksTotal, 0) / taskBehaviors.length
     : 0;
 
+<<<<<<< HEAD
   // Habit completion rate
   const habitBehaviors = behaviors.filter(b => b.habitsTotal > 0);
   const habitAvgRate = habitBehaviors.length > 0
@@ -227,6 +237,10 @@ async function gatherReportData(startDate: string, endDate: string): Promise<Rep
 
   // Late night count
   const lateNightCount = lateNights;
+=======
+  // Late night count
+  const lateNightCount = behaviors.filter(b => b.activeHours?.some(h => h >= 0 && h < 6)).length;
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   const periodDays = Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1);
   const periodLabel = periodDays <= 7 ? '本周' : periodDays <= 31 ? '本月' : `${periodDays}天`;
@@ -234,7 +248,11 @@ async function gatherReportData(startDate: string, endDate: string): Promise<Rep
   return {
     startDate, endDate, periodLabel, avgMood, highRiskCount,
     diaryDays, totalDays, trend, bestDay, worstDay,
+<<<<<<< HEAD
     taskAvgRate, lateNightCount, habitAvgRate, sleepAvgHours,
+=======
+    taskAvgRate, lateNightCount,
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   };
 }
 

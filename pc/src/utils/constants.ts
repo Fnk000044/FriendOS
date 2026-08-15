@@ -37,6 +37,7 @@ export const DEFAULT_CATEGORIES = [
   { name: '生活', color: '#22C55E' },
   { name: '健康', color: '#F59E0B' },
 ];
+<<<<<<< HEAD
 
 // ── 危机伦理统一话术与热线（P0-7）─────────────────────────────
 // 危机文本恒走固定回复（热线 + 安全确认 + 不替代专业医疗），不允许模板随机化绕过。
@@ -75,3 +76,5 @@ export const DEMO_STORY_PHASES = [
 ] as const;
 
 export const DEMO_STORAGE_KEY = 'friendos_demo_injected';
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193

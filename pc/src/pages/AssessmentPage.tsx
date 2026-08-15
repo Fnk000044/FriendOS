@@ -1,13 +1,20 @@
 import { useState, useMemo } from 'react';
+<<<<<<< HEAD
 import { ClipboardList, ArrowLeft, History, Trash2, Moon, Dumbbell } from 'lucide-react';
+=======
+import { ClipboardList, ArrowLeft, History, Trash2 } from 'lucide-react';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import PHQ9Form from '../components/assessment/PHQ9Form';
 import GAD7Form from '../components/assessment/GAD7Form';
 import PSS10Form from '../components/assessment/PSS10Form';
 import CSSRSForm from '../components/assessment/CSSRSForm';
+<<<<<<< HEAD
 import ISI7Form from '../components/assessment/ISI7Form';
 import CDRISC10Form from '../components/assessment/CDRISC10Form';
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 import AssessmentResult from '../components/assessment/AssessmentResult';
 import { useAssessments } from '../hooks/useAssessments';
 import { useLanguage } from '../i18n/useLanguage';
@@ -15,14 +22,19 @@ import { useCrisisStore } from '../stores/crisisStore';
 import type { Assessment } from '../db/models';
 import { getToday } from '../utils/date';
 
+<<<<<<< HEAD
 type ScaleType = 'PHQ9' | 'GAD7' | 'PSS10' | 'CSSRS' | 'ISI7' | 'CDRISC10';
 type View = 'home' | 'phq9' | 'gad7' | 'pss10' | 'cssrs' | 'isi7' | 'cdrisc10' | 'result' | 'history';
+=======
+type View = 'home' | 'phq9' | 'gad7' | 'pss10' | 'cssrs' | 'result' | 'history';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 export default function AssessmentPage() {
   const { t } = useLanguage();
   const { assessments, saveAssessment, deleteAssessment } = useAssessments();
   const { show: showCrisis } = useCrisisStore();
   const [view, setView] = useState<View>('home');
+<<<<<<< HEAD
   const [currentType, setCurrentType] = useState<ScaleType>('PHQ9');
   const [lastResult, setLastResult] = useState<Assessment | null>(null);
 
@@ -30,11 +42,20 @@ export default function AssessmentPage() {
     // 验证分数范围
     const expectedLength =
       type === 'PHQ9' ? 9 : type === 'GAD7' ? 7 : type === 'PSS10' ? 10 : type === 'ISI7' ? 7 : type === 'CDRISC10' ? 10 : 6;
+=======
+  const [currentType, setCurrentType] = useState<'PHQ9' | 'GAD7' | 'PSS10' | 'CSSRS'>('PHQ9');
+  const [lastResult, setLastResult] = useState<Assessment | null>(null);
+
+  const handleComplete = async (type: 'PHQ9' | 'GAD7' | 'PSS10' | 'CSSRS', scores: number[]) => {
+    // 验证分数范围
+    const expectedLength = type === 'PHQ9' ? 9 : type === 'GAD7' ? 7 : type === 'PSS10' ? 10 : 6;
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     if (!Array.isArray(scores) || scores.length !== expectedLength) {
       console.error(`Invalid scores length: expected ${expectedLength}, got ${scores.length}`);
       return;
     }
     const maxScore = type === 'PSS10' ? 4 : type === 'CSSRS' ? 4 : 3;
+<<<<<<< HEAD
     if (type !== 'ISI7' && type !== 'CDRISC10') {
       if (scores.some(s => typeof s !== 'number' || s < 0 || s > maxScore || !Number.isInteger(s))) {
         console.error(`Invalid score values: must be integers 0-${maxScore}`);
@@ -46,6 +67,11 @@ export default function AssessmentPage() {
         console.error('Invalid score values: must be integers 0-4');
         return;
       }
+=======
+    if (scores.some(s => typeof s !== 'number' || s < 0 || s > maxScore || !Number.isInteger(s))) {
+      console.error(`Invalid score values: must be integers 0-${maxScore}`);
+      return;
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     }
 
     const totalScore = scores.reduce((a, b) => a + b, 0);
@@ -84,6 +110,7 @@ export default function AssessmentPage() {
       if (totalScore <= 13) level = 'low';
       else if (totalScore <= 26) level = 'moderate';
       else level = 'high';
+<<<<<<< HEAD
     } else if (type === 'ISI7') {
       // ISI-7: Bastien et al., 2001
       if (totalScore <= 7) level = 'none';
@@ -95,6 +122,8 @@ export default function AssessmentPage() {
       if (totalScore <= 22) level = 'low';
       else if (totalScore <= 29) level = 'moderate';
       else level = 'high';
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     } else {
       // C-SSRS: 以最高危题号决定等级
       // Q3/Q4/Q5 任一阳性 → critical；Q1/Q2 阳性 → high；否则 low
@@ -122,8 +151,11 @@ export default function AssessmentPage() {
   const gad7History = useMemo(() => assessments?.filter(a => a.type === 'GAD7') ?? [], [assessments]);
   const pss10History = useMemo(() => assessments?.filter(a => a.type === 'PSS10') ?? [], [assessments]);
   const cssrsHistory = useMemo(() => assessments?.filter(a => a.type === 'CSSRS') ?? [], [assessments]);
+<<<<<<< HEAD
   const isi7History = useMemo(() => assessments?.filter(a => a.type === 'ISI7') ?? [], [assessments]);
   const cdriscHistory = useMemo(() => assessments?.filter(a => a.type === 'CDRISC10') ?? [], [assessments]);
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
@@ -141,8 +173,11 @@ export default function AssessmentPage() {
              view === 'gad7' ? 'GAD-7 焦虑筛查' :
              view === 'pss10' ? 'PSS-10 压力评估' :
              view === 'cssrs' ? 'C-SSRS 自杀风险筛查' :
+<<<<<<< HEAD
              view === 'isi7' ? 'ISI-7 失眠严重程度' :
              view === 'cdrisc10' ? 'CD-RISC-10 心理韧性' :
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
              view === 'result' ? '评估结果' : '评估历史'}
           </h1>
           <p className="text-sm text-text-muted mt-1">
@@ -230,6 +265,7 @@ export default function AssessmentPage() {
             )}
           </Card>
 
+<<<<<<< HEAD
           <Card
             hover
             onClick={() => setView('isi7')}
@@ -269,6 +305,9 @@ export default function AssessmentPage() {
           </Card>
 
           {(phq9History.length > 0 || gad7History.length > 0 || pss10History.length > 0 || cssrsHistory.length > 0 || isi7History.length > 0 || cdriscHistory.length > 0) && (
+=======
+          {(phq9History.length > 0 || gad7History.length > 0 || pss10History.length > 0 || cssrsHistory.length > 0) && (
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
             <Card hover onClick={() => setView('history')} className="flex items-center gap-3">
               <History className="w-5 h-5 text-text-muted" />
               <span className="text-sm text-text-secondary">查看评估历史</span>
@@ -323,6 +362,7 @@ export default function AssessmentPage() {
         </Card>
       )}
 
+<<<<<<< HEAD
       {/* ISI-7 form */}
       {view === 'isi7' && (
         <Card>
@@ -343,6 +383,8 @@ export default function AssessmentPage() {
         </Card>
       )}
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       {/* Result */}
       {view === 'result' && lastResult && (
         <Card>
@@ -352,7 +394,11 @@ export default function AssessmentPage() {
             totalScore={lastResult.totalScore}
             level={lastResult.level}
             onClose={() => setView('home')}
+<<<<<<< HEAD
             onRetake={() => setView(currentType === 'PHQ9' ? 'phq9' : currentType === 'GAD7' ? 'gad7' : currentType === 'PSS10' ? 'pss10' : currentType === 'CSSRS' ? 'cssrs' : currentType === 'ISI7' ? 'isi7' : 'cdrisc10')}
+=======
+            onRetake={() => setView(currentType === 'PHQ9' ? 'phq9' : currentType === 'GAD7' ? 'gad7' : currentType === 'PSS10' ? 'pss10' : 'cssrs')}
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
           />
         </Card>
       )}
@@ -449,6 +495,7 @@ export default function AssessmentPage() {
             </div>
           )}
 
+<<<<<<< HEAD
           {isi7History.length > 0 && (
             <div className="space-y-2">
               <h3 className="font-medium text-text-primary">ISI-7 失眠评估记录</h3>
@@ -495,6 +542,8 @@ export default function AssessmentPage() {
             </div>
           )}
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
           <Button variant="ghost" onClick={() => setView('home')}>返回</Button>
         </div>
       )}

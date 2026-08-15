@@ -1,5 +1,8 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
+<<<<<<< HEAD
 import { createPortal } from 'react-dom';
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -81,9 +84,13 @@ export default function Modal({ open, onClose, title, children, maxWidth = 'max-
 
   if (!visible) return null;
 
+<<<<<<< HEAD
   // 用 portal 渲染到 body：避免父容器 transform/filter 创建层叠上下文
   // 导致 fixed 遮罩定位异常（二级窗口取消时"闪黑"的根因之一）
   return createPortal(
+=======
+  return (
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     <div
       ref={overlayRef}
       className="fixed inset-0 z-50 flex items-center justify-center"
@@ -124,7 +131,11 @@ export default function Modal({ open, onClose, title, children, maxWidth = 'max-
           {children}
         </div>
       </div>
+<<<<<<< HEAD
     </div>,
     document.body,
+=======
+    </div>
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   );
 }

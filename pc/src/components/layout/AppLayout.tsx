@@ -5,21 +5,30 @@ import StatusBar from './StatusBar';
 import { useUIStore } from '../../stores/uiStore';
 import { useThemeStore } from '../../stores/useThemeStore';
 import { useAppearanceStore } from '../../stores/useAppearanceStore';
+<<<<<<< HEAD
 import { useDemoModeStore } from '../../stores/demoModeStore';
 import { useLanguage } from '../../i18n/useLanguage';
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 export default function AppLayout() {
   const sidebarOpen = useUIStore((s) => s.sidebarOpen);
   const collapsed = useUIStore((s) => s.sidebarCollapsed);
   const location = useLocation();
+<<<<<<< HEAD
   const { t } = useLanguage();
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   // 激活主题 store（初始化时自动 applyTheme + 监听系统变化）
   useThemeStore((s) => s.resolved);
   // 激活外观 store（初始化时自动 applyAppearance + 订阅变化触发重渲染）
   // 订阅 reduceMotion，开启时跳过页面切换入场动画类，避免重挂载造成的瞬时闪烁
   const reduceMotion = useAppearanceStore((s) => s.reduceMotion);
+<<<<<<< HEAD
   // 演示模式状态（激活时顶部横幅全局可见）
   const demoActive = useDemoModeStore((s) => s.status === 'active');
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   const sidebarMargin = sidebarOpen
     ? (collapsed ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width)')
@@ -48,6 +57,7 @@ export default function AppLayout() {
 
       <Sidebar />
       <div className="relative z-10 pt-8 transition-all duration-200 ease-out" style={{ marginLeft: sidebarMargin }}>
+<<<<<<< HEAD
         {/* 演示模式横幅：激活时全局可见 */}
         {demoActive && (
           <div
@@ -64,6 +74,8 @@ export default function AppLayout() {
             {t('settings.demo_banner')}
           </div>
         )}
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
         <Header />
         <div className="flex" style={{ height: 'calc(100vh - 32px - var(--header-height) - 28px)' }}>
           <main className="flex-1 px-4 md:px-7 py-6 max-w-7xl mx-auto min-w-0 overflow-y-auto" role="main" aria-label="主内容区">

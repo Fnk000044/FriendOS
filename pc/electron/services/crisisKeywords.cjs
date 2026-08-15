@@ -39,6 +39,7 @@ const NEGATIVE_KEYWORDS = [
   '孤独', '害怕', '紧张', '愤怒', '低落', '压抑'
 ];
 
+<<<<<<< HEAD
 // 语义强词表（方案A 双确认用）：
 // 不含"想死/自杀"等 L1 硬词，但属于临床危机语义（无意义感/绝望感/撑不下去）。
 // ONNX crisis 概率 >= 0.5 且命中本表 → 升 crisis（弹窗）；仅 ONNX 单路 → high。
@@ -55,6 +56,10 @@ const STRONG_CRISIS_PHRASES = [
 module.exports = {
   CRISIS_KEYWORDS,
   STRONG_CRISIS_PHRASES,
+=======
+module.exports = {
+  CRISIS_KEYWORDS,
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   NEGATION_WORDS,
   CRISIS_EXCLUSIONS,
   NEGATIVE_KEYWORDS,

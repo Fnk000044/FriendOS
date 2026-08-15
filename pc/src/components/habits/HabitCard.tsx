@@ -139,7 +139,11 @@ const HabitCard = React.memo(function HabitCard({ habit, isLogged, streak, onTog
             aria-expanded={showCalendar}
           >
             <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${showCalendar ? 'rotate-180' : ''}`} />
+<<<<<<< HEAD
             {showCalendar ? '收起日历' : '本月记录'}
+=======
+            {showCalendar ? '收起月历' : '本月记录'}
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
           </button>
           {showCalendar && (
             <HabitCalendar

@@ -19,6 +19,7 @@ const HabitChart = React.memo(function HabitChart({ data }: HabitChartProps) {
     );
   }
 
+<<<<<<< HEAD
   // 只统计有打卡记录的天（habitsRate > 0），避免"今日 0%"误导（PRD v3 P0-5）
   const validData = data.filter((d) => d.habitsRate > 0);
   if (validData.length === 0) {
@@ -36,6 +37,12 @@ const HabitChart = React.memo(function HabitChart({ data }: HabitChartProps) {
   const avgRate = Math.round(validData.reduce((sum, d) => sum + d.habitsRate, 0) / validData.length * 100);
   const trend = validData.length >= 2
     ? Math.round((validData[validData.length - 1].habitsRate - validData[validData.length - 2].habitsRate) * 100)
+=======
+  const latestRate = Math.round(data[data.length - 1].habitsRate);
+  const avgRate = Math.round(data.reduce((sum, d) => sum + d.habitsRate, 0) / data.length);
+  const trend = data.length >= 2
+    ? Math.round(data[data.length - 1].habitsRate - data[data.length - 2].habitsRate)
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     : 0;
 
   const radius = 60;
@@ -70,7 +77,11 @@ const HabitChart = React.memo(function HabitChart({ data }: HabitChartProps) {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-2xl font-bold text-text-primary">{latestRate}%</span>
+<<<<<<< HEAD
             <span className="text-xs text-text-muted">{t('report.latest_habit_day')}</span>
+=======
+            <span className="text-xs text-text-muted">{t('report.today')}</span>
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
           </div>
         </div>
         <div className="space-y-3">

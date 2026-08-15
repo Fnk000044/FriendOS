@@ -240,6 +240,7 @@ export interface CrisisLog {
   createdAt: string;
 }
 
+<<<<<<< HEAD
 /**
  * 危机安全计划（Safety Planning Intervention, Stanley & Brown 2012）
  * 单行表（id='default'），六个自由文本字段均加密存储。
@@ -258,6 +259,8 @@ export interface SafetyPlan {
   updatedAt: string;
 }
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 export interface ConversationSummary {
   id: string;
   date: string;
@@ -279,7 +282,11 @@ export interface Conversation {
 
 export interface Assessment {
   id: string;
+<<<<<<< HEAD
   type: 'PHQ9' | 'GAD7' | 'PSS10' | 'CSSRS' | 'ISI7' | 'CDRISC10';
+=======
+  type: 'PHQ9' | 'GAD7' | 'PSS10' | 'CSSRS';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   date: string;
   scores: number[];
   totalScore: number;
@@ -298,6 +305,7 @@ export interface TherapyRecord {
   createdAt: string;
 }
 
+<<<<<<< HEAD
 /**
  * 反馈触点类型（统一反馈模型，见 deliverables/qingyuanbei/arch-self-evolution.md §2.2）
  * - sentiment：情感分类纠错（F1）
@@ -325,10 +333,18 @@ export interface FeedbackLog {
   /** 用户自由文本（加密字段 encryptField） */
   text?: string;
   /** 原预测标签/等级（可查询枚举） */
+=======
+export interface FeedbackLog {
+  id: string;
+  type: 'sentiment' | 'ai_response' | 'recommendation' | 'early_warning';
+  targetId?: string;
+  text?: string;
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   predicted: string;
   feedback: 'accurate' | 'inaccurate';
   accurate?: 'accurate' | 'inaccurate';
   refId?: string;
+<<<<<<< HEAD
   /** 用户纠正内容（自由文本/枚举，写入时 encryptField） */
   correction?: string;
   /** 用户纠正后的枚举标签（sentiment 触点，明文） */
@@ -343,11 +359,14 @@ export interface FeedbackLog {
   actualValue?: number;
   /** 预测步长 1..7（forecast 触点，明文数值） */
   horizon?: number;
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   createdAt: string;
   timestamp?: number;
 }
 
 /**
+<<<<<<< HEAD
  * 本地自进化模型（单行，id='default'）
  *
  * 这是「学习参数」的逻辑结构：均为聚合统计（无原文/无 PII），
@@ -403,6 +422,8 @@ export interface SelfEvoModelRow {
 }
 
 /**
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
  * AI 报告缓存
  * 按 startDate+endDate 复用同一周期报告，避免重复推理
  */

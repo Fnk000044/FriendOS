@@ -22,7 +22,10 @@ import {
   Step0Situation, Step1AutomaticThought, Step2Emotions, Step3Evidence,
   Step4AlternativeThought, Step5Belief, Step6Experiment,
 } from './steps/ThoughtRecordSteps';
+<<<<<<< HEAD
 import InterventionFeedback from '../common/InterventionFeedback';
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 // 情绪选项：用 SVG 图标替代 emoji，避免平台渲染不一致
 const EMOTION_OPTIONS: { labelKey: TranslationKey; Icon: LucideIcon }[] = [
@@ -204,9 +207,12 @@ export default function ThoughtRecord({ onComplete }: ThoughtRecordProps) {
                 </span>
               )}
             </p>
+<<<<<<< HEAD
             <div className="mb-4 flex justify-center">
               <InterventionFeedback interventionType="thought_record" />
             </div>
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
             <div className="flex gap-3 justify-center">
               <button
                 type="button"

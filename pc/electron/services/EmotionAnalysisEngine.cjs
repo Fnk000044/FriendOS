@@ -443,16 +443,27 @@ function analyzeSleepPattern(isoDate) {
 /**
  * Analyze a single diary entry and return comprehensive emotion data
  * @param {object} diary - { id, date, content, mood, createdAt }
+<<<<<<< HEAD
  * @param {object} [calibration] - 用户情感先验校准（crisis 通道冻结）
  * @returns {object} Emotion analysis result with PANAS scores
  */
 async function analyzeDiary(diary, calibration) {
+=======
+ * @returns {object} Emotion analysis result with PANAS scores
+ */
+async function analyzeDiary(diary) {
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   if (!diary || !diary.content) {
     return null;
   }
 
+<<<<<<< HEAD
   // Sentiment analysis（改走 analyzeEnhanced，修复历史 bug：analyzeWithONNX 不返回 level/score/keywords）
   const sentiment = await SentimentService.analyzeEnhanced(diary.content, calibration);
+=======
+  // Sentiment analysis (ONNX model)
+  const sentiment = await SentimentService.analyzeWithONNX(diary.content);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   // Multi-dimensional emotion extraction (legacy 6-dimension)
   const emotions = extractEmotions(diary.content);
@@ -490,10 +501,16 @@ async function analyzeDiary(diary, calibration) {
 /**
  * Analyze conversation messages
  * @param {Array} messages - Array of { role, content }
+<<<<<<< HEAD
  * @param {object} [calibration] - 用户情感先验校准
  * @returns {object} Emotion analysis result
  */
 async function analyzeConversation(messages, calibration) {
+=======
+ * @returns {object} Emotion analysis result
+ */
+async function analyzeConversation(messages) {
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   if (!messages || messages.length === 0) return null;
 
   // Only analyze user messages
@@ -501,7 +518,11 @@ async function analyzeConversation(messages, calibration) {
   if (userMessages.length === 0) return null;
 
   const combinedText = userMessages.map(m => m.content).join('\n');
+<<<<<<< HEAD
   const sentiment = await SentimentService.analyzeEnhanced(combinedText, calibration);
+=======
+  const sentiment = await SentimentService.analyzeWithONNX(combinedText);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   const emotions = extractEmotions(combinedText);
 
   return {
@@ -690,6 +711,7 @@ function generateInsights(profile) {
  */
 function generateSuggestions(profile) {
   const suggestions = [];
+<<<<<<< HEAD
   const d = profile.dimensions || {};
 
   // ── 风险维度（高危优先热线与安全建议） ─────────────────
@@ -744,6 +766,31 @@ function generateSuggestions(profile) {
 
   // 去重 + 上限 5 条
   return [...new Set(suggestions)].slice(0, 5);
+=======
+
+  if (profile.riskLevel === 'high' || profile.riskLevel === 'critical') {
+    // 热线放在最后（不必要时不展现），先给可操作的自助建议
+    suggestions.push('与信任的人分享你的感受');
+    suggestions.push('尝试做一些让自己放松的事情');
+    suggestions.push('建议拨打心理援助热线：400-161-9995');
+  } else if (profile.riskLevel === 'medium') {
+    suggestions.push('尝试写一篇感恩日记，记录今天值得感恩的事');
+    suggestions.push('做一次 4-7-8 呼吸练习');
+    suggestions.push('与朋友或家人聊聊天');
+  } else {
+    if (profile.dimensions.stress > 60) {
+      suggestions.push('适当休息，做一些自己喜欢的事情');
+    }
+    if (profile.dimensions.energy < 40) {
+      suggestions.push('保持规律的作息和适度运动');
+    }
+    if (profile.dimensions.selfCare < 40) {
+      suggestions.push('关注自己的需求，做一些自我关怀的活动');
+    }
+  }
+
+  return suggestions.slice(0, 3); // Max 3 suggestions
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 }
 
 // ── IPC Handlers ──────────────────────────────────────────────
@@ -753,18 +800,30 @@ function generateSuggestions(profile) {
  * @param {Electron.IpcMain} ipcMain
  */
 function registerHandlers(ipcMain) {
+<<<<<<< HEAD
   ipcMain.handle('emotion:analyzeDiary', async (_event, diary, calibration) => {
     try {
       return await analyzeDiary(diary, calibration);
+=======
+  ipcMain.handle('emotion:analyzeDiary', async (_event, diary) => {
+    try {
+      return await analyzeDiary(diary);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     } catch (err) {
       console.error('[EmotionEngine] analyzeDiary error:', err);
       return null;
     }
   });
 
+<<<<<<< HEAD
   ipcMain.handle('emotion:analyzeConversation', async (_event, messages, calibration) => {
     try {
       return await analyzeConversation(messages, calibration);
+=======
+  ipcMain.handle('emotion:analyzeConversation', async (_event, messages) => {
+    try {
+      return await analyzeConversation(messages);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     } catch (err) {
       console.error('[EmotionEngine] analyzeConversation error:', err);
       return null;

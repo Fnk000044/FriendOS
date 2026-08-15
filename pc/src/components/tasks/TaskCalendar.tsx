@@ -39,12 +39,15 @@ export default function TaskCalendar({ onSelectDate, selectedDate }: TaskCalenda
     return db.tasks.where('scheduledDate').between(monthStart, monthEnd, true, true).toArray();
   }, [monthStart, monthEnd]);
 
+<<<<<<< HEAD
   // 当月有情绪记录的日期（角标蓝点）
   const emotionDates = useLiveQuery(async () => {
     const recs = await db.emotionRecords.where('date').between(monthStart, monthEnd, true, true).toArray();
     return new Set(recs.map((r) => r.date));
   }, [monthStart, monthEnd]);
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   // 按日期分组
   const tasksByDate = useMemo(() => {
     const map: Record<string, Task[]> = {};
@@ -55,6 +58,7 @@ export default function TaskCalendar({ onSelectDate, selectedDate }: TaskCalenda
     return map;
   }, [monthTasks]);
 
+<<<<<<< HEAD
   /** 日期角标颜色：绿=全部完成 / 橙=有逾期未完成 / 灰=有任务未完成 / 蓝=仅情绪记录 */
   function badgeColor(date: string): string | null {
     const dayTasks = tasksByDate[date] || [];
@@ -76,6 +80,8 @@ export default function TaskCalendar({ onSelectDate, selectedDate }: TaskCalenda
     return `${dayTasks.length} 个任务 · ${done} 个已完成`;
   }
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   // 生成日历网格（含前导空格）
   const days = useMemo(() => {
     const firstDay = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1);
@@ -142,15 +148,21 @@ export default function TaskCalendar({ onSelectDate, selectedDate }: TaskCalenda
           const isSelected = date === sel;
           const dayTasks = tasksByDate[date] || [];
           const pendingCount = dayTasks.filter(t => t.status === 'pending').length;
+<<<<<<< HEAD
           const badge = badgeColor(date);
           const tip = badgeTooltip(date);
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
           return (
             <button
               key={i}
               type="button"
               onClick={() => handleSelect(date)}
+<<<<<<< HEAD
               title={tip || undefined}
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
               className={`min-h-[48px] rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all relative ${
                 isSelected
                   ? 'bg-primary text-white'
@@ -160,6 +172,7 @@ export default function TaskCalendar({ onSelectDate, selectedDate }: TaskCalenda
               }`}
             >
               <span className={`text-[13px] leading-none ${isSelected ? 'font-semibold' : ''}`}>{dayNum}</span>
+<<<<<<< HEAD
               {/* 右上角 8×8 圆角方框角标：绿=全完成 / 橙=有逾期 / 灰=有未完成 / 蓝=情绪记录 */}
               {badge && (
                 <span
@@ -169,6 +182,24 @@ export default function TaskCalendar({ onSelectDate, selectedDate }: TaskCalenda
                 />
               )}
               {pendingCount > 0 && !isSelected && !badge && (
+=======
+              {dayTasks.length > 0 && (
+                <div className="flex gap-0.5 items-center">
+                  {/* 最多显示 3 个优先级色点 */}
+                  {dayTasks.slice(0, 3).map((t, idx) => (
+                    <span
+                      key={idx}
+                      className="w-1 h-1 rounded-full"
+                      style={{ backgroundColor: isSelected ? 'rgba(255,255,255,0.9)' : PRIORITY_COLORS[t.priority] }}
+                    />
+                  ))}
+                  {dayTasks.length > 3 && (
+                    <span className={`text-[10px] leading-none ${isSelected ? 'text-white/80' : 'text-text-muted'}`}>+</span>
+                  )}
+                </div>
+              )}
+              {pendingCount > 0 && !isSelected && (
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
                 <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-red-500" />
               )}
             </button>

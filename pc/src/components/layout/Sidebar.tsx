@@ -2,8 +2,12 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, CheckSquare, BookOpen, Target,
   Brain, BarChart3, Settings, Sparkles, Smartphone,
+<<<<<<< HEAD
   Activity, Heart, ClipboardList, Shield, MessageCircle,
   ShieldCheck, Lock, Info
+=======
+  Activity, Heart, ClipboardList, Shield, MessageCircle
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 } from 'lucide-react';
 import { useLanguage } from '../../i18n/useLanguage';
 import { useUIStore } from '../../stores/uiStore';
@@ -37,8 +41,11 @@ const navGroups: NavGroup[] = [
     items: [
       { to: '/therapy', icon: Heart, key: 'nav.therapy' },
       { to: '/assessment', icon: ClipboardList, key: 'nav.assessment' },
+<<<<<<< HEAD
       { to: '/knowledge', icon: BookOpen, key: 'nav.knowledge' },
       { to: '/safety-plan', icon: ShieldCheck, key: 'nav.safety_plan' },
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       { to: '/memories', icon: Brain, key: 'nav.memories' },
     ],
   },
@@ -47,8 +54,11 @@ const navGroups: NavGroup[] = [
     items: [
       { to: '/sync', icon: Smartphone, key: 'nav.sync' },
       { to: '/settings', icon: Settings, key: 'nav.settings' },
+<<<<<<< HEAD
       { to: '/privacy', icon: ShieldCheck, key: 'nav.privacy_policy' },
       { to: '/about', icon: Info, key: 'nav.about' },
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     ],
   },
 ];

@@ -1,5 +1,8 @@
 import { useState, useCallback, useRef } from 'react';
+<<<<<<< HEAD
 import { computeSentimentCalibration } from '../services/selfevolution/SelfEvolutionService';
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 export interface SentimentResult {
   level: 'low' | 'medium' | 'high' | 'crisis';
@@ -48,8 +51,12 @@ export function useSentiment(): UseSentimentReturn {
     setError(null);
 
     try {
+<<<<<<< HEAD
       const calibration = await computeSentimentCalibration();
       const result = await api.sentimentAnalyze(text, calibration);
+=======
+      const result = await api.sentimentAnalyze(text);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       return result;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Analysis failed';
@@ -81,8 +88,12 @@ export function useSentiment(): UseSentimentReturn {
       setError(null);
 
       try {
+<<<<<<< HEAD
         const calibration = await computeSentimentCalibration();
         const local = await api.sentimentAnalyze(text, calibration);
+=======
+        const local = await api.sentimentAnalyze(text);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
         let cloud: CloudAnalysisResult | null = null;
 
         if (local?.needCloud) {

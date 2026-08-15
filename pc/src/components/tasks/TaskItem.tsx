@@ -87,6 +87,7 @@ export default React.memo(function TaskItem({ task, onToggle, onClick, onToggleS
         onClick={(e) => { e.stopPropagation(); handleToggle(); }}
         aria-pressed={isCompleted}
         aria-label={isCompleted ? t('task.completed') : t('task.pending')}
+<<<<<<< HEAD
         className="shrink-0 flex items-center justify-center w-6 h-6"
       >
         {/* 自定义勾选动画：圆圈填充 → 对勾淡入（scale 0.6→1）→ 文字划线 */}
@@ -114,6 +115,17 @@ export default React.memo(function TaskItem({ task, onToggle, onClick, onToggleS
             </svg>
           )}
         </span>
+=======
+        className={`shrink-0 transition-transform duration-200 ${showBounce ? 'scale-125' : 'scale-100'}`}
+      >
+        {isCompleted ? (
+          <CheckCircle2 className="w-5 h-5 text-green-500" />
+        ) : (
+          <Circle className={`w-5 h-5 transition-colors duration-200 ${
+            isCompleting ? 'text-green-400' : 'text-text-muted group-hover:text-primary'
+          }`} />
+        )}
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       </button>
 
       <div

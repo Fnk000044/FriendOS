@@ -74,10 +74,18 @@ describe('CrisisInterventionModal', () => {
 
     const dialog = screen.getByRole('dialog');
     expect(dialog).toHaveAttribute('aria-modal', 'true');
+<<<<<<< HEAD
     // 热线号码必须展示（统一引用 constants.CRISIS_HOTLINES，含 12356 全国统一心理援助热线）
     expect(screen.getByText('400-161-9995')).toBeInTheDocument();
     expect(screen.getByText('12356')).toBeInTheDocument();
     expect(screen.getByText('010-82951332')).toBeInTheDocument();
+=======
+    // 4 条求助热线号码必须展示
+    expect(screen.getByText('400-161-9995')).toBeInTheDocument();
+    expect(screen.getByText('010-82951332')).toBeInTheDocument();
+    expect(screen.getByText('400-821-1215')).toBeInTheDocument();
+    expect(screen.getByText('400-179-1885')).toBeInTheDocument();
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   });
 
   it('倒计时期间关闭按钮禁用，Escape 无法关闭', () => {

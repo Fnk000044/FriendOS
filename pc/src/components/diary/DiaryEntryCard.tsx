@@ -2,7 +2,10 @@ import React, { memo } from 'react';
 import { format, parseISO } from 'date-fns';
 import type { DiaryEntry } from '../../db/models';
 import MoodSelector from './MoodSelector';
+<<<<<<< HEAD
 import WeatherGlyph from './WeatherGlyph';
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 import { useLanguage } from '../../i18n/useLanguage';
 
 interface DiaryEntryCardProps {
@@ -36,6 +39,7 @@ const DiaryEntryCard = memo(function DiaryEntryCard({ entry, onClick }: DiaryEnt
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-text-primary">{entry.title || format(date, titleFormat)}</p>
+<<<<<<< HEAD
           <p className="text-xs text-text-muted flex items-center gap-1.5">
             {format(date, dateFormat)}
             {/* 天气展示（预设或自定义） */}
@@ -48,6 +52,9 @@ const DiaryEntryCard = memo(function DiaryEntryCard({ entry, onClick }: DiaryEnt
               </span>
             )}
           </p>
+=======
+          <p className="text-xs text-text-muted">{format(date, dateFormat)}</p>
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
         </div>
         <MoodSelector value={entry.mood} size="sm" />
       </div>

@@ -14,6 +14,7 @@ FriendOS/
 │   ├── build/         # 构建产物（图标等）
 │   ├── dist/          # vite build 输出
 │   └── release/       # electron-builder 输出
+<<<<<<< HEAD
 ├── docs/              # 人类可读架构文档（AI 科学依据 / 目录规范 / 离线冒烟测试）
 │   ├── risk_methodology.md     # 风险预警方法说明（ML vs 统计、阈值来源、免责）
 │   ├── model_card.md           # ONNX 情感模型卡
@@ -22,6 +23,9 @@ FriendOS/
 │   ├── offline_smoke_test.md   # 打包版离线冒烟测试清单
 │   ├── 目录整理规范.md          # 目录规范 + 新增/移动/清理清单
 │   └── archive/               # 历史归档（含 _pdf_extract.txt）
+=======
+├── docs/              # 人类可读架构文档
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 ├── 数据集*/  论文/  索引/   # 非代码资产，不要改
 └── version            # 单行版本号（当前 0.0.4）
 ```
@@ -71,10 +75,16 @@ FriendOS/
 - **入口**：每个 `.cjs`/`.js` 是独立可执行脚本，无统一入口
 - **用途**：`build-installer.cjs` / `package-manual.js`（打包）、
   `generate-ico.cjs`（图标）、`eval-sentiment.cjs` / `eval-risk.cjs`（评估）、
+<<<<<<< HEAD
   `external_validation.cjs`（外部人工验证抽样 + 一致率）、
   `train_sentiment/`（训练）
 - **运行**：`node scripts/<name>.cjs`，工作目录是 `pc/`
 - **约束**：不依赖渲染层或主进程的运行时；只读 `pc/dist`、`pc/build`、`pc/models`、`docs/external_validation`
+=======
+  `train_sentiment/`（训练）
+- **运行**：`node scripts/<name>.cjs`，工作目录是 `pc/`
+- **约束**：不依赖渲染层或主进程的运行时；只读 `pc/dist`、`pc/build`、`pc/models`
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 - **不要**把这些脚本当作应用代码引入 `src/` 或 `electron/`
 
 ## 跨源根约束
@@ -99,7 +109,10 @@ npm run build        # vite build（渲染层产物，不打包 exe）
 npm run lint         # eslint src（最小规则）
 npm run typecheck    # tsc --noEmit
 npm run dist         # vite build + electron-builder（产出 exe）
+<<<<<<< HEAD
 npm run eval:external # 外部人工验证抽样（scripts/external_validation.cjs）
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 ```
 
 ## 提交与分支

@@ -2,7 +2,10 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { db } from '../../db';
 import { useTasks } from '../useTasks';
+<<<<<<< HEAD
 import { formatLocalDate } from '../../utils/date';
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 import type { Task } from '../../db/models';
 
 describe('hooks/useTasks', () => {
@@ -68,8 +71,12 @@ describe('hooks/useTasks', () => {
       });
 
       const stored = await db.tasks.get(id!);
+<<<<<<< HEAD
       // 应用统一使用本地日期（formatLocalDate），不能用 UTC toISOString（时区午夜边界会漂移）
       const today = formatLocalDate(new Date());
+=======
+      const today = new Date().toISOString().slice(0, 10);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       expect(stored!.scheduledDate).toBe(today);
     });
   });

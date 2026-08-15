@@ -95,6 +95,7 @@ function evaluate(samples, predictFn) {
   return { accuracy, confusion, metrics, total };
 }
 
+<<<<<<< HEAD
 // ── 外部验证抽样模式（--external-sample N）──────────────────────
 // 复用关键词层"模型"对 external_validation.cjs 抽样的文本输出模型标签，
 // 生成 docs/external_validation/model_labels.csv（id,text,model_label,keyword_confidence）
@@ -157,6 +158,10 @@ function main() {
   node scripts/eval-sentiment.cjs --external-sample N  # 对外部抽样文本输出模型标签`);
     return;
   }
+=======
+// 主流程
+function main() {
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   console.log('=== FriendOS 情感分析准确率评估 ===\n');
   const samples = loadSamples(1000);
   console.log(`加载样本数: ${samples.length}`);

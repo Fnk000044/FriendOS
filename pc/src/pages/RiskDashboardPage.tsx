@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { useState, useMemo, useEffect, useRef } from 'react';
+=======
+import { useState, useMemo, useEffect } from 'react';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Shield, TrendingUp, TrendingDown, Minus, AlertTriangle, Activity, RefreshCw } from 'lucide-react';
 import { db } from '../db';
@@ -20,8 +24,11 @@ import RiskTrendChart from '../components/risk/RiskTrendChart';
 import RiskTimelineChart from '../components/risk/RiskTimelineChart';
 import RiskSignalSources from '../components/risk/RiskSignalSources';
 import type { RiskLevel } from '../db/models';
+<<<<<<< HEAD
 import type { HasDataMap } from '../utils/evidenceChain';
 import { computeRiskPersonalization } from '../services/selfevolution/SelfEvolutionService';
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 interface RiskBreakdown {
   emotion: { score: number; weight: number };
@@ -43,10 +50,13 @@ interface RiskResult {
   riskLevelInfo: { min: number; max: number; label: string; color: string };
   breakdown: RiskBreakdown;
   factors: RiskFactor[];
+<<<<<<< HEAD
   diagnostics?: {
     exclusionsHit: unknown[];
     escalation: { escalated: boolean; reasons: string[]; crisisFactorCount: number };
   };
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   summary: string;
   timestamp: number;
 }
@@ -104,6 +114,7 @@ export default function RiskDashboardPage() {
   }, []);
 
   // 计算风险评分
+<<<<<<< HEAD
   // 修复审计 P1-3：五张 LiveQuery 任一变化都会重跑全套 IPC，且旧请求无取消保护，
   // 慢请求可能覆盖新结果。这里加递增序号守卫——只有最新一次请求才能写入 state。
   const calcSeqRef = useRef(0);
@@ -111,6 +122,9 @@ export default function RiskDashboardPage() {
     const seq = ++calcSeqRef.current;
     const isStale = () => seq !== calcSeqRef.current;
 
+=======
+  useEffect(() => {
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     const calculateRisk = async () => {
       if (!emotionRecords || !behaviorRecords || !assessments || !diaries) {
         // 数据未就绪时也要释放 loading，避免整页骨架屏卡死
@@ -128,7 +142,10 @@ export default function RiskDashboardPage() {
 
       // 15 秒超时保护：超时后仍尝试渲染已有信号，而非整页 EmptyState
       const timeoutId = setTimeout(() => {
+<<<<<<< HEAD
         if (isStale()) return;
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
         setTimedOut(true);
         setIsLoading(false);
         // 超时不设 error，让页面显示部分数据 + "部分信号源加载中"提示
@@ -154,7 +171,10 @@ export default function RiskDashboardPage() {
         } catch (e) {
           console.warn('behaviorAnalyzeTrends IPC failed, fallback to local', e);
         }
+<<<<<<< HEAD
         if (isStale()) return;
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
         if (!behaviorData) {
           behaviorData = {
             consecutiveNoDiary: calculateConsecutiveNoDiary(diaries),
@@ -165,19 +185,28 @@ export default function RiskDashboardPage() {
           };
         }
 
+<<<<<<< HEAD
         // 调用风险评分引擎（透传本地个性化校准层，危机判定基于基线分数不受影响）
         const personalization = await computeRiskPersonalization();
         if (isStale()) return;
+=======
+        // 调用风险评分引擎
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
         const result = await window.electronAPI?.riskCalculate?.({
           emotionRecords: emotionRecords.slice(0, 30),
           behaviorData,
           assessments,
           conversationSummaries: conversationSummaries?.slice(0, 10) || [],
           diaries: diaries.slice(0, 14),
+<<<<<<< HEAD
           personalization,
         });
 
         if (isStale()) return;
+=======
+        });
+
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
         if (!result) {
           throw new Error('riskCalculate unavailable');
         }
@@ -190,11 +219,19 @@ export default function RiskDashboardPage() {
       } catch (err) {
         console.error('Risk calculation failed:', err);
         // 不直接 setError 导致整页 EmptyState，改为提示部分加载
+<<<<<<< HEAD
         if (!isStale()) setTimedOut(true);
       } finally {
         clearTimeout(timeoutId);
         // selectedDays 单独变化时不强制改 loading 状态（开头已按需跳过）
         if (!isOnlyDaysChange && !isStale()) {
+=======
+        setTimedOut(true);
+      } finally {
+        clearTimeout(timeoutId);
+        // selectedDays 单独变化时不强制改 loading 状态（开头已按需跳过）
+        if (!isOnlyDaysChange) {
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
           setIsLoading(false);
         }
       }
@@ -215,6 +252,7 @@ export default function RiskDashboardPage() {
     ];
   }, [riskResult, t]);
 
+<<<<<<< HEAD
   // 证据链 hasData：各信号源是否有数据（决定 no_data 判定）
   const hasData: HasDataMap = useMemo(
     () => ({
@@ -227,6 +265,8 @@ export default function RiskDashboardPage() {
     [emotionRecords, behaviorRecords, assessments, conversationSummaries, diaries]
   );
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
@@ -347,6 +387,7 @@ export default function RiskDashboardPage() {
         </div>
       )}
 
+<<<<<<< HEAD
       {/* 早期预警卡片 —— 基于近 15 天滑动窗口的趋势预测（含证据链下钻） */}
       <EarlyWarningCard riskResult={riskResult} hasData={hasData} />
 
@@ -354,6 +395,13 @@ export default function RiskDashboardPage() {
       {riskResult && <RiskScoreCard riskResult={riskResult} hasData={hasData} />}
 
       {/* 注：7 日情绪预测已移至情绪分析页（EmotionPage），此处去重，避免重复展示（PRD v3 P0-6） */}
+=======
+      {/* 早期预警卡片 —— 基于近 15 天滑动窗口的趋势预测 */}
+      <EarlyWarningCard />
+
+      {/* 风险评分卡片 —— 强化视觉：大色块背景 + 5 格等级条 + 行动指引 */}
+      {riskResult && <RiskScoreCard riskResult={riskResult} />}
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
       {/* 风险时间线 —— 30 天风险分折线 + 个人基线带 + 事件锚点 */}
       <RiskTimelineChart days={selectedDays} />

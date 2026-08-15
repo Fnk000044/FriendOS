@@ -20,9 +20,12 @@ const pageTitles: Record<string, string> = {
   '/settings': 'nav.settings',
   '/sync': 'nav.sync',
   '/assessment': 'nav.assessment',
+<<<<<<< HEAD
   '/privacy': 'nav.privacy_policy',
   '/safety-plan': 'nav.safety_plan',
   '/knowledge': 'nav.knowledge',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 };
 
 export default function Header() {

@@ -1,12 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+<<<<<<< HEAD
 import toast from 'react-hot-toast';
 import { Heart, X, Shield, ExternalLink, ShieldCheck } from 'lucide-react';
+=======
+import { Heart, X, Shield, ExternalLink } from 'lucide-react';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 import HotlineCard from './HotlineCard';
 import { useCrisisStore } from '../../stores/crisisStore';
 import { db } from '../../db';
 import { getToday } from '../../utils/date';
 import { useLanguage } from '../../i18n/useLanguage';
 import { prefersReducedMotion } from '../../utils/reduceMotion';
+<<<<<<< HEAD
 import { CRISIS_HOTLINES } from '../../utils/constants';
 import { recordFeedback } from '../../services/selfevolution/SelfEvolutionService';
 
@@ -24,6 +29,15 @@ const HOTLINE_KEYS = CRISIS_HOTLINES.map((h) => ({
   nameKey: HOTLINE_I18N[h.number]?.nameKey ?? 'crisis.hotline_national_name',
   descKey: HOTLINE_I18N[h.number]?.descKey ?? 'crisis.hotline_national_desc',
 }));
+=======
+
+const HOTLINE_KEYS = [
+  { nameKey: 'crisis.hotline_national_name' as const, number: '400-161-9995', descKey: 'crisis.hotline_national_desc' as const },
+  { nameKey: 'crisis.hotline_beijing_name' as const, number: '010-82951332', descKey: 'crisis.hotline_beijing_desc' as const },
+  { nameKey: 'crisis.hotline_life_name' as const, number: '400-821-1215', descKey: 'crisis.hotline_life_desc' as const },
+  { nameKey: 'crisis.hotline_hope_name' as const, number: '400-179-1885', descKey: 'crisis.hotline_hope_desc' as const },
+];
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 /**
  * 危机警报音频（Web Audio API，无需外部音频文件）
@@ -184,6 +198,7 @@ export default function CrisisInterventionModal() {
     setTimeout(() => previouslyFocusedRef.current?.focus(), 0);
   }, [canClose, hide, riskLevel, triggerContent, triggerSource]);
 
+<<<<<<< HEAD
   const handleOpenSafetyPlan = useCallback(() => {
     // 记录危机日志后关闭弹窗并跳转安全计划页（SPI 闭环：识别→干预→转介/自助）
     // 用 location.hash 导航：应用是 HashRouter，且组件测试无 Router 上下文时仍可测
@@ -224,6 +239,8 @@ export default function CrisisInterventionModal() {
     hide();
   }, [hide, t, triggerContent]);
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   // 焦点陷阱 + Escape 关闭
   useEffect(() => {
     if (!visible) return;
@@ -317,7 +334,10 @@ export default function CrisisInterventionModal() {
                   {t('crisis.description_3')}
                 </p>
                 <p>{t('crisis.description_4')}</p>
+<<<<<<< HEAD
                 <p className="mt-2 font-medium text-red-600 dark:text-red-400">{t('crisis.not_medical')}</p>
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
               </div>
             </div>
           </div>
@@ -357,6 +377,7 @@ export default function CrisisInterventionModal() {
         </div>
 
         {/* Footer */}
+<<<<<<< HEAD
         <div className="px-6 py-4 border-t space-y-2" style={{ background: 'var(--bg-hover)', borderColor: 'var(--glass-border)' }}>
           <button
             type="button"
@@ -367,6 +388,9 @@ export default function CrisisInterventionModal() {
             <ShieldCheck className="w-4 h-4 text-blue-500" aria-hidden="true" />
             {t('safety_plan.open_from_crisis')}
           </button>
+=======
+        <div className="px-6 py-4 border-t" style={{ background: 'var(--bg-hover)', borderColor: 'var(--glass-border)' }}>
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
           <button
             ref={dismissBtnRef}
             onClick={handleDismiss}
@@ -379,6 +403,7 @@ export default function CrisisInterventionModal() {
           >
             {canClose ? t('crisis.close_button') : t('crisis.countdown', { seconds: countdown })}
           </button>
+<<<<<<< HEAD
           {canClose && (
             <div className="flex items-center justify-center gap-3 pt-1 text-[11px] text-text-muted">
               <span>{t('crisis.feedback_question')}</span>
@@ -399,6 +424,8 @@ export default function CrisisInterventionModal() {
               </button>
             </div>
           )}
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
         </div>
 
         {/* Close button (only when countdown is done) */}

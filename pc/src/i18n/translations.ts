@@ -4,14 +4,20 @@ export type TranslationKey =
   | 'app.title'
   | 'nav.dashboard' | 'nav.risk' | 'nav.tasks' | 'nav.diary' | 'nav.habits' | 'nav.memories' | 'nav.emotion' | 'nav.therapy' | 'nav.reports' | 'nav.settings' | 'nav.sync'
   | 'nav.assistant' | 'nav.knowledge' | 'nav.resources' | 'nav.assessment'
+<<<<<<< HEAD
   | 'nav.about'
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   | 'nav.data_local'
   | 'nav.group_daily' | 'nav.group_analysis' | 'nav.group_tools' | 'nav.group_system'
   | 'chat.offline_mode' | 'chat.cloud_mode' | 'chat.welcome' | 'chat.input_placeholder' | 'chat.disclaimer'
   | 'chat.suggest_diary' | 'chat.suggest_breathing' | 'chat.suggest_assessment'
   | 'chat.settings_title' | 'chat.settings_desc' | 'chat.provider' | 'chat.api_key' | 'chat.api_key_placeholder'
   | 'chat.test_connection' | 'chat.testing' | 'chat.test_success' | 'chat.test_fail' | 'chat.no_key' | 'chat.save_key'
+<<<<<<< HEAD
   | 'chat.model_name' | 'chat.save_model'
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   | 'sync.title' | 'sync.description' | 'sync.scan_to_connect'
   | 'sync.server_status_running' | 'sync.server_status_stopped'
   | 'sync.start_server' | 'sync.stop_server'
@@ -36,13 +42,20 @@ export type TranslationKey =
   | 'task.stats.all' | 'task.stats.today' | 'task.stats.pending' | 'task.stats.completed' | 'task.stats.rollover'
   | 'task.rolled_to_tomorrow' | 'task.pending_rollover' | 'task.title_required'
   | 'diary.title' | 'diary.write' | 'diary.no_entries' | 'diary.no_entries_desc' | 'diary.write_first'
+<<<<<<< HEAD
   | 'diary.title_placeholder' | 'diary.content_placeholder' | 'diary.weather' | 'diary.tags' | 'diary.save' | 'diary.update' | 'diary.cancel'
+=======
+  | 'diary.title_placeholder' | 'diary.content_placeholder' | 'diary.weather' | 'diary.save' | 'diary.update' | 'diary.cancel'
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   | 'diary.back' | 'diary.save_emotion_fail'
   | 'habit.title' | 'habit.create' | 'habit.no_habits' | 'habit.no_habits_desc'
   | 'habit.name' | 'habit.name_placeholder' | 'habit.desc' | 'habit.color' | 'habit.create_btn' | 'habit.cancel'
   | 'habit.log' | 'habit.logged' | 'habit.streak_days'
   | 'memory.title' | 'memory.create' | 'memory.edit' | 'memory.no_memories' | 'memory.no_memories_desc'
+<<<<<<< HEAD
   | 'memory.description' | 'memory.go_diary' | 'memory.go_chat'
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   | 'memory.search_placeholder' | 'memory.all_categories' | 'memory.title_placeholder' | 'memory.content_placeholder'
   | 'memory.type' | 'memory.source' | 'memory.category' | 'memory.tags' | 'memory.save' | 'memory.update' | 'memory.cancel'
   | 'memory.manual' | 'memory.idea' | 'memory.insight' | 'memory.diary_extract' | 'memory.bookmark' | 'memory.other'
@@ -52,7 +65,10 @@ export type TranslationKey =
   | 'report.total' | 'report.completed'
   | 'report.loading' | 'report.select_hint'
   | 'report.ai_report' | 'report.insights' | 'report.suggestions' | 'report.health_radar' | 'report.emotion_trend' | 'report.no_emotion_data'
+<<<<<<< HEAD
   | 'report.view_emotion_page' | 'report.latest_habit_day'
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   | 'report.no_data' | 'report.today' | 'report.avg_rate' | 'report.trend'
   | 'settings.title' | 'settings.data_mgmt' | 'settings.data_desc' | 'settings.export' | 'settings.import'
   | 'settings.storage_info' | 'settings.storage_desc' | 'settings.about' | 'settings.about_desc'
@@ -157,12 +173,16 @@ export type TranslationKey =
   | 'risk.warning_green' | 'risk.warning_yellow' | 'risk.warning_orange' | 'risk.warning_red' | 'risk.anomaly_score' | 'risk.refresh' | 'risk.refreshing' | 'risk.partial_data'
   | 'risk.trend_title' | 'risk.risk_index' | 'risk.level_low' | 'risk.level_medium' | 'risk.level_high'
   | 'risk.status_high' | 'risk.status_attention' | 'risk.status_normal' | 'risk.status_good'
+<<<<<<< HEAD
   | 'risk.timeline_summary_rising' | 'risk.timeline_summary_falling' | 'risk.timeline_summary_stable'
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   | 'risk.seek_help_title' | 'risk.hotline_label' | 'risk.partial_loading_hint'
   | 'appearance.title' | 'appearance.subtitle' | 'appearance.accent' | 'appearance.accent_desc' | 'appearance.font_scale' | 'appearance.font_scale_desc'
   | 'appearance.reduce_motion' | 'appearance.reduce_motion_desc'
   | 'appearance.preview' | 'appearance.font_small' | 'appearance.font_normal' | 'appearance.font_large' | 'appearance.font_xlarge'
   | 'appearance.color_teal' | 'appearance.color_purple' | 'appearance.color_blue' | 'appearance.color_pink' | 'appearance.color_orange' | 'appearance.color_slate'
+<<<<<<< HEAD
   | 'about.zhiyou' | 'about.tagline' | 'about.intro' | 'about.version' | 'about.tech_stack' | 'about.ethics'
   | 'about.helpline' | 'about.helpline_desc' | 'about.not_medical' | 'about.credits' | 'about.credits_desc'
   | 'settings.auto_backup' | 'settings.auto_backup_desc' | 'settings.auto_backup_enable' | 'settings.backup_interval' | 'settings.last_backup' | 'settings.never' | 'settings.backup_now' | 'settings.backing_up'
@@ -277,6 +297,14 @@ export type TranslationKey =
   | 'knowledge.no_results' | 'knowledge.tips' | 'knowledge.hotline_note'
   | 'knowledge.disclaimer' | 'knowledge.open_safety_plan'
   | 'chat.suggest_knowledge' | 'chat.knowledge_hint';
+=======
+  | 'settings.auto_backup' | 'settings.auto_backup_desc' | 'settings.auto_backup_enable' | 'settings.backup_interval' | 'settings.last_backup' | 'settings.never' | 'settings.backup_now' | 'settings.backing_up'
+  | 'chat.history' | 'chat.no_history' | 'chat.no_title' | 'chat.input_hint' | 'chat.new_conversation'
+  | 'header.ai_settings' | 'header.ai_assistant' | 'header.sidebar_show' | 'header.sidebar_expand' | 'header.sidebar_collapse'
+  | 'diary.date_label'
+  | 'lock.title' | 'lock.subtitle' | 'lock.placeholder' | 'lock.error' | 'lock.unlock'
+  | 'error.title' | 'error.retry' | 'error.retry_failed';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 export type Translations = Record<Lang, Record<TranslationKey, string>>;
 
@@ -294,13 +322,20 @@ export const translations: Translations = {
     'nav.therapy': '治疗练习',
     'nav.reports': '复盘总结',
     'nav.settings': '设置',
+<<<<<<< HEAD
     'nav.about': '关于',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'nav.data_local': '所有数据本地存储',
     'nav.group_daily': '日常',
     'nav.group_analysis': '分析',
     'nav.group_tools': '工具',
     'nav.group_system': '系统',
+<<<<<<< HEAD
     'nav.assistant': '知己助理',
+=======
+    'nav.assistant': 'AI助理',
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'nav.assessment': '心理评估',
 
     'nav.sync': '手机同步',
@@ -333,8 +368,11 @@ export const translations: Translations = {
     'assistant.clear': '清除对话',
     'chat.offline_mode': '离线陪伴模式',
     'chat.cloud_mode': '云对话已连接',
+<<<<<<< HEAD
     'chat.source_local': '本地',
     'chat.source_cloud': '云端',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'chat.welcome': '和知己聊聊吧，我在听。',
     'chat.input_placeholder': '说点什么…',
     'chat.disclaimer': '知己是陪伴助手，不能替代专业医疗。如有危机请拨打 400-161-9995。',
@@ -352,8 +390,11 @@ export const translations: Translations = {
     'chat.test_fail': '连接失败：{error}',
     'chat.no_key': '未配置',
     'chat.save_key': '保存',
+<<<<<<< HEAD
     'chat.model_name': '模型名称',
     'chat.save_model': '保存模型',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
     'header.quick_capture': 'Ctrl+K 快速记录',
 
@@ -431,7 +472,10 @@ export const translations: Translations = {
     'diary.title_placeholder': '标题（可选）',
     'diary.content_placeholder': '写下今天的感受、经历、思考...',
     'diary.weather': '天气',
+<<<<<<< HEAD
     'diary.tags': '标签',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'diary.save': '保存',
     'diary.update': '更新',
     'diary.save_emotion_fail': '情感记录保存失败，但日记已保存',
@@ -459,9 +503,12 @@ export const translations: Translations = {
     'habit.loading': '加载习惯中...',
 
     'memory.title': '记忆沉淀',
+<<<<<<< HEAD
     'memory.description': '自动收录你在对话、日记和任务中的关键信息，帮你快速回顾重要内容',
     'memory.go_diary': '去写一篇日记',
     'memory.go_chat': '去和知己聊聊',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'memory.create': '新建记忆',
     'memory.edit': '编辑记忆',
     'memory.no_memories': '没有记忆',
@@ -528,16 +575,25 @@ export const translations: Translations = {
     'report.completed': '已完成',
     'report.loading': '生成报告中...',
     'report.select_hint': '选择一个报告类型开始分析',
+<<<<<<< HEAD
     'report.ai_report': '心理分析报告',
+=======
+    'report.ai_report': 'AI 分析报告',
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'report.insights': '洞察',
     'report.suggestions': '建议',
     'report.health_radar': '心理健康画像',
     'report.emotion_trend': '情绪趋势',
     'report.no_emotion_data': '暂无情绪数据',
+<<<<<<< HEAD
     'report.view_emotion_page': '查看情绪分析',
     'report.no_data': '暂无数据',
     'report.today': '今日',
     'report.latest_habit_day': '最近打卡日',
+=======
+    'report.no_data': '暂无数据',
+    'report.today': '今日',
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'report.avg_rate': '平均完成率',
     'report.trend': '趋势',
 
@@ -549,6 +605,7 @@ export const translations: Translations = {
     'settings.storage_info': '存储信息',
     'settings.storage_desc': '数据存储在浏览器 IndexedDB 中',
     'settings.about': '关于知己',
+<<<<<<< HEAD
     'about.zhiyou': '知己（Zhiyou）',
     'about.tagline': '本地优先 · 隐私优先 · 心理健康陪伴助手',
     'about.intro': '知己是一个本地优先的桌面心理健康应用：多信号可解释风险评估 + 统计早期预警 + ML 情感/危机识别。所有数据只保存在你的设备上，不上传任何服务器。',
@@ -560,6 +617,8 @@ export const translations: Translations = {
     'about.not_medical': '我不能替代专业医疗。紧急情况请立即拨打 120 或前往就近医院。',
     'about.credits': '致谢',
     'about.credits_desc': '感谢开源社区与心理学研究者的工作。本项目为广州大学"庆园杯"人工智能创新应用大赛参赛作品。',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'settings.about_desc': '个人管理系统 v1.0，所有数据本地存放，不上传任何服务器',
     'settings.model_status': '情感分析模型状态',
     'settings.model_status_desc': '关键词分析随时可用。训练 ONNX 模型可提升分析精度。',
@@ -570,10 +629,13 @@ export const translations: Translations = {
     'settings.demo_data_success': '演示数据填充成功！',
     'settings.demo_data_fail': '演示数据填充失败',
     'settings.open_folder': '打开存储文件夹',
+<<<<<<< HEAD
     'settings.change_location': '更改存储位置',
     'settings.location_migrated': '数据已迁移到新位置',
     'settings.location_restart_hint': '需要重启应用以切换到新存储位置，现在重启吗？',
     'settings.location_migrate_fail': '迁移失败，请重试',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'settings.reset': '恢复初始化',
     'settings.reset_confirm': '确定要恢复初始化吗？所有数据将被清除，此操作不可恢复。',
     'settings.theme': '主题外观',
@@ -715,10 +777,13 @@ export const translations: Translations = {
     'crisis.close_button': '我已了解，关闭',
     'crisis.countdown': '{seconds} 秒后可关闭',
     'crisis.aria_label': '危机干预',
+<<<<<<< HEAD
     'crisis.feedback_question': '这次提醒准确吗？',
     'crisis.feedback_accurate': '准确',
     'crisis.feedback_false_alarm': '误报',
     'crisis.feedback_thanks': '已记住，以后类似的表达会更克制',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'crisis.hotline_national_name': '全国心理援助热线',
     'crisis.hotline_national_desc': '24小时免费心理危机干预热线',
     'crisis.hotline_beijing_name': '北京心理危机研究与干预中心',
@@ -887,9 +952,12 @@ export const translations: Translations = {
     'risk.status_good': '良好',
     'risk.seek_help_title': '建议立即寻求专业帮助',
     'risk.hotline_label': '24 小时心理援助热线',
+<<<<<<< HEAD
     'risk.timeline_summary_rising': '最近风险分数呈上升趋势（当前 {level}，最新 {latest} 分），建议关注并坚持记录',
     'risk.timeline_summary_falling': '最近风险分数呈下降趋势（当前 {level}，最新 {latest} 分），状态在好转',
     'risk.timeline_summary_stable': '最近风险分数整体平稳（当前 {level}，最新 {latest} 分），未见明显波动',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'risk.partial_loading_hint': '部分信号源加载中，以下为已可用数据。可点击下方重试获取完整分析。',
     'appearance.title': '外观',
     'appearance.subtitle': '个性化你的视觉体验',
@@ -927,6 +995,7 @@ export const translations: Translations = {
     'chat.no_title': '(无标题)',
     'chat.input_hint': 'Enter 发送 · Shift+Enter 换行',
     'chat.new_conversation': '新对话',
+<<<<<<< HEAD
     'chat.today': '今天',
     'chat.yesterday': '昨天',
     'chat.earlier': '更早',
@@ -935,6 +1004,12 @@ export const translations: Translations = {
     // Header
     'header.ai_settings': 'AI 设置',
     'header.ai_assistant': '知己助理',
+=======
+
+    // Header
+    'header.ai_settings': 'AI 设置',
+    'header.ai_assistant': 'AI 助理',
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'header.sidebar_show': '显示侧边栏',
     'header.sidebar_expand': '展开侧边栏',
     'header.sidebar_collapse': '折叠侧边栏',
@@ -953,6 +1028,7 @@ export const translations: Translations = {
     'error.title': '出错了',
     'error.retry': '重试',
     'error.retry_failed': '多次重试失败，请刷新页面或重启应用',
+<<<<<<< HEAD
 
     // ── AI 冲刺新增（T02/T04/T05）────────────────────────────
     // Chat 会话
@@ -1267,6 +1343,8 @@ export const translations: Translations = {
     'knowledge.open_safety_plan': '为危机时刻制定安全计划',
     'chat.suggest_knowledge': '心理知识库',
     'chat.knowledge_hint': '想了解更多？看看',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   },
 
   en: {
@@ -1282,13 +1360,20 @@ export const translations: Translations = {
     'nav.therapy': 'Therapy',
     'nav.reports': 'Review',
     'nav.settings': 'Settings',
+<<<<<<< HEAD
     'nav.about': 'About',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'nav.data_local': 'All data stored locally',
     'nav.group_daily': 'Daily',
     'nav.group_analysis': 'Insights',
     'nav.group_tools': 'Tools',
     'nav.group_system': 'System',
+<<<<<<< HEAD
     'nav.assistant': 'Zhiyou Assistant',
+=======
+    'nav.assistant': 'AI Assistant',
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'nav.assessment': 'Assessment',
 
     'nav.sync': 'Phone Sync',
@@ -1321,8 +1406,11 @@ export const translations: Translations = {
     'assistant.clear': 'Clear chat',
     'chat.offline_mode': 'Offline companion mode',
     'chat.cloud_mode': 'Cloud chat connected',
+<<<<<<< HEAD
     'chat.source_local': 'Local',
     'chat.source_cloud': 'Cloud',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'chat.welcome': 'Talk to ZhiJi, I am listening.',
     'chat.input_placeholder': 'Say something…',
     'chat.disclaimer': 'ZhiJi is a companion, not a substitute for professional care. In crisis call 400-161-9995.',
@@ -1340,8 +1428,11 @@ export const translations: Translations = {
     'chat.test_fail': 'Failed: {error}',
     'chat.no_key': 'Not configured',
     'chat.save_key': 'Save',
+<<<<<<< HEAD
     'chat.model_name': 'Model name',
     'chat.save_model': 'Save model',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
     'header.quick_capture': 'Ctrl+K Quick Capture',
 
@@ -1420,7 +1511,10 @@ export const translations: Translations = {
     'diary.title_placeholder': 'Title (optional)',
     'diary.content_placeholder': 'Write your feelings, experiences, thoughts...',
     'diary.weather': 'Weather',
+<<<<<<< HEAD
     'diary.tags': 'Tags',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'diary.save': 'Save',
     'diary.update': 'Update',
     'diary.save_emotion_fail': 'Emotion record failed to save, but diary was saved',
@@ -1448,9 +1542,12 @@ export const translations: Translations = {
     'habit.loading': 'Loading habits...',
 
     'memory.title': 'Memory Vault',
+<<<<<<< HEAD
     'memory.description': 'Automatically collects key info from your chats, diaries and tasks for quick recall',
     'memory.go_diary': 'Write a diary entry',
     'memory.go_chat': 'Chat with Zhiyou',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'memory.create': 'New Memory',
     'memory.edit': 'Edit Memory',
     'memory.no_memories': 'No memories yet',
@@ -1517,16 +1614,25 @@ export const translations: Translations = {
     'report.completed': 'Completed',
     'report.loading': 'Generating report...',
     'report.select_hint': 'Select a report type to start',
+<<<<<<< HEAD
     'report.ai_report': 'Mental Health Analysis Report',
+=======
+    'report.ai_report': 'AI Analysis Report',
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'report.insights': 'Insights',
     'report.suggestions': 'Suggestions',
     'report.health_radar': 'Health Profile',
     'report.emotion_trend': 'Emotion Trend',
     'report.no_emotion_data': 'No emotion data yet',
+<<<<<<< HEAD
     'report.view_emotion_page': 'View emotion analysis',
     'report.no_data': 'No data',
     'report.today': 'Today',
     'report.latest_habit_day': 'Latest check-in day',
+=======
+    'report.no_data': 'No data',
+    'report.today': 'Today',
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'report.avg_rate': 'Avg. Rate',
     'report.trend': 'Trend',
 
@@ -1538,6 +1644,7 @@ export const translations: Translations = {
     'settings.storage_info': 'Storage Info',
     'settings.storage_desc': 'Data stored in browser IndexedDB',
     'settings.about': 'About ZhiJi',
+<<<<<<< HEAD
     'about.zhiyou': 'Zhiyou',
     'about.tagline': 'Local-first · Privacy-first mental health companion',
     'about.intro': 'Zhiyou is a local-first desktop mental health app: explainable multi-signal risk assessment + statistical early warning + ML emotion/crisis recognition. All data stays on your device.',
@@ -1549,6 +1656,8 @@ export const translations: Translations = {
     'about.not_medical': 'I cannot replace professional care. In emergencies call 120 or go to the nearest hospital.',
     'about.credits': 'Credits',
     'about.credits_desc': 'Thanks to the open-source community and psychology researchers. Built for the Qingyuan Cup AI Innovation Competition.',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'settings.about_desc': 'Personal Management System v1.0. All data stored locally, no server upload.',
     'settings.model_status': 'Sentiment Analysis Model',
     'settings.model_status_desc': 'Keyword analysis is always available. Training the ONNX model improves accuracy.',
@@ -1559,10 +1668,13 @@ export const translations: Translations = {
     'settings.demo_data_success': 'Demo data filled successfully!',
     'settings.demo_data_fail': 'Failed to fill demo data',
     'settings.open_folder': 'Open Data Folder',
+<<<<<<< HEAD
     'settings.change_location': 'Change storage location',
     'settings.location_migrated': 'Data migrated to the new location',
     'settings.location_restart_hint': 'Restart is required to use the new location. Restart now?',
     'settings.location_migrate_fail': 'Migration failed, please retry',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'settings.reset': 'Factory Reset',
     'settings.reset_confirm': 'Are you sure? All data will be cleared. This action cannot be undone.',
     'settings.theme': 'Appearance',
@@ -1704,10 +1816,13 @@ export const translations: Translations = {
     'crisis.close_button': 'I understand, close',
     'crisis.countdown': 'Close in {seconds}s',
     'crisis.aria_label': 'Crisis Intervention',
+<<<<<<< HEAD
     'crisis.feedback_question': 'Was this alert accurate?',
     'crisis.feedback_accurate': 'Accurate',
     'crisis.feedback_false_alarm': 'False alarm',
     'crisis.feedback_thanks': 'Noted — similar expressions will be gentler next time',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'crisis.hotline_national_name': 'National Crisis Hotline',
     'crisis.hotline_national_desc': '24/7 free crisis intervention',
     'crisis.hotline_beijing_name': 'Beijing Crisis Center',
@@ -1876,9 +1991,12 @@ export const translations: Translations = {
     'risk.status_good': 'Good',
     'risk.seek_help_title': 'Please seek professional help immediately',
     'risk.hotline_label': '24-hour psychological helpline',
+<<<<<<< HEAD
     'risk.timeline_summary_rising': 'Risk score is trending up recently ({level}, latest {latest}). Please stay aware and keep recording.',
     'risk.timeline_summary_falling': 'Risk score is trending down recently ({level}, latest {latest}). Things are improving.',
     'risk.timeline_summary_stable': 'Risk score has been stable recently ({level}, latest {latest}). No significant fluctuation.',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'risk.partial_loading_hint': 'Some signal sources are still loading. Showing available data. Click retry for full analysis.',
     'appearance.title': 'Appearance',
     'appearance.subtitle': 'Personalize your visual experience',
@@ -1916,6 +2034,7 @@ export const translations: Translations = {
     'chat.no_title': '(untitled)',
     'chat.input_hint': 'Enter to send · Shift+Enter for newline',
     'chat.new_conversation': 'New conversation',
+<<<<<<< HEAD
     'chat.today': 'Today',
     'chat.yesterday': 'Yesterday',
     'chat.earlier': 'Earlier',
@@ -1924,6 +2043,12 @@ export const translations: Translations = {
     // Header
     'header.ai_settings': 'AI Settings',
     'header.ai_assistant': 'Zhiyou Assistant',
+=======
+
+    // Header
+    'header.ai_settings': 'AI Settings',
+    'header.ai_assistant': 'AI Assistant',
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     'header.sidebar_show': 'Show sidebar',
     'header.sidebar_expand': 'Expand sidebar',
     'header.sidebar_collapse': 'Collapse sidebar',
@@ -1942,6 +2067,7 @@ export const translations: Translations = {
     'error.title': 'Something went wrong',
     'error.retry': 'Retry',
     'error.retry_failed': 'Multiple retries failed. Please refresh or restart the app.',
+<<<<<<< HEAD
 
     // ── AI Sprint additions (T02/T04/T05) ──────────────────────
     // Chat session
@@ -2256,5 +2382,7 @@ export const translations: Translations = {
     'knowledge.open_safety_plan': 'Create a safety plan for difficult moments',
     'chat.suggest_knowledge': 'Knowledge base',
     'chat.knowledge_hint': 'Want to know more? Read',
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   },
 };

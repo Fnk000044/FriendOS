@@ -4,7 +4,11 @@ import type {
   DailyRecord, QuickCapture, Category, SyncLog, Quote,
   EmotionRecord, BehaviorRecord, HealthProfile, CrisisLog,
   ConversationSummary, Conversation, Assessment, TherapyRecord, FeedbackLog,
+<<<<<<< HEAD
   AIReportCache, SubTask, SelfEvoModelRow, SafetyPlan
+=======
+  AIReportCache, SubTask
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 } from './models';
 
 export class FriendOSDatabase extends Dexie {
@@ -29,8 +33,11 @@ export class FriendOSDatabase extends Dexie {
   therapyRecords!: EntityTable<TherapyRecord, 'id'>;
   feedbackLogs!: EntityTable<FeedbackLog, 'id'>;
   aiReportCache!: EntityTable<AIReportCache, 'id'>;
+<<<<<<< HEAD
   selfEvoModels!: EntityTable<SelfEvoModelRow, 'id'>;
   safetyPlans!: EntityTable<SafetyPlan, 'id'>;
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   constructor() {
     super('FriendOS');
@@ -106,6 +113,7 @@ export class FriendOSDatabase extends Dexie {
     this.version(11).stores({
       conversations: '&id, createdAt, updatedAt, sessionId',
     });
+<<<<<<< HEAD
 
     // v12: 本地自进化学习参数表（单行，id='default'，整行参数加密存储）。
     // 反馈与学习参数不参与 LAN sync（每设备独立学习）。
@@ -117,6 +125,8 @@ export class FriendOSDatabase extends Dexie {
     this.version(13).stores({
       safetyPlans: '&id',
     });
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
   }
 }
 

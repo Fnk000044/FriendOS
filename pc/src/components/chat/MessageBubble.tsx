@@ -2,7 +2,10 @@ import { memo } from 'react';
 import { Sparkles, User } from 'lucide-react';
 import type { ChatMessageState } from '../../stores/chatStore';
 import { shouldReduceMotion } from '../../utils/reduceMotion';
+<<<<<<< HEAD
 import { useLanguage } from '../../i18n/useLanguage';
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 interface Props {
   message: ChatMessageState;
@@ -10,10 +13,15 @@ interface Props {
 }
 
 function MessageBubbleBase({ message, reduceMotion }: Props) {
+<<<<<<< HEAD
   const { t } = useLanguage();
   const isUser = message.role === 'user';
   const reduce = reduceMotion ?? shouldReduceMotion();
   const isCrisis = !!message.crisisFlag;
+=======
+  const isUser = message.role === 'user';
+  const reduce = reduceMotion ?? shouldReduceMotion();
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   const emotionColor: Record<string, string> = {
     crisis: '#ef4444',
@@ -45,12 +53,16 @@ function MessageBubbleBase({ message, reduceMotion }: Props) {
             isUser ? 'text-white' : 'text-text-primary'
           } ${message.streaming && !reduce ? 'animate-pulse-subtle' : ''}`}
           style={{
+<<<<<<< HEAD
             background: isUser
               ? 'var(--gradient-primary)'
               : isCrisis
                 ? 'rgba(239,68,68,0.12)'
                 : 'var(--bg-hover)',
             border: isCrisis ? '1px solid rgba(239,68,68,0.35)' : undefined,
+=======
+            background: isUser ? 'var(--gradient-primary)' : 'var(--bg-hover)',
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
             borderTopRightRadius: isUser ? '6px' : undefined,
             borderTopLeftRadius: !isUser ? '6px' : undefined,
           }}
@@ -59,7 +71,11 @@ function MessageBubbleBase({ message, reduceMotion }: Props) {
           {message.streaming && <span className="inline-block w-1.5 h-3.5 ml-0.5 bg-current align-middle animate-pulse" aria-hidden="true" />}
         </div>
 
+<<<<<<< HEAD
         {/* Meta row: emotion dot + source badge */}
+=======
+        {/* Meta row: emotion dot + method tag */}
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
         <div className={`flex items-center gap-1.5 px-1 ${isUser ? 'flex-row-reverse' : ''}`}>
           {message.emotionLabel && (
             <span
@@ -69,6 +85,7 @@ function MessageBubbleBase({ message, reduceMotion }: Props) {
               aria-label={`emotion: ${message.emotionLabel}`}
             />
           )}
+<<<<<<< HEAD
           {!isUser && message.method === 'fallback' && (
             <span
               className="text-[9px] px-1 py-0.5 rounded font-medium"
@@ -86,6 +103,12 @@ function MessageBubbleBase({ message, reduceMotion }: Props) {
             </span>
           )}
           {!isUser && message.method === 'greeting' && (
+=======
+          {message.method === 'fallback' && !isUser && (
+            <span className="text-[9px] text-text-muted">{message.crisisFlag ? '⚠' : '离线'}</span>
+          )}
+          {message.method === 'greeting' && !isUser && (
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
             <span className="text-[9px] text-text-muted">问候</span>
           )}
         </div>

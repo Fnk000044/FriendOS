@@ -1,12 +1,19 @@
 import { useMemo, useState } from 'react';
+<<<<<<< HEAD
 import { Shield, AlertTriangle, RefreshCw, Activity, Clock, ChevronRight, ThumbsUp, ThumbsDown, ListTree } from 'lucide-react';
+=======
+import { Shield, AlertTriangle, RefreshCw, Activity, Clock, ChevronRight, ThumbsUp, ThumbsDown } from 'lucide-react';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 import { LineChart, Line, ResponsiveContainer, YAxis, Tooltip } from 'recharts';
 import { useLanguage } from '../../i18n/useLanguage';
 import { useEarlyWarning } from '../../hooks/useEarlyWarning';
 import { logFeedback } from '../../services/feedback/FeedbackService';
 import type { EarlyWarningResult } from '../../services/emotion/EarlyWarningService';
+<<<<<<< HEAD
 import EvidenceChainView from '../risk/EvidenceChainView';
 import { buildEvidenceChain, type HasDataMap, type RiskResultLike } from '../../utils/evidenceChain';
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 const LEVEL_CONFIG: Record<EarlyWarningResult['level'], {
   bg: string; border: string; text: string; icon: typeof Shield; bar: string; pulse: boolean;
@@ -54,6 +61,7 @@ const LEVEL_CONFIG: Record<EarlyWarningResult['level'], {
  * - 预警信号列表
  * - 异常分数（0-100）
  * - 趋势小图（最近窗口 moodTrend 折线）
+<<<<<<< HEAD
  * - 「查看证据链」下钻（需父级传入 riskResult）
  */
 interface EarlyWarningCardProps {
@@ -85,6 +93,13 @@ export default function EarlyWarningCard({ riskResult, hasData }: EarlyWarningCa
     );
     setChainOpen(true);
   };
+=======
+ */
+export default function EarlyWarningCard() {
+  const { t } = useLanguage();
+  const { result, loading, error, refresh } = useEarlyWarning();
+  const [feedbackGiven, setFeedbackGiven] = useState<null | 'accurate' | 'inaccurate'>(null);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
   const handleFeedback = (accurate: 'accurate' | 'inaccurate') => {
     setFeedbackGiven(accurate);
@@ -255,6 +270,7 @@ export default function EarlyWarningCard({ riskResult, hasData }: EarlyWarningCa
         </div>
       )}
 
+<<<<<<< HEAD
       {/* 证据链入口：预警可解释，不是黑盒 */}
       {riskResult && (
         <button
@@ -268,6 +284,8 @@ export default function EarlyWarningCard({ riskResult, hasData }: EarlyWarningCa
         </button>
       )}
 
+=======
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       {/* 反馈接线：预测准不准，用于在线评估准确率 */}
       <div className="flex items-center gap-2 mt-3 pt-2 border-t" style={{ borderColor: 'var(--glass-border)' }}>
         <span className="text-xs text-slate-400">这个预测准确吗？</span>
@@ -297,8 +315,14 @@ export default function EarlyWarningCard({ riskResult, hasData }: EarlyWarningCa
           <span className="text-xs text-slate-400">已记录，谢谢反馈</span>
         )}
       </div>
+<<<<<<< HEAD
 
       {chainOpen && <EvidenceChainView open chain={chain} onClose={() => setChainOpen(false)} />}
     </div>
   );
 }
+=======
+    </div>
+  );
+}
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193

@@ -22,9 +22,13 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+<<<<<<< HEAD
     // 构建环境适配：emptyOutDir=false，dist 由构建前脚本/手动清空，
     // 避免 vite 内部 rmSync 触发沙箱 safe-delete 拦截导致构建失败
     emptyOutDir: false,
+=======
+    emptyOutDir: true,
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     // Target Electron's Chromium version
     target: 'chrome120',
     // Enable CSS code splitting

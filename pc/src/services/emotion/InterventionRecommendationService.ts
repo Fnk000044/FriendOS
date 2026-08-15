@@ -8,8 +8,12 @@
  */
 
 import type { HealthProfile } from '../../db/models';
+<<<<<<< HEAD
 import { computeInterventionEma } from '../selfevolution/SelfEvolutionService';
 import type { InterventionType } from '../selfevolution/types';
+=======
+import { getBestIntervention } from '../therapy/EffectivenessService';
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 
 export interface Recommendation {
   id: string;
@@ -26,7 +30,11 @@ export interface Recommendation {
  * 根据健康画像生成个性化干预推荐
  *
  * @param profile 健康画像
+<<<<<<< HEAD
  * @param useEffectiveness 是否融合历史有效率 EMA（默认 true，<3 次有效样本退回纯规则）
+=======
+ * @param useEffectiveness 是否融合历史有效率权重（默认 true，<3 次记录退回纯规则）
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
  */
 export async function getRecommendations(
   profile: HealthProfile | null,
@@ -36,6 +44,7 @@ export async function getRecommendations(
 
   if (!useEffectiveness) return baseRecs;
 
+<<<<<<< HEAD
   // 带遗忘因子的有效率 EMA（隐式 moodBefore/After + 显式反馈）
   const ema = await computeInterventionEma();
   // 冷启动：总有效样本 < 3 → 回退纯规则
@@ -46,20 +55,37 @@ export async function getRecommendations(
   return baseRecs.map(rec => {
     const type = recTypeToIntervention(rec.type);
     const effectivenessScore = type ? ema.emaEffectiveness[type] : 0.5;
+=======
+  // 融合历史有效率权重
+  const best = await getBestIntervention();
+  if (!best) return baseRecs; // 数据不足退回纯规则
+
+  // 规则基础分 × 0.6 + 历史有效率 × 0.4
+  const maxBase = Math.max(...baseRecs.map(r => r.priority), 1);
+  return baseRecs.map(rec => {
+    const isBestType = bestTypeMatch(rec.type, best.type);
+    const effectivenessScore = isBestType ? best.effectivenessRate : (best.effectivenessRate * 0.5);
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
     const weightedPriority = round2(
       (rec.priority / maxBase) * 6 + effectivenessScore * 4
     );
     return {
       ...rec,
       priority: weightedPriority,
+<<<<<<< HEAD
       reason: type
         ? `${rec.reason}（近期有效率约 ${Math.round(effectivenessScore * 100)}%）`
+=======
+      reason: isBestType
+        ? `${rec.reason}（你过去体验效果最好，有效率 ${Math.round(best.effectivenessRate * 100)}%）`
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
         : rec.reason,
     };
   }).sort((a, b) => b.priority - a.priority).slice(0, 4);
 }
 
 /**
+<<<<<<< HEAD
  * 推荐类型与干预统计类型的映射
  */
 function recTypeToIntervention(recType: Recommendation['type']): InterventionType | null {
@@ -67,6 +93,15 @@ function recTypeToIntervention(recType: Recommendation['type']): InterventionTyp
   if (recType === 'mindfulness') return 'mindfulness';
   if (recType === 'thoughtRecord') return 'thought_record';
   return null;
+=======
+ * 推荐类型与统计类型的映射
+ */
+function bestTypeMatch(recType: Recommendation['type'], statType: string): boolean {
+  if (recType === 'breathing' && statType === 'breathing') return true;
+  if (recType === 'mindfulness' && statType === 'mindfulness') return true;
+  if (recType === 'thoughtRecord' && statType === 'thought_record') return true;
+  return false;
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 }
 
 function round2(n: number): number {

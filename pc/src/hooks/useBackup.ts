@@ -21,7 +21,11 @@ export function useBackup() {
   const handleExport = useCallback(async () => {
     setExporting(true);
     try {
+<<<<<<< HEAD
       const data = await collectAllData();
+=======
+      const data = collectAllData();
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       const jsonStr = JSON.stringify(data, null, 2);
 
       // 优先使用主进程对话框导出（真实错误反馈 + 用户可选路径）
@@ -62,6 +66,7 @@ export function useBackup() {
           return;
         }
 
+<<<<<<< HEAD
         // 原子化：先备份当前数据，再执行导入；失败时用备份回滚
         let backupJson: string | null = null;
         try {
@@ -105,6 +110,35 @@ export function useBackup() {
           }
           return;
         }
+=======
+        // 原子化：先备份当前数据，再执行导入
+        let backupJson: string | null = null;
+        try {
+          backupJson = JSON.stringify(collectAllData());
+        } catch (backupErr) {
+          console.warn('[Import] Could not create backup:', backupErr);
+        }
+        void backupJson;
+
+        // 清空并重新写入
+        await db.delete();
+        await db.open();
+
+        const tables = [
+          'tasks', 'diaries', 'habits', 'habitLogs', 'memories', 'memoryCandidates',
+          'dailyRecords', 'quickCaptures', 'categories', 'syncLogs', 'quotes',
+          'emotionRecords', 'behaviorRecords', 'healthProfiles', 'crisisLogs',
+          'conversationSummaries', 'assessments', 'therapyRecords', 'feedbackLogs',
+        ] as const;
+        for (const table of tables) {
+          if (data[table]?.length) {
+            await (db[table] as any).bulkAdd(data[table]);
+          }
+        }
+
+        toast.success(t('common.import_success'));
+        window.location.reload();
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
       } catch (err: any) {
         toast.error(`${t('common.import_fail')}: ${err?.message || '未知错误'}`);
         console.error('[Import]', err);
@@ -144,6 +178,7 @@ export function useBackup() {
   return { exporting, handleExport, handleImport };
 }
 
+<<<<<<< HEAD
 /** 参与备份/导入的全部表名（导出与回滚共用同一清单，避免遗漏新表） */
 const BACKUP_TABLES = [
   'tasks', 'diaries', 'habits', 'habitLogs', 'memories', 'memoryCandidates',
@@ -163,4 +198,31 @@ async function collectAllData() {
     data[table] = await (db[table] as any).toArray();
   }
   return data;
+=======
+/** 收集所有 Dexie 表数据为可序列化对象（导出/原子备份共用） */
+async function collectAllData() {
+  return {
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    tasks: await db.tasks.toArray(),
+    diaries: await db.diaries.toArray(),
+    habits: await db.habits.toArray(),
+    habitLogs: await db.habitLogs.toArray(),
+    memories: await db.memories.toArray(),
+    memoryCandidates: await db.memoryCandidates.toArray(),
+    dailyRecords: await db.dailyRecords.toArray(),
+    quickCaptures: await db.quickCaptures.toArray(),
+    categories: await db.categories.toArray(),
+    syncLogs: await db.syncLogs.toArray(),
+    quotes: await db.quotes.toArray(),
+    emotionRecords: await db.emotionRecords.toArray(),
+    behaviorRecords: await db.behaviorRecords.toArray(),
+    healthProfiles: await db.healthProfiles.toArray(),
+    crisisLogs: await db.crisisLogs.toArray(),
+    conversationSummaries: await db.conversationSummaries.toArray(),
+    assessments: await db.assessments.toArray(),
+    therapyRecords: await db.therapyRecords.toArray(),
+    feedbackLogs: await db.feedbackLogs.toArray(),
+  };
+>>>>>>> a66c30d430cd26eb226e71f7098d31e9a6a7c193
 }
