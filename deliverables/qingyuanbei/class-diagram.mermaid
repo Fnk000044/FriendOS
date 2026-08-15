@@ -1,0 +1,56 @@
+classDiagram
+    class FeedbackLog {
+        +string id
+        +FeedbackType type
+        +string targetId?
+        +string refId?
+        +string text?
+        +string predicted
+        +FeedbackAccuracy feedback
+        +string accurate?
+        +string correction?
+        +string correctedLabel?
+        +string direction?
+        +string scope?
+        +number forecastValue?
+        +number actualValue?
+        +number horizon?
+        +string createdAt
+        +number timestamp
+    }
+    class SelfEvoModel {
+        +string id
+        +SentimentCalibration sentiment
+        +RiskCalibration risk
+        +InterventionCalibration intervention
+        +ForecastCalibration forecast
+        +SampleCounts sampleCounts
+        +number lastUpdated
+        +number version
+    }
+    class SentimentCalibration {
+        +map priors
+        +number temperature
+        +number sampleCount
+    }
+    class RiskCalibration {
+        +map weightFactors
+        +number offset
+        +number sampleCount
+    }
+    class InterventionCalibration {
+        +map emaEffectiveness
+        +map effectiveN
+        +number sampleCount
+    }
+    class ForecastCalibration {
+        +array horizonBias
+        +number probA
+        +number probB
+        +number sampleCount
+    }
+    FeedbackLog ..> SelfEvoModel : 聚合生成
+    SelfEvoModel *-- SentimentCalibration
+    SelfEvoModel *-- RiskCalibration
+    SelfEvoModel *-- InterventionCalibration
+    SelfEvoModel *-- ForecastCalibration

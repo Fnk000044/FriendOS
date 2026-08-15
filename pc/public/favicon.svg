@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2DD4BF"/>
+      <stop offset="100%" style="stop-color:#0D9488"/>
+    </linearGradient>
+    <linearGradient id="sparkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF"/>
+      <stop offset="100%" style="stop-color:#CCFBF1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 品牌渐变圆角方块（与应用内"知己" logo 一致） -->
+  <rect x="16" y="16" width="224" height="224" rx="52" fill="url(#brandGrad)"/>
+  <rect x="16" y="16" width="224" height="224" rx="52" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="2"/>
+
+  <!-- Sparkles 图标（lucide 风格，白色描边 + 柔和填充） -->
+  <g transform="translate(128 128)">
+    <!-- 主星（左上大四角星） -->
+    <path d="M-42 -46 L-30 -18 L-2 -6 L-30 6 L-42 34 L-54 6 L-82 -6 L-54 -18 Z" fill="url(#sparkGrad)"/>
+    <!-- 次星（右上） -->
+    <path d="M22 -30 L28 -12 L46 -6 L28 0 L22 18 L16 0 L-2 -6 L16 -12 Z" fill="#FFFFFF" opacity="0.9"/>
+    <!-- 小星（右下） -->
+    <path d="M30 30 L34 42 L46 46 L34 50 L30 62 L26 50 L14 46 L26 42 Z" fill="#FFFFFF" opacity="0.75"/>
+    <!-- 微小星（左下） -->
+    <path d="M-48 44 L-45 52 L-37 55 L-45 58 L-48 66 L-51 58 L-59 55 L-51 52 Z" fill="#FFFFFF" opacity="0.6"/>
+  </g>
+</svg>

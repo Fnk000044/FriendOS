@@ -1,0 +1,53 @@
+{
+  "appId": "com.friendos.app",
+  "productName": "FriendOS",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "build/**/*",
+    "models/**/*"
+  ],
+  "extraResources": [
+    {
+      "from": "../models",
+      "to": "models",
+      "filter": ["**/*"]
+    }
+  ],
+  "asar": true,
+  "asarUnpack": [
+    "node_modules/node-llama-cpp/**/*",
+    "node_modules/@node-llama-cpp/**/*",
+    "node_modules/onnxruntime-node/**/*",
+    "node_modules/onnxruntime-common/**/*",
+    "models/**/*",
+    "build/**/*"
+  ],
+  "win": {
+    "icon": "build/custom-icon.ico",
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ],
+    "signAndEditExecutable": false
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "allowElevation": true,
+    "installerIcon": "build/custom-icon.ico",
+    "uninstallerIcon": "build/custom-icon.ico",
+    "installerHeaderIcon": "build/custom-icon.ico",
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "FriendOS",
+    "include": "build/installer.nsh",
+    "artifactName": "${productName}Setup-${version}.${ext}"
+  },
+  "forceCodeSigning": false
+}

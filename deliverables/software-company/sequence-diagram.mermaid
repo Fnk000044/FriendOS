@@ -1,0 +1,81 @@
+sequenceDiagram
+    participant U as 用户
+    participant CP as ChatPage
+    participant CS as ChatService
+    participant ST as chatStore(session)
+    participant IPC as preload
+    participant M as main.cjs
+    participant FB as ChatFallbackEngine
+    participant SM as SentimentService(ONNX)
+
+    U->>CP: 输入"最近考试压力好大"
+    CP->>CS: sendMessage(text)
+    CS->>SM: sentimentAnalyze(text)
+    SM-->>CS: {level:'negative', negativeProb:0.85}
+    CS->>CS: maintainSession(session, label) → turnCount+1
+    CS->>IPC: chatGetProviderConfig()
+    IPC-->>CS: {hasKey:false}
+    CS->>IPC: chatFallback({text, emotionLabel:'negative', negativeProb:0.85, session})
+    IPC->>M: ipcMain 'chat:fallback'
+    M->>FB: respond(text, opts)
+    FB-->>M: {text, branch:'stress', isCrisis:false, sessionDelta}
+    M-->>CS: result
+    CS->>ST: merge(sessionDelta)
+    CS->>CP: add assistant 消息(method:'fallback', emotionLabel:'negative')
+    Note over CS: 第 3 轮起 reply 引用 session.topics："你刚才提到的考试……"
+    Note over CS: 第 5 轮进入 support：建议呼吸练习/写日记
+
+sequenceDiagram
+    participant P as SettingsPage
+    participant DP as DiagnosticsPanel
+    participant IPC as preload
+    participant M as main.cjs
+    participant D as DiagnosticsService
+    participant SM as SentimentService
+
+    P->>DP: mount
+    DP->>IPC: diagnosticsCheck({demoMode})
+    IPC->>M: ipcMain 'diagnostics:check'
+    M->>D: check()
+    D->>SM: getModelStatus() + ensureOnnxLoaded()
+    D-->>M: {network, model, apiKey, degradationPath, demoMode, version}
+    M-->>DP: DiagnosticsResult
+    DP-->>P: 四态卡片（联网/模型/Key/降级路径）+ 离线就绪文案
+
+sequenceDiagram
+    participant U as 用户
+    participant RD as RiskDashboardPage
+    participant RS as RiskScoreCard/EarlyWarningCard
+    participant EC as EvidenceChainView
+    participant EB as utils/evidenceChain.ts
+    participant IPC as preload
+    participant M as main.cjs
+    participant R as RiskScoringEngine
+
+    U->>RD: 打开风险看板
+    RD->>IPC: riskCalculate({emotionRecords, behaviorData, assessments, conversationSummaries, diaries})
+    IPC->>M: ipcMain 'risk:calculate'
+    M->>R: calculateRiskScore(data)
+    R-->>RD: {totalScore, riskLevel, breakdown, factors, diagnostics}
+    U->>RS: 点击预警卡片"查看证据链"
+    RS->>EB: buildEvidenceChain(riskResult)
+    EB-->>EC: EvidenceChain(contributions/triggers/actions/disclaimer)
+    EC-->>U: 下钻视图（分数→信号贡献→依据→建议→免责）
+
+sequenceDiagram
+    participant U as 用户
+    participant DS as DataSettings
+    participant DM as demoModeStore
+    participant SD as seedDemoData.ts
+    participant DB as IndexedDB(Dexie)
+
+    U->>DS: 点击"一键注入 30 天演示数据"
+    DS->>DM: activate()（写 localStorage + status=active）
+    DS->>SD: seedDemoData()
+    SD->>DB: 清空业务表 → 写入 30 天确定性故事线
+    SD-->>DS: {success:true}
+    DS-->>U: toast + 顶部"演示模式"横幅
+    U->>DS: 点击"清理演示数据"
+    DS->>SD: clearDemoData()
+    SD->>DB: 清空业务表（保留偏好设置）
+    DS->>DM: deactivate()

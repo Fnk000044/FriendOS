@@ -1,0 +1,6 @@
+id,text,model_label,keyword_confidence
+ext_1897,"我最近感到非常焦虑，这影响了我的日常生活。我可以做些什么来管理我的焦虑。,negative",negative,0.60
+ext_2678,"我不确定自己人生想要做什么，这给我带来了很大的压力。,negative",negative,0.60
+ext_6814,"我感到非常焦虑，但不知道原因是什么,negative",negative,0.60
+ext_1842,"我一直在经历恐慌发作，并且害怕这是某种严重的问题,negative",negative,0.60
+ext_2901,"我睡眠困难，怀疑自己可能患有失眠症。,negative",negative,0.60

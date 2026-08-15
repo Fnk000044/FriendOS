@@ -1,0 +1,16 @@
+sequenceDiagram
+    participant A as App 启动
+    participant DP as DiagnosticsPanel
+    participant IPC as preload
+    participant M as main.cjs
+    participant D as DiagnosticsService
+    participant SM as SentimentService
+
+    A->>DP: 首屏挂载（可关闭）
+    DP->>IPC: diagnosticsCheck({demoMode})
+    IPC->>M: ipcMain 'diagnostics:check'
+    M->>D: check()
+    D->>SM: getModelStatus() + ensureOnnxLoaded()
+    D-->>M: {network, model, apiKey, degradationPath, demoMode, appVersion}
+    M-->>DP: DiagnosticsResult
+    DP-->>A: 四态卡片（联网/模型/Key/降级路径）+ "离线模式-模板对话已就绪"文案 + 演示模式按钮

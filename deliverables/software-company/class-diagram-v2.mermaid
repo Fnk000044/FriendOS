@@ -1,0 +1,90 @@
+classDiagram
+    class ChatSessionState {
+        +int turnCount
+        +string[] emotionHistory
+        +string[] topics
+        +string summary
+        +string[] usedTemplates
+        +string dominantEmotion
+    }
+    class ChatFallbackEngine {
+        <<main process service (已实现,复用)>>
+        +respond(text, opts) ChatFallbackResult
+        +greeting(opts) ChatGreetingResult
+        +detectCrisis(text) boolean
+        +extractTopics(text) string[]
+        +buildSessionDelta(state, text, label, usedKeys) ChatSessionDelta
+        +stateStage(session) string
+    }
+    class ChatService {
+        <<renderer service (改)>>
+        +sendMessage(text) Promise~void~
+        +buildContext() Promise~ChatContext~
+        +maybeSummarize() Promise~void~
+        -shortCircuitIfNoKey() Promise~boolean~
+    }
+    class DiagnosticsService {
+        <<main process service (已实现,复用)>>
+        +check(extra) Promise~DiagnosticsResult~
+    }
+    class DiagnosticsResult {
+        +string appVersion
+        +object network
+        +object model
+        +object apiKey
+        +string degradationPath
+        +boolean demoMode
+        +number timestamp
+    }
+    class RiskTrendPredictor {
+        <<main process service (已实现,复用)>>
+        +predict(input) RiskPredictionResult
+        +fitLogistic(features, labels) number[]
+        +linearRegression(xs, ys) object
+        +forecastMood(series) number[]
+    }
+    class RiskPredictionResult {
+        +float riskUpgradeProb
+        +number[] moodForecast7d
+        +string riskTrend
+        +float confidence
+        +string method
+        +string note
+    }
+    class EvidenceChainBuilder {
+        <<renderer pure util (新)>>
+        +buildEvidenceChain(riskResult, hasData) EvidenceChain
+    }
+    class EvidenceChain {
+        +int totalScore
+        +string riskLevel
+        +EvidenceContribution[] contributions
+        +EvidenceTrigger[] triggers
+        +EvidenceAction[] actions
+        +object escalation
+        +string disclaimer
+        +string methodRef
+    }
+    class DiagnosticsPanel {
+        <<renderer component (新)>>
+        +run() Promise~DiagnosticsResult~
+    }
+    class EvidenceChainView {
+        <<renderer component (新)>>
+        +open(chain: EvidenceChain) void
+    }
+    class SeedDemoData {
+        <<renderer util (已实现,复用)>>
+        +seedDemoData(flag?) Promise~Result~
+        +clearDemoData() Promise~void~
+    }
+
+    ChatService --> ChatFallbackEngine : IPC chat:fallback (session 传入/delta 回写)
+    ChatService --> ChatSessionState : owns/merges (chatStore.session)
+    ChatFallbackEngine --> ChatSessionState : reads + returns delta
+    DiagnosticsPanel --> DiagnosticsService : IPC diagnostics:check
+    EvidenceChainBuilder --> EvidenceChain : produces
+    EvidenceChainBuilder --> RiskScoringEngine.Result : consumes breakdown+factors+diagnostics
+    EvidenceChainView --> EvidenceChain : renders
+    EmotionPrediction --> RiskTrendPredictor : IPC prediction:getTrend
+    SeedDemoData --> DemoModeStore : activate/deactivate (已实现)

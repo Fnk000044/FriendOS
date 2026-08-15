@@ -1,0 +1,19 @@
+sequenceDiagram
+    participant U as 用户
+    participant RD as RiskDashboardPage
+    participant RS as RiskScoreCard/EarlyWarningCard
+    participant EV as EvidenceChainView
+    participant EB as utils/evidenceChain.ts
+    participant IPC as preload
+    participant M as main.cjs
+    participant R as RiskScoringEngine
+
+    U->>RD: 打开风险看板
+    RD->>IPC: riskCalculate({emotionRecords, behaviorData, assessments, conversationSummaries, diaries})
+    IPC->>M: ipcMain 'risk:calculate'
+    M->>R: calculateRiskScore(data)
+    R-->>RD: {totalScore, riskLevel, breakdown, factors, diagnostics}
+    U->>RS: 点击预警卡片/评分卡"查看证据链"
+    RS->>EB: buildEvidenceChain(riskResult, hasData)
+    EB-->>EV: EvidenceChain(contributions/triggers/actions/disclaimer/methodRef)
+    EV-->>U: 下钻视图（总分→5 信号贡献条→触发依据→建议动作→免责声明）

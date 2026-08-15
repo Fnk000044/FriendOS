@@ -1,0 +1,26 @@
+sequenceDiagram
+    participant U as 用户
+    participant CP as ChatPage
+    participant CS as ChatService
+    participant ST as chatStore(session)
+    participant IPC as preload
+    participant M as main.cjs
+    participant FB as ChatFallbackEngine
+    participant SM as SentimentService(ONNX)
+
+    U->>CP: 输入"最近考试压力好大"
+    CP->>CS: sendMessage(text)
+    CS->>SM: sentimentAnalyze(text)（IPC sentiment-analyze）
+    SM-->>CS: {level:'negative', negativeProb:0.85}
+    CS->>IPC: chatGetProviderConfig()
+    IPC-->>CS: {hasKey:false}
+    CS->>IPC: chatFallback({text, emotionLabel:'negative', negativeProb:0.85, session: ST.session})
+    IPC->>M: ipcMain 'chat:fallback'
+    M->>FB: respond(text, opts)
+    FB-->>M: {text, branch:'stress', isCrisis:false, sessionDelta}
+    M-->>CS: ChatFallbackResult
+    CS->>ST: updateSession(fb.sessionDelta)（turnCount+1/主题/情绪历史/去重）
+    CS->>CP: finalizeLast({method:'fallback', emotionLabel:'negative'})
+    Note over CP: MessageBubble 显示「本地」徽标 + 情感点
+    Note over CS: 第 3 轮起 reply 引用 session.topics："你刚才提到的考试……"
+    Note over CS: 第 5 轮进入 support：建议呼吸练习/写日记

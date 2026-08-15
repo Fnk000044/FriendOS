@@ -1,0 +1,98 @@
+classDiagram
+    class ChatSessionState {
+        +int turnCount
+        +string[] emotionHistory
+        +string[] topics
+        +string summary
+        +string[] usedTemplates
+        +string dominantEmotion
+    }
+    class ChatFallbackEngine {
+        <<main process service>>
+        +respond(text, opts) ChatFallbackResult
+        +greeting(opts) ChatGreetingResult
+        +detectCrisis(text) boolean
+        +extractTopics(text) string[]
+        +buildSessionDelta(state, text, label) ChatSessionDelta
+    }
+    class ChatFallbackResult {
+        +string text
+        +string branch
+        +boolean isCrisis
+        +ChatSessionDelta sessionDelta
+    }
+    class ChatService {
+        <<renderer service>>
+        +sendMessage(text) Promise~void~
+        +buildContext() Promise~ChatContext~
+        +maintainSession(sentiment, text) void
+        +maybeSummarize() Promise~void~
+    }
+    class DiagnosticsService {
+        <<main process service>>
+        +check() Promise~DiagnosticsResult~
+    }
+    class DiagnosticsResult {
+        +string appVersion
+        +object network
+        +object model
+        +object apiKey
+        +string degradationPath
+        +boolean demoMode
+        +number timestamp
+    }
+    class RiskTrendPredictor {
+        <<main process service>>
+        +predict(input) RiskPredictionResult
+        +fitLogistic(features, labels) coefficients
+        +forecastMood(series) number[]
+    }
+    class RiskPredictionResult {
+        +float riskUpgradeProb
+        +number[] moodForecast7d
+        +string riskTrend
+        +float confidence
+        +string method
+        +string note
+    }
+    class BehaviorAnalyzer {
+        <<main process service>>
+        +calculatePersonalBaseline(records) Baseline
+        +analyzeDailyBehavior(record, context, baseline) Result
+        +analyzeBehaviorTrends(records) Trends
+    }
+    class EvidenceChainBuilder {
+        <<renderer pure util>>
+        +buildEvidenceChain(riskResult) EvidenceChain
+    }
+    class EvidenceChain {
+        +int totalScore
+        +string riskLevel
+        +Contribution[] contributions
+        +Trigger[] triggers
+        +Action[] actions
+        +object escalation
+        +string disclaimer
+    }
+    class DemoModeStore {
+        <<renderer zustand>>
+        +string status
+        +string injectedAt
+        +activate() void
+        +deactivate() void
+    }
+    class SeedDemoData {
+        <<renderer util>>
+        +seedDemoData() Promise~Result~
+        +clearDemoData() Promise~void~
+    }
+
+    ChatService --> ChatFallbackEngine : IPC chat:fallback
+    ChatService --> ChatSessionState : owns/merges
+    ChatFallbackEngine --> ChatSessionState : reads + returns delta
+    DiagnosticsService --> DiagnosticsResult : produces
+    RiskTrendPredictor --> RiskPredictionResult : produces
+    EvidenceChainBuilder --> EvidenceChain : produces
+    EvidenceChainBuilder --> RiskScoringEngine.Result : consumes breakdown+factors+diagnostics
+    BehaviorAnalyzer --> RiskTrendPredictor : baseline input
+    DemoModeStore --> SeedDemoData : triggers

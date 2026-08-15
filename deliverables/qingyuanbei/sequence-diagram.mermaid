@@ -1,0 +1,23 @@
+sequenceDiagram
+    participant U as 用户
+    participant R as 渲染层(React)
+    participant FS as SelfEvolutionService.ts
+    participant DB as Dexie(IndexedDB)
+    participant M as 主进程(SentimentService.cjs)
+    participant O as ONNX Session
+
+    U->>R: 写日记/聊天
+    R->>FS: getSentimentCalibration()
+    FS->>DB: 读 selfEvoModels（解密）
+    DB-->>FS: calibration
+    R->>M: sentiment-analyze(text, calibration)
+    M->>O: run(input_ids, attention_mask)
+    O-->>M: logits(4 类)
+    M->>M: softmax → prob；应用先验偏移（crisis 冻结）
+    M-->>R: {level, negativeProb, positiveProb, crisisProb, method, calibrated:true}
+    R-->>U: 展示情感标签 + 纠正按钮
+    U->>R: 纠正「应该是开心」
+    R->>FS: recordFeedback({type:'sentiment', correctedLabel:'positive', text, refId})
+    FS->>DB: 写 feedbackLogs（text 加密）
+    FS->>FS: 在线更新先验 β（收缩+clamp+危机锁）
+    FS->>DB: 写 selfEvoModels（聚合统计，加密）
